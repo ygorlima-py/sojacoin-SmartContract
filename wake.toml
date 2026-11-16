@@ -1,0 +1,7 @@
+[compiler.solc]
+include_paths = ["node_modules"]
+via_IR = true
+
+[compiler.solc.optimizer]
+enabled = true
+runs = 200

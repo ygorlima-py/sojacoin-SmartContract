@@ -1,0 +1,35 @@
+# Dependências instaladas localmente; mantenha package.json e package-lock.json no Git.
+node_modules/
+
+# Saídas de compilação e dados locais do Wake e do Foundry.
+.wake/
+out/
+cache/
+broadcast/
+artifacts/
+build/
+coverage/
+lcov.info
+*.abi
+*.bin
+
+# Segredos, carteiras e configurações locais.
+.env
+.env.*
+!.env.example
+keystore/
+*.pem
+*.key
+*.p12
+*.keystore
+
+# Arquivos locais do ambiente de desenvolvimento.
+.agents/
+.aws/
+.codex/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
