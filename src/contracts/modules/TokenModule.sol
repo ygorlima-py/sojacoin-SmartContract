@@ -8,9 +8,10 @@ import {ERC20Pausable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {SojaCoinStorage} from "../storage/SojaCoinStorage.sol";
+import {IUnitRegistry} from "../interfaces/IUnitRegistry.sol";
 
-// Regras da movimentação do SJC. Os depósitos, garantias e resgates usam
-// as rotinas internas da base para movimentar tokens mantidos pelo contrato.
+// SJC transfer rules. Deposits, guarantees, and redemptions use the base's
+// internal routines to move tokens held by the contract.
 abstract contract TokenModule is
     SojaCoinStorage,
     ERC20,
@@ -19,21 +20,21 @@ abstract contract TokenModule is
     Ownable2Step,
     ERC20Permit
 {
-    /// @notice Inicializa o token, o dono inicial e a assinatura EIP-2612 do SJC.
-    /// @param initialOwner Carteira que receberá a propriedade inicial do contrato.
+    /// @notice Initializes the token, its initial owner, and SJC's EIP-2612 permit support.
+    /// @param initialOwner Wallet that receives initial ownership of the contract.
     constructor(address initialOwner)
         ERC20("SojaCoin", "SJC")
         Ownable(initialOwner)
         ERC20Permit("SojaCoin")
     {}
 
-    /// @notice Aplica as regras comuns a transferências, emissões e queimas de SJC.
-    /// @dev Destinatários de transferências normais precisam estar cadastrados. A entrada
-    /// ou saída de SJC do próprio contrato exige uma operação interna autorizada. Durante
-    /// a liquidação controlada de um resgate, a rotina usa a implementação ERC-20 sem a pausa.
-    /// @param from Carteira de origem; zero indica emissão de SJC.
-    /// @param to Carteira de destino; zero indica queima de SJC.
-    /// @param value Quantidade movimentada em unidades internas do token.
+    /// @notice Applies the shared rules for SJC transfers, issuance, and burns.
+    /// @dev Recipients of ordinary transfers must be registered. SJC entering or leaving
+    /// the contract requires an authorized internal operation. During controlled redemption
+    /// settlement, this routine uses the ERC-20 implementation without the pause.
+    /// @param from Source wallet; zero indicates SJC issuance.
+    /// @param to Destination wallet; zero indicates an SJC burn.
+    /// @param value Amount moved in the token's internal units.
     function _update(
         address from,
         address to,
@@ -42,104 +43,163 @@ abstract contract TokenModule is
         if (to != address(0)) {
             if (to == address(this) || from == address(this)) {
                 require(
-                    _movimentacaoDeTrava,
-                    "Movimentacao de trava nao autorizada"
+                    _movementOfLock,
+                    "Unauthorized token lock movement"
                 );
             } else {
                 require(
-                    participanteCadastrado[to],
-                    "destino nao cadastrado"
+                    participantRegistered[to],
+                    "Recipient is not registered"
                 );
             }
         }
 
-        if (_liquidacaoResgate) {
-            require(from == address(this), "Liquidacao de resgate invalida");
+        if (_settlementRedemption) {
+            require(from == address(this), "Invalid redemption settlement");
             ERC20._update(from, to, value);
         } else {
             super._update(from, to, value);
         }
     }
 
-    /// @notice Informa que o SJC usa seis casas decimais.
-    /// @return Quantidade de casas decimais exibidas para o token.
+    /// @notice Returns the number of decimal places used by SJC.
+    /// @return Number of decimal places displayed for the token.
     function decimals() public pure virtual override returns (uint8) {
         return 6;
     }
 
-    /// @notice Desativa a renúncia à propriedade do contrato.
-    /// @dev O dono pode transferir a propriedade, mas esta chamada sempre reverte
-    /// para manter um responsável administrativo configurado.
+    /// @notice Disables renunciation of contract ownership.
+    /// @dev The owner can transfer ownership, but this call always reverts
+    /// to keep an administrative account configured.
     function renounceOwnership() public view virtual override onlyOwner {
-        revert("Renuncia de dono desativada");
+        revert("Owner renunciation is disabled");
     }
 
-    /// @notice Transfere SJC em uma operação interna de trava, CPR ou resgate.
-    /// @dev Ativa temporariamente a permissão para o contrato receber ou devolver tokens;
-    /// a operação ERC-20 ainda respeita a pausa global.
-    /// @param from Carteira de onde os tokens sairão.
-    /// @param to Carteira que receberá os tokens.
-    /// @param amountSc Quantidade transferida em unidades internas do SJC.
-    function _transferirTokensDaTrava(
+    /// @notice Transfers SJC during an internal lock, CPR, or redemption operation.
+    /// @dev Temporarily enables the contract to receive or return tokens; the ERC-20
+    /// operation still honors the global pause.
+    /// @param from Wallet from which the tokens are sent.
+    /// @param to Wallet that receives the tokens.
+    /// @param amountSJC Amount transferred in SJC's internal units.
+    function _transferTokensFromLock(
         address from,
         address to,
-        uint256 amountSc
+        uint256 amountSJC
     ) internal {
-        _movimentacaoDeTrava = true;
-        _transfer(from, to, amountSc);
-        _movimentacaoDeTrava = false;
+        _movementOfLock = true;
+        _transfer(from, to, amountSJC);
+        _movementOfLock = false;
     }
 
-    /// @notice Devolve ao titular os SJC que estavam presos em um pedido de resgate.
-    /// @dev Ativa uma exceção temporária à pausa global somente para transferir do contrato
-    /// ao titular. A função não permite movimentar tokens entre participantes.
-    /// @param to Carteira do titular que receberá os tokens devolvidos.
-    /// @param amountSc Quantidade devolvida em unidades internas do SJC.
-    function _transferirTokensDoResgate(address to, uint256 amountSc) internal {
-        _movimentacaoDeTrava = true;
-        _liquidacaoResgate = true;
-        _transfer(address(this), to, amountSc);
-        _liquidacaoResgate = false;
-        _movimentacaoDeTrava = false;
+    /// @notice Returns to the holder SJC held for a redemption request.
+    /// @dev Temporarily bypasses the global pause only to transfer from the contract
+    /// to the holder. This function cannot move tokens between participants.
+    /// @param to Holder's wallet that receives the returned tokens.
+    /// @param amountSJC Amount returned in SJC's internal units.
+    function _transferTokensFromRedemption(address to, uint256 amountSJC) internal {
+        _movementOfLock = true;
+        _settlementRedemption = true;
+        _transfer(address(this), to, amountSJC);
+        _settlementRedemption = false;
+        _movementOfLock = false;
     }
 
-    /// @notice Queima os SJC mantidos pelo contrato após a conclusão de um resgate.
-    /// @dev A exceção temporária à pausa só permite queima a partir do saldo do próprio contrato.
-    /// @param amountSc Quantidade que será queimada, em unidades internas do SJC.
-    function _queimarTokensDoResgate(uint256 amountSc) internal {
-        _liquidacaoResgate = true;
-        _burn(address(this), amountSc);
-        _liquidacaoResgate = false;
+    /// @notice Burns SJC held by the contract after a redemption is completed.
+    /// @dev The temporary pause bypass only allows burns from the contract's own balance.
+    /// @param amountSJC Amount to burn, in SJC's internal units.
+    function _burnRedemptionTokens(uint256 amountSJC) internal {
+        _settlementRedemption = true;
+        _burn(address(this), amountSJC);
+        _settlementRedemption = false;
     }
 
-    /// @notice Recalcula o teto de emissão usando o estoque registrado em miligramas.
-    /// @dev Um incremento mínimo de SJC representa 60 mg; o resultado é arredondado para baixo.
-    function _atualizarTetoEmissao() internal {
-        tetoEmissaoSc = estoqueRegistradoMg / MG_POR_UNIDADE_SJC;
+    /// @notice Recalculates the issuance cap using inventory available across units.
+    /// @dev In-transit inventory remains part of global backing but is excluded from the cap
+    /// for new issuance until receipt is confirmed. One SJC represents 60 mg.
+    function _updateIssuanceCap() internal {
+        uint256 eligibleInventoryMg = registeredInventoryMg;
+        if (unitRegistry != address(0)) {
+            uint256 inTransitMg = IUnitRegistry(unitRegistry)
+                .inventoryInTransitMg();
+            require(inTransitMg <= eligibleInventoryMg, "In-transit amount exceeds inventory");
+            eligibleInventoryMg -= inTransitMg;
+        }
+        issuanceCapSJC = eligibleInventoryMg / MG_PER_SJC_UNIT;
     }
 
-    /// @notice Pausa o contrato e registra o horário da pausa, se ainda não estiver pausado.
-    /// @dev Função interna usada pela administração e pelos controles de lastro.
-    function _pausarContrato() internal {
+    /// @notice Requires a valid audit for the current inventory model.
+    /// @dev When units are configured, the valid timestamp is the oldest audit among
+    /// all active units. Auditing one unit therefore does not renew the others.
+    function _requireCurrentAudit() internal view {
+        uint256 dateAudit = lastAuditAt;
+        if (unitRegistry != address(0)) {
+            dateAudit = IUnitRegistry(unitRegistry)
+                .lastAuditAt();
+        }
+
+        require(dateAudit != 0, "Audit does not exist");
+        require(
+            block.timestamp <= dateAudit + AUDIT_PERIOD,
+            "Audit has expired"
+        );
+    }
+
+    /// @notice Returns the audit timestamp used by the current inventory model.
+    function _currentAuditDate() internal view returns (uint256) {
+        if (unitRegistry != address(0)) {
+            return IUnitRegistry(unitRegistry).lastAuditAt();
+        }
+        return lastAuditAt;
+    }
+
+    /// @notice Reduces global inventory by the physical weight that left custody.
+    /// @dev If global inventory is lower than the reported outbound amount, sets the balance
+    /// to zero, emits a discrepancy alert, and pauses if remaining backing cannot cover SJC.
+    /// @param massMg Outbound weight, in milligrams.
+    /// @param responsibleParty Wallet that recorded the outbound movement.
+    function _reducePhysicalInventory(
+        uint256 massMg,
+        address responsibleParty
+    ) internal {
+        if (registeredInventoryMg >= massMg) {
+            registeredInventoryMg -= massMg;
+        } else {
+            emit DiscrepancyDetected(
+                responsibleParty,
+                owner(),
+                registeredInventoryMg,
+                totalSupply(),
+                block.timestamp
+            );
+            registeredInventoryMg = 0;
+        }
+
+        _updateIssuanceCap();
+        _pauseIfUnderBacked(responsibleParty);
+    }
+
+    /// @notice Pauses the contract and records the pause timestamp if it is not already paused.
+    /// @dev Internal function used by administration and backing controls.
+    function _pauseContract() internal {
         if (!paused()) {
-            ultimaPausa = block.timestamp;
+            lastPausedAt = block.timestamp;
             _pause();
         }
     }
 
-    /// @notice Emite um alerta e pausa o contrato se os SJC emitidos excederem o estoque registrado.
-    /// @dev Compara o total de SJC convertido em miligramas com o estoque contabilizado.
-    /// @param detectadaPor Carteira ou operação que identificou a divergência.
-    function _pausarSeSemLastro(address detectadaPor) internal {
-        if (totalSupply() * MG_POR_UNIDADE_SJC > estoqueRegistradoMg) {
-            emit DivergenciaDetectada(
-                detectadaPor,
-                wareHouse,
-                estoqueRegistradoMg,
+    /// @notice Emits an alert and pauses the contract if issued SJC exceeds recorded inventory.
+    /// @dev Compares the total SJC converted to milligrams against accounted inventory.
+    /// @param detectedBy Wallet or operation that detected the discrepancy.
+    function _pauseIfUnderBacked(address detectedBy) internal {
+        if (totalSupply() * MG_PER_SJC_UNIT > registeredInventoryMg) {
+            emit DiscrepancyDetected(
+                detectedBy,
+                owner(),
+                registeredInventoryMg,
                 totalSupply(),
                 block.timestamp
             );
-            _pausarContrato();
+            _pauseContract();
         }
     }
 }

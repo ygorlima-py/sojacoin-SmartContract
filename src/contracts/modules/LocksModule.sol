@@ -3,88 +3,88 @@ pragma solidity ^0.8.27;
 
 import {TokenModule} from "./TokenModule.sol";
 
-// Garantias formadas por SJC já emitido e mantido no próprio contrato.
+// Guarantees backed by already-issued SJC held by the contract.
 abstract contract LocksModule is TokenModule {
-    /// @notice Bloqueia SJC que o titular já possui para garantir um acordo com um credor.
-    /// @dev A carteira que chama é o titular. Ambos precisam estar cadastrados; os tokens
-    /// saem do saldo do titular e ficam sob custódia do contrato até liberação ou execução.
-    /// @param amountSc Quantidade de SJC a bloquear, em unidades internas do token.
-    /// @param credor Carteira cadastrada que poderá liberar ou executar a trava.
-    /// @param hashAcordo Hash do acordo guardado fora da blockchain.
-    /// @param vencimento Data Unix a partir da qual o credor poderá executar a trava.
-    /// @return idTrava Identificador atribuído a esta garantia.
-    function travarSJC(
-        uint256 amountSc,
-        address credor,
-        bytes32 hashAcordo,
-        uint256 vencimento
-    ) external returns (uint256 idTrava) {
+    /// @notice Locks SJC held by the holder to secure an agreement with a creditor.
+    /// @dev The caller's wallet is the holder. Both parties must be registered; the tokens
+    /// leave the holder's balance and remain in the contract's custody until released or executed.
+    /// @param amountSJC Amount of SJC to lock, in the token's internal units.
+    /// @param creditor Registered wallet allowed to release or execute the lock.
+    /// @param hashAgreement Hash of the agreement stored off-chain.
+    /// @param dueDate Unix timestamp from which the creditor may execute the lock.
+    /// @return lockId Identifier assigned to this guarantee.
+    function lockSJC(
+        uint256 amountSJC,
+        address creditor,
+        bytes32 hashAgreement,
+        uint256 dueDate
+    ) external returns (uint256 lockId) {
         require(
-            participanteCadastrado[msg.sender],
-            "Titular nao cadastrado"
+            participantRegistered[msg.sender],
+            "Holder is not registered"
         );
-        require(participanteCadastrado[credor], "Credor nao cadastrado");
-        require(credor != msg.sender, "Credor igual ao titular");
-        require(amountSc > 0, "Quantidade invalida");
-        require(hashAcordo != bytes32(0), "Hash do acordo invalida");
-        require(vencimento > block.timestamp, "Vencimento invalido");
+        require(participantRegistered[creditor], "Creditor is not registered");
+        require(creditor != msg.sender, "Creditor and holder must differ");
+        require(amountSJC > 0, "Invalid amount");
+        require(hashAgreement != bytes32(0), "Invalid agreement hash");
+        require(dueDate > block.timestamp, "Invalid due date");
 
-        idTrava = ++proximaTrava;
-        travas[idTrava] = Trava(
+        lockId = ++nextLockId;
+        locks[lockId] = TokenLock(
             msg.sender,
-            credor,
-            amountSc,
-            hashAcordo,
-            vencimento,
+            creditor,
+            amountSJC,
+            hashAgreement,
+            dueDate,
             true
         );
 
-        _transferirTokensDaTrava(msg.sender, address(this), amountSc);
+        _transferTokensFromLock(msg.sender, address(this), amountSJC);
 
-        travasAtivasPorParticipante[msg.sender] += 1;
-        travasAtivasPorParticipante[credor] += 1;
+        activeLocksByParticipant[msg.sender] += 1;
+        activeLocksByParticipant[creditor] += 1;
 
-        emit TokensTravados(
-            idTrava,
+        emit TokensLocked(
+            lockId,
             msg.sender,
-            credor,
-            amountSc,
-            hashAcordo
+            creditor,
+            amountSJC,
+            hashAgreement
         );
     }
 
-    /// @notice Encerra uma trava e devolve ao titular os SJC que estavam bloqueados.
-    /// @dev Só o credor da trava pode chamar. A devolução não depende do vencimento.
-    /// @param idTrava Identificador da trava a liberar.
-    function liberarTrava(uint256 idTrava) external {
-        Trava storage trava = travas[idTrava];
+    /// @notice Closes a lock and returns the locked SJC to the holder.
+    /// @dev Only the lock's creditor can call this. The return does not depend on the due date.
+    /// @param lockId Identifier of the lock to release.
+    function releaseTokenLock(uint256 lockId) external {
+        TokenLock storage lock = locks[lockId];
 
-        require(trava.ativa, "Trava inativa");
-        require(msg.sender == trava.credor, "Apenas o credor");
+        require(lock.active, "Token lock is inactive");
+        require(msg.sender == lock.creditor, "Creditor only");
 
-        trava.ativa = false;
-        travasAtivasPorParticipante[trava.holder] -= 1;
-        travasAtivasPorParticipante[trava.credor] -= 1;
+        lock.active = false;
+        activeLocksByParticipant[lock.holder] -= 1;
+        activeLocksByParticipant[lock.creditor] -= 1;
 
-        _transferirTokensDaTrava(address(this), trava.holder, trava.amountSc);
-        emit TravaLiberada(idTrava);
+        _transferTokensFromLock(address(this), lock.holder, lock.amountSJC);
+        emit TokenLockReleased(lockId);
     }
 
-    /// @notice Executa uma trava vencida e transfere os SJC bloqueados ao credor.
-    /// @dev Só o credor da trava pode chamar, e apenas a partir do vencimento registrado.
-    /// @param idTrava Identificador da trava a executar.
-    function executarTrava(uint256 idTrava) external {
-        Trava storage trava = travas[idTrava];
+    /// @notice Executes an expired lock and transfers the locked SJC to the creditor.
+    /// @dev Only the lock's creditor can call this, and only after the recorded due date.
+    /// @param lockId Identifier of the lock to execute.
+    function executeTokenLock(uint256 lockId) external {
+        TokenLock storage lock = locks[lockId];
 
-        require(trava.ativa, "Trava inativa");
-        require(msg.sender == trava.credor, "Apenas o credor");
-        require(block.timestamp >= trava.vencimento, "Ainda nao venceu");
+        require(lock.active, "Token lock is inactive");
+        require(msg.sender == lock.creditor, "Creditor only");
+        require(block.timestamp >= lock.dueDate, "Not yet due");
 
-        trava.ativa = false;
-        travasAtivasPorParticipante[trava.holder] -= 1;
-        travasAtivasPorParticipante[trava.credor] -= 1;
+        lock.active = false;
+        activeLocksByParticipant[lock.holder] -= 1;
+        activeLocksByParticipant[lock.creditor] -= 1;
 
-        _transferirTokensDaTrava(address(this), trava.credor, trava.amountSc);
-        emit TravaExecutada(idTrava);
+        _transferTokensFromLock(address(this), lock.creditor, lock.amountSJC);
+        emit TokenLockExecuted(lockId);
     }
 }
