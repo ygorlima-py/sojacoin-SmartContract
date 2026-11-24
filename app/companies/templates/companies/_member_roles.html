@@ -1,0 +1,21 @@
+{% for role in member.active_roles %}
+    {% if role.role == 'administrator' %}
+        Administrador
+    {% elif role.role == 'registration' %}
+        Cadastro
+    {% elif role.role == 'receiving' %}
+        Recebimento
+    {% elif role.role == 'issuance' %}
+        Emissão
+    {% elif role.role == 'auditor' %}
+        Auditoria
+    {% else %}
+        {{ role.get_role_display }}
+    {% endif %}
+    
+    {% if not forloop.last %}
+        , 
+    {% endif %}
+    {% empty %}
+    Sem função atribuída
+{% endfor %}

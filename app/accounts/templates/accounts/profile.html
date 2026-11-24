@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Meu perfil | SojaCoin{% endblock %}
+{% block page_title %}Meu perfil{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Dados da sua conta e segurança</p>{% endblock %}
+
+{% block header_actions %}
+    <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="flex h-[30px] items-center gap-[7px] rounded-[8px] px-2 text-[13px] font-semibold text-[#5C685E] transition hover:bg-[#F6F7F4]">
+            <svg viewBox="0 0 16 16" class="h-[15px] w-[15px]" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M6.25 2.25H3.5a1 1 0 0 0-1 1v9.5a1 1 0 0 0 1 1h2.75"></path>
+                <path d="M8.25 5.25 11 8l-2.75 2.75M5.5 8h8"></path>
+            </svg>
+            Sair
+        </button>
+    </form>
+{% endblock %}
+
+{% block content %}
+<div class="flex w-full flex-col gap-[18px]">
+    <div class="grid w-full grid-cols-1 items-start gap-[18px] xl:grid-cols-[minmax(0,1fr)_344px]">
+        <div class="flex min-w-0 flex-col gap-[18px]">
+            <section class="w-full overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+                <div class="flex h-[44px] items-center border-b border-[#E2E5DE] px-4">
+                    <h2 class="text-[13.5px] font-semibold text-[#17211A]">Seu perfil</h2>
+                </div>
+
+                <form id="profile-form" method="post" class="flex flex-col gap-[14px] p-[14px_16px]" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div role="alert" class="rounded-[7px] border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 gap-[14px] md:grid-cols-2">
+                        <div class="flex flex-col gap-[5px]">
+                            <label for="{{ form.full_name.id_for_label }}" class="text-[12px] font-semibold text-[#5C685E]">Nome completo</label>
+                            {{ form.full_name }}
+                            {% for error in form.full_name.errors %}<p class="text-[12px] leading-4 text-red-700">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="flex flex-col gap-[5px]">
+                            <label for="profile-email" class="text-[12px] font-semibold text-[#5C685E]">E-mail</label>
+                            <div id="profile-email" class="flex h-[38px] items-center rounded-[7px] border border-[#E2E5DE] bg-[#F9FAF7] px-[11px] text-[13px] text-[#5C685E]">{{ request.user.email|default:"Não informado" }}</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-[14px] md:grid-cols-2">
+                        <div class="flex flex-col gap-[5px]">
+                            <label for="{{ form.phone.id_for_label }}" class="text-[12px] font-semibold text-[#5C685E]">Telefone</label>
+                            {{ form.phone }}
+                            <p class="text-[11px] text-[#8A948B]">Com DDD</p>
+                            {% for error in form.phone.errors %}<p class="text-[12px] leading-4 text-red-700">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="flex flex-col gap-[5px]">
+                            <span class="text-[12px] font-semibold text-[#8A948B]">Perfil de acesso</span>
+                            <div class="flex h-[38px] items-center rounded-[7px] border border-[#E2E5DE] bg-[#F9FAF7] px-[11px] text-[13px] text-[#17211A]">{{ primary_role_label }}</div>
+                            <p class="text-[11px] text-[#8A948B]">Alterado em Equipe e permissões</p>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <section class="w-full overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+                <div class="flex h-[44px] items-center border-b border-[#E2E5DE] px-4">
+                    <h2 class="text-[13.5px] font-semibold text-[#17211A]">Segurança</h2>
+                </div>
+                <div class="flex items-center justify-between gap-3 p-[14px_16px]">
+                    <div class="flex flex-col gap-px">
+                        <h3 class="text-[12.5px] font-semibold text-[#17211A]">Senha</h3>
+                        <p class="text-[11px] text-[#8A948B]">Atualize sua senha de acesso.</p>
+                    </div>
+                    <a href="{% url 'accounts:password_change' %}" class="flex h-8 shrink-0 items-center rounded-[8px] border border-[#CCD3C9] bg-white px-[11px] text-[13px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">Alterar senha</a>
+                </div>
+            </section>
+        </div>
+
+        <div class="flex w-full flex-col gap-[18px] xl:w-[344px]">
+            <section class="w-full overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+                <div class="flex h-[44px] items-center border-b border-[#E2E5DE] px-4">
+                    <h2 class="text-[13.5px] font-semibold text-[#17211A]">Conta</h2>
+                </div>
+                <div class="flex flex-col gap-[14px] p-[14px_16px]">
+                    <div class="flex flex-col gap-[5px]">
+                        <span class="text-[12px] font-semibold text-[#5C685E]">Usuário</span>
+                        <div class="flex h-[38px] items-center rounded-[7px] border border-[#E2E5DE] bg-[#F9FAF7] px-[11px] text-[13px] text-[#5C685E]">{{ request.user.username }}</div>
+                    </div>
+                    <div class="flex flex-col gap-[5px]">
+                        <span class="text-[12px] font-semibold text-[#5C685E]">Empresa</span>
+                        <div class="flex min-h-[38px] items-center rounded-[7px] border border-[#E2E5DE] bg-[#F9FAF7] px-[11px] text-[13px] text-[#5C685E]">{{ company_name }}</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="w-full overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+                <div class="flex h-[44px] items-center border-b border-[#E2E5DE] px-4">
+                    <h2 class="text-[13.5px] font-semibold text-[#17211A]">Salvar alterações</h2>
+                </div>
+                <div class="flex flex-col gap-2 p-[12px_16px_14px]">
+                    <button form="profile-form" type="submit" class="flex h-[38px] w-full items-center justify-center rounded-[8px] bg-[#1E6B3C] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#17552F] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30 focus:ring-offset-2">Salvar alterações</button>
+                    <button form="profile-form" type="reset" class="flex h-[38px] w-full items-center justify-center rounded-[8px] border border-[#CCD3C9] bg-white px-3.5 text-[13px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">Descartar</button>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

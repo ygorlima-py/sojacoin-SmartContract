@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load tz %}
+
+{% block title %}Histórico de acessos | SojaCoin{% endblock %}
+{% block page_title %}Histórico de acessos{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Alterações de {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+
+{% block content %}
+<section class="max-w-5xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+    <div class="border-b border-[#E2E5DE] px-4 py-4">
+        <div class="flex items-start gap-3">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#E9F2EC] text-[#1E6B3C]" aria-hidden="true">
+                <i class="fa-solid fa-clock-rotate-left text-[13px]"></i>
+            </div>
+            <div>
+                <h2 class="text-[13.5px] font-semibold text-[#17211A]">Alterações registradas</h2>
+            </div>
+        </div>
+    </div>
+
+    {% if history_rows %}
+        <div class="divide-y divide-[#E2E5DE]">
+            {% for row in history_rows %}
+                <article class="px-4 py-5">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="flex items-start gap-2.5">
+                            <div class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F1F4F0] text-[#1E6B3C]" aria-hidden="true">
+                                <i class="fa-solid fa-arrow-right text-[11px]"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-[12.5px] font-semibold text-[#17211A]">{{ row.action_label }}</h3>
+                            </div>
+                        </div>
+                        <time class="whitespace-nowrap text-[11px] text-[#8A948B]" datetime="{{ row.change.occurred_at|date:'c' }}">
+                            {{ row.change.occurred_at|localtime|date:"d/m/Y H:i" }}
+                        </time>
+                    </div>
+
+                    <dl class="mt-4 grid gap-2 rounded-[8px] border border-[#E2E5DE] bg-[#FCFDFC] p-3 text-[11.5px] sm:grid-cols-3">
+                        <div>
+                            <dt class="font-semibold text-[#8A948B]">Responsável</dt>
+                            <dd class="mt-0.5 text-[#5C685E]">
+                                {{ row.change.actor.profile.full_name|default:row.change.actor.username }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="font-semibold text-[#8A948B]">Membro afetado</dt>
+                            <dd class="mt-0.5 text-[#5C685E]">
+                                {{ row.change.membership.user.profile.full_name|default:row.change.membership.user.username }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="font-semibold text-[#8A948B]">Unidade</dt>
+                            <dd class="mt-0.5 text-[#5C685E]">
+                                {% if row.change.unit %}{{ row.change.unit.name }}{% else %}Empresa{% endif %}
+                            </dd>
+                        </div>
+                    </dl>
+
+                    {% if row.details %}
+                    <div class="mt-4 w-full max-w-[520px]">
+                        <h4 class="text-[12px] font-semibold text-[#17211A]">{% if row.change.action == 'unit_access_updated' and row.change.new_value.active == False %}Permissões anteriores{% elif row.change.action == 'unit_access_updated' %}Permissões{% else %}Detalhes{% endif %}</h4>
+                        <dl class="mt-2 divide-y divide-[#E2E5DE] text-[12px]">
+                            {% for detail in row.details %}
+                                <div class="grid grid-cols-2 items-center gap-3 py-2">
+                                    <dt class="font-semibold text-[#5C685E]">{{ detail.label }}</dt>
+                                    <dd class="min-w-0 text-left">
+                                        {% if detail.before %}
+                                            <span class="text-[#8A948B]">{{ detail.before }}</span>
+                                            <span class="mx-1 text-[#8A948B]" aria-label="alterado para">→</span>
+                                        {% endif %}
+                                        <span class="font-semibold text-[#17211A]">{{ detail.after }}</span>
+                                    </dd>
+                                </div>
+                            {% endfor %}
+                        </dl>
+                    </div>
+                    {% endif %}
+
+                    {% if row.change.transaction %}
+                        <p class="mt-3 break-all text-[11px] text-[#8A948B]">
+                            Referência da transação: <code class="text-[#5C685E]">{{ row.change.transaction }}</code>
+                        </p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+            <nav class="flex items-center justify-between border-t border-[#E2E5DE] px-4 py-3 text-[11px]" aria-label="Paginação do histórico">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" class="font-semibold text-[#1E6B3C]">Anterior</a>
+                {% else %}
+                    <span class="text-[#CCD3C9]">Anterior</span>
+                {% endif %}
+                <span class="text-[#8A948B]">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="font-semibold text-[#1E6B3C]">Próxima</a>
+                {% else %}
+                    <span class="text-[#CCD3C9]">Próxima</span>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="px-4 py-8 text-center text-[13px] text-[#8A948B]">
+            Nenhuma alteração de acesso registrada.
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

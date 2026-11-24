@@ -1,0 +1,105 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'blockchain/deployment.css' %}">
+  <script defer src="{% static 'blockchain/deployment.js' %}"></script>
+{% endblock %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  {% if show_cancel_deployment %}
+    <li>
+      <form method="post" action="{{ cancel_deployment_url }}">
+        {% csrf_token %}
+        <button class="button" type="submit" onclick="return confirm('Cancelar este processo de implantação?');">
+          Cancelar processo
+        </button>
+      </form>
+    </li>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {{ block.super }}
+  {% if show_deployment_configurations %}
+    <section class="deployment-configuration" aria-labelledby="deployment-configuration-title">
+      <div class="deployment-configuration-heading">
+        <div>
+          <h2 id="deployment-configuration-title">Configuração dos vínculos</h2>
+          <p>Confira as duas ligações necessárias entre os contratos implantados.</p>
+        </div>
+        <div class="deployment-configuration-summary">
+          <span><strong>Nove contratos:</strong> {{ deployment_confirmed_step_count }} de 9 confirmados</span>
+          <span>
+            <strong>Vínculos:</strong>
+            {% if deployment_configuration_complete %}configuração concluída{% else %}pendentes ou em conferência{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <table class="deployment-configuration-table">
+        <thead>
+          <tr>
+            <th scope="col">Vínculo</th>
+            <th scope="col">Endereço esperado</th>
+            <th scope="col">Situação</th>
+            <th scope="col">Hash da transação</th>
+            <th scope="col">Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in deployment_configuration_rows %}
+            <tr>
+              <th scope="row">{{ row.label }}</th>
+              <td><code>{{ row.expected_address }}</code></td>
+              <td>{{ row.status }}</td>
+              <td><code>{{ row.transaction_hash }}</code></td>
+              <td>
+                {% if deployment_configuration_enabled and row.action == "prepare" %}
+                  <button type="button" class="button" data-configure-url="{{ row.action_url }}">
+                    Configurar vínculo
+                  </button>
+                  <span class="deployment-row-message" role="status"></span>
+                {% elif deployment_configuration_enabled and row.action == "confirm" %}
+                  <button
+                    type="button"
+                    class="button"
+                    data-confirm-configuration-url="{{ row.confirm_url }}"
+                  >Consultar confirmação</button>
+                  <span class="deployment-row-message" role="status"></span>
+                {% elif deployment_configuration_enabled and row.action == "recover" %}
+                  <div class="deployment-recovery">
+                    <input
+                      type="text"
+                      maxlength="66"
+                      placeholder="Hash da carteira"
+                      aria-label="Hash da chamada de configuração"
+                      data-configuration-attempt-id="{{ row.attempt_id }}"
+                      data-register-configuration-url="{{ row.register_url }}"
+                    >
+                    <button type="button" class="button" data-register-configuration-hash>
+                      Conferir hash
+                    </button>
+                    <span class="deployment-row-message" role="status"></span>
+                  </div>
+                {% else %}
+                  <span aria-hidden="true">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% if row.sender_address != "—" %}
+              <tr class="deployment-configuration-detail">
+                <td colspan="5"><strong>Carteira que enviou:</strong> <code>{{ row.sender_address }}</code></td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endif %}
+  {% if deployment_wallet_enabled %}
+    <div id="deployment-wallet-config" data-chain-id="{{ deployment_chain_id }}" hidden></div>
+  {% endif %}
+{% endblock %}

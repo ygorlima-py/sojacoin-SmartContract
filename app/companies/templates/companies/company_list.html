@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Empresas | SojaCoin{% endblock %}
+{% block page_title %}Empresas{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Escolha a empresa para continuar</p>{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+    <div class="border-b border-[#E2E5DE] px-4 py-3">
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Empresas disponíveis</h2>
+    </div>
+    <div class="divide-y divide-[#E2E5DE]">
+        {% for membership in memberships %}
+            <a href="{% url 'companies:detail' membership.company_id %}" class="flex items-center justify-between px-4 py-3 transition hover:bg-[#F9FAF7]">
+                <span>
+                    <span class="block text-[13px] font-semibold text-[#17211A]">{{ membership.company.trade_name|default:membership.company.legal_name }}</span>
+                    <span class="block text-[11px] text-[#8A948B]">{{ membership.company.cnpj }}</span>
+                </span>
+                {% if membership.company.active %}
+                    <span class="text-[11px] font-semibold text-[#1E6B3C]">Ativa</span>
+                {% else %}
+                    <span class="text-[11px] font-semibold text-[#8A948B]">Inativa</span>
+                {% endif %}
+            </a>
+        {% empty %}
+            <p class="px-4 py-5 text-[13px] text-[#5C685E]">Nenhuma empresa está vinculada à sua conta.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

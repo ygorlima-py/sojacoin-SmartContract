@@ -1,0 +1,220 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SojaCoin management platform">
+    <title>{% block title %}SojaCoin{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-[#F6F7F4] font-[Inter,system-ui,sans-serif] text-[#17211A] antialiased">
+    {% firstof company.pk active_membership.company_id as nav_company_id %}
+    {% firstof company.trade_name company.legal_name company_name "Conta pessoal" as nav_company_name %}
+    <div class="min-h-screen lg:flex">
+        <aside class="hidden w-[256px] shrink-0 flex-col border-r border-[#E2E5DE] bg-white lg:flex">
+            <div class="flex items-center gap-[9px] p-4">
+                <div class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#1E6B3C]" aria-hidden="true">
+                    <span class="text-[14px] font-bold text-white">S</span>
+                </div>
+                <div class="flex flex-col gap-0">
+                    <a href="{% url 'accounts:profile' %}" class="text-[14.5px] font-bold tracking-[-0.3px]">SojaCoin</a>
+                    <span class="text-[10px] text-[#8A948B]">Soja armazenada</span>
+                </div>
+            </div>
+
+            <div class="px-3 pb-3">
+                <a href="{% url 'companies:list' %}" class="flex w-full items-center justify-between gap-1.5 rounded-[8px] border border-[#E2E5DE] px-2.5 py-2 transition hover:bg-[#F9FAF7]">
+                    <div class="min-w-0 flex-1">
+                        <div class="text-[9.5px] font-semibold tracking-[0.7px] text-[#8A948B]">EMPRESA</div>
+                        <div class="truncate text-[12.5px] font-semibold text-[#17211A]">{{ nav_company_name }}</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-[11px] text-[#8A948B]" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <nav class="flex-1 space-y-px px-2.5 pb-4" aria-label="Navegação principal">
+                {% block sidebar_nav %}
+                    <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
+                        <i class="fa-solid fa-house w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
+                        <span class="flex flex-col items-start gap-[2px] leading-none">
+                            <span>Início</span>
+                            <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="Coming soon">
+                                <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>Coming soon
+                            </span>
+                        </span>
+                    </span>
+
+                    <section class="mt-4 border-t border-[#E2E5DE] pt-3" aria-labelledby="sidebar-operations">
+                        <h2 id="sidebar-operations" class="flex items-center gap-2 px-2.5 text-[9.5px] font-bold tracking-[0.8px] text-[#5C685E]">
+                            <i class="fa-solid fa-arrows-rotate w-[14px] text-center text-[11px] text-[#1E6B3C]" aria-hidden="true"></i>
+                            <span>OPERAÇÕES</span>
+                        </h2>
+                        <div class="ml-3 mt-1 pl-2">
+                            <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
+                                <i class="fa-solid fa-truck w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
+                                <span class="flex flex-col items-start gap-[2px] leading-none">
+                                    <span>Recebimentos</span>
+                                    <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="Coming soon">
+                                        <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>Coming soon
+                                    </span>
+                                </span>
+                            </span>
+                            <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
+                                <i class="fa-solid fa-file-lines w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
+                                <span class="flex flex-col items-start gap-[2px] leading-none">
+                                    <span>CPRs</span>
+                                    <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="Coming soon">
+                                        <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>Coming soon
+                                    </span>
+                                </span>
+                            </span>
+                            <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
+                                <i class="fa-solid fa-boxes-stacked w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
+                                <span class="flex flex-col items-start gap-[2px] leading-none">
+                                    <span>Emissões</span>
+                                    <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="Coming soon">
+                                        <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>Coming soon
+                                    </span>
+                                </span>
+                            </span>
+                        </div>
+                    </section>
+
+                    <section class="mt-4 border-t border-[#E2E5DE] pt-3" aria-labelledby="sidebar-records">
+                        <h2 id="sidebar-records" class="flex items-center gap-2 px-2.5 text-[9.5px] font-bold tracking-[0.8px] text-[#5C685E]">
+                            <i class="fa-solid fa-address-book w-[14px] text-center text-[11px] text-[#1E6B3C]" aria-hidden="true"></i>
+                            <span>CADASTROS</span>
+                        </h2>
+                        <div class="ml-3 mt-1 pl-2">
+                            <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
+                                <i class="fa-solid fa-users w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
+                                <span class="flex flex-col items-start gap-[2px] leading-none">
+                                    <span>Participantes</span>
+                                    <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="Coming soon">
+                                        <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>Coming soon
+                                    </span>
+                                </span>
+                            </span>
+                            {% if nav_company_id %}
+                                <a href="{% url 'companies:unit_list' company_id=nav_company_id %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] {% if request.resolver_match.url_name == 'unit_list' or request.resolver_match.url_name == 'unit_detail' or request.resolver_match.url_name == 'unit_new' or request.resolver_match.url_name == 'unit_edit' %}bg-[#E9F2EC] font-semibold text-[#1E6B3C]{% else %}font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]{% endif %}">
+                                    <i class="fa-solid fa-warehouse w-[15px] text-center text-[13px]" aria-hidden="true"></i>
+                                    <span>Unidades</span>
+                                </a>
+                            {% else %}
+                        <a href="{% url 'companies:list' %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]" title="Escolha uma empresa primeiro">
+                                    <i class="fa-solid fa-warehouse w-[15px] text-center text-[13px]" aria-hidden="true"></i>
+                                    <span>Unidades</span>
+                        </a>
+                            {% endif %}
+                        </div>
+                    </section>
+
+                    <section class="mt-4 border-t border-[#E2E5DE] pt-3" aria-labelledby="sidebar-finance">
+                        <h2 id="sidebar-finance" class="flex items-center gap-2 px-2.5 text-[9.5px] font-bold tracking-[0.8px] text-[#5C685E]">
+                            <i class="fa-solid fa-chart-column w-[14px] text-center text-[11px] text-[#1E6B3C]" aria-hidden="true"></i>
+                            <span>FINANCEIRO</span>
+                        </h2>
+                        <div class="ml-3 mt-1 pl-2">
+                            <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
+                                <i class="fa-solid fa-chart-line w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
+                                <span class="flex flex-col items-start gap-[2px] leading-none">
+                                    <span>Saldos</span>
+                                    <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="Coming soon">
+                                        <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>Coming soon
+                                    </span>
+                                </span>
+                            </span>
+                        </div>
+                    </section>
+
+                    <section class="mt-4 border-t border-[#E2E5DE] pt-3" aria-labelledby="sidebar-administration">
+                        <h2 id="sidebar-administration" class="flex items-center gap-2 px-2.5 text-[9.5px] font-bold tracking-[0.8px] text-[#5C685E]">
+                            <i class="fa-solid fa-shield-halved w-[14px] text-center text-[11px] text-[#1E6B3C]" aria-hidden="true"></i>
+                            <span>ADMINISTRAÇÃO</span>
+                        </h2>
+                        <div class="ml-3 mt-1 pl-2">
+                            {% if nav_company_id %}
+                                <a href="{% url 'companies:detail' company_id=nav_company_id %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] {% if request.resolver_match.url_name == 'detail' or request.resolver_match.url_name == 'edit' %}bg-[#E9F2EC] font-semibold text-[#1E6B3C]{% else %}font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]{% endif %}">
+                                    <i class="fa-solid fa-building w-[15px] text-center text-[13px]" aria-hidden="true"></i>
+                                    <span>Empresa</span>
+                                </a>
+                            {% else %}
+                        <a href="{% url 'companies:list' %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]" title="Escolha uma empresa primeiro">
+                                    <i class="fa-solid fa-building w-[15px] text-center text-[13px]" aria-hidden="true"></i>
+                                    <span>Empresa</span>
+                        </a>
+                            {% endif %}
+                            {% if nav_company_id %}
+                            <a href="{% url 'companies:member_list' company_id=nav_company_id %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] {% if request.resolver_match.url_name == 'member_list' or request.resolver_match.url_name == 'member_detail' %}bg-[#E9F2EC] font-semibold text-[#1E6B3C]{% else %}font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]{% endif %}">
+                                <i class="fa-solid fa-user-shield w-[15px] text-center text-[13px]" aria-hidden="true"></i>
+                                <span>Equipe e permissões</span>
+                            </a>
+                            {% if can_manage_company %}
+                                <a href="{% url 'companies:history' company_id=nav_company_id %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] {% if request.resolver_match.url_name == 'history' %}bg-[#E9F2EC] font-semibold text-[#1E6B3C]{% else %}font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]{% endif %}">
+                                    <i class="fa-solid fa-clock-rotate-left w-[15px] text-center text-[13px]" aria-hidden="true"></i>
+                                    <span>Histórico</span>
+                                </a>
+                            {% endif %}
+                            {% else %}
+                            <a href="{% url 'companies:list' %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]" title="Escolha uma empresa primeiro">
+                                <i class="fa-solid fa-user-shield w-[15px] text-center text-[13px]" aria-hidden="true"></i>
+                                <span>Equipe e permissões</span>
+                            </a>
+                            <a href="{% url 'companies:list' %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]" title="Escolha uma empresa primeiro">
+                                <i class="fa-solid fa-clock-rotate-left w-[15px] text-center text-[13px]" aria-hidden="true"></i>
+                                <span>Histórico</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </section>
+                {% endblock %}
+            </nav>
+
+            <div class="border-t border-[#E2E5DE] px-4 py-3.5">
+                <div class="text-[11px] font-medium text-[#5C685E]">Conta autenticada</div>
+                <div class="text-[10.5px] text-[#8A948B]">SojaCoin</div>
+            </div>
+        </aside>
+
+        <div class="flex min-h-screen min-w-0 flex-1 flex-col">
+            <header class="flex min-h-[64px] items-center justify-between gap-4 border-b border-[#E2E5DE] bg-white px-4 sm:px-7">
+                <div class="min-w-0">
+                    <h1 class="truncate text-[17px] font-semibold tracking-[-0.2px] text-[#17211A]">{% block page_title %}SojaCoin{% endblock %}</h1>
+                    {% block page_subtitle %}{% endblock %}
+                </div>
+                <div class="flex shrink-0 items-center gap-3">
+                    <div class="hidden items-center gap-2 sm:flex">
+                        <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2 rounded-[6px] px-1 py-0.5 transition hover:bg-[#F9FAF7]" title="Meu perfil">
+                            <div class="flex h-7 w-7 items-center justify-center rounded-full bg-[#E9F2EC] text-[10.5px] font-semibold text-[#1E6B3C]" aria-hidden="true">{{ request.user.username|slice:":2"|upper }}</div>
+                            <div class="hidden flex-col gap-0 md:flex">
+                                <div class="text-[12.5px] font-semibold text-[#17211A]">{{ request.user.profile.full_name|default:request.user.username }}</div>
+                                <div class="text-[10.5px] text-[#8A948B]">{{ primary_role_label|default:"Conta" }}</div>
+                            </div>
+                        </a>
+                    </div>
+                    {% block header_actions %}{% endblock %}
+                </div>
+            </header>
+
+            <main class="flex-1 px-4 py-6 sm:px-7">
+                {% if messages %}
+                    <div class="mb-[18px] space-y-3" aria-live="polite">
+                        {% for message in messages %}
+                            <div class="rounded-[8px] border border-[#E2E5DE] bg-white px-4 py-3 text-[12px] text-[#5C685E]">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

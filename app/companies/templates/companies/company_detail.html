@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ company.trade_name|default:company.legal_name }} | SojaCoin{% endblock %}
+{% block page_title %}{{ company.trade_name|default:company.legal_name }}{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Contexto selecionado</p>{% endblock %}
+{% block header_actions %}
+    {% if can_edit %}
+        <a href="{% url 'companies:edit' company_id=company.pk %}" class="inline-flex h-[32px] items-center gap-2 rounded-[8px] border border-[#CCD3C9] bg-white px-3 text-[12px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">
+            <i class="fa-solid fa-pen-to-square text-[12px] text-[#5C685E]" aria-hidden="true"></i>
+            Editar empresa
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+    <div class="border-b border-[#E2E5DE] px-4 py-3">
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Dados da empresa</h2>
+    </div>
+    <dl class="grid gap-4 p-4 text-[13px] sm:grid-cols-2">
+        <div>
+            <dt class="text-[11px] font-semibold text-[#8A948B]">Razão social</dt>
+            <dd class="mt-1 text-[#17211A]">{{ company.legal_name }}</dd>
+        </div>
+        <div>
+            <dt class="text-[11px] font-semibold text-[#8A948B]">CNPJ</dt>
+            <dd class="mt-1 text-[#17211A]">{{ company.cnpj }}</dd>
+        </div>
+        <div>
+            <dt class="text-[11px] font-semibold text-[#8A948B]">Seu vínculo</dt>
+            <dd class="mt-1 text-[#17211A]">{{ membership }}</dd>
+        </div>
+        <div>
+            <dt class="text-[11px] font-semibold text-[#8A948B]">Status</dt>
+            <dd class="mt-1 text-[#17211A]">{% if company.active %}Ativa{% else %}Inativa{% endif %}</dd>
+        </div>
+    </dl>
+</section>
+{% endblock %}

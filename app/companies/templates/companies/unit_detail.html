@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ unit.name }} | SojaCoin{% endblock %}
+{% block page_title %}{{ unit.name }}{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Detalhes da unidade</p>{% endblock %}
+
+{% block header_actions %}
+    {% if can_manage_units %}
+        <a href="{% url 'companies:unit_edit' company_id=company.pk unit_id=unit.pk %}" class="inline-flex h-[32px] items-center gap-2 rounded-[8px] border border-[#CCD3C9] bg-white px-3 text-[12px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">
+            <i class="fa-solid fa-pen-to-square text-[12px] text-[#5C685E]" aria-hidden="true"></i>
+            Editar unidade
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+    <div class="border-b border-[#E2E5DE] px-4 py-3">
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Dados da unidade</h2>
+    </div>
+    <dl class="grid gap-4 p-4 text-[13px] sm:grid-cols-2">
+        <div>
+            <dt class="text-[11px] font-semibold text-[#8A948B]">Nome</dt>
+            <dd class="mt-1 text-[#17211A]">{{ unit.name }}</dd>
+        </div>
+        <div>
+            <dt class="text-[11px] font-semibold text-[#8A948B]">Código</dt>
+            <dd class="mt-1 text-[#17211A]">{{ unit.code }}</dd>
+        </div>
+        <div>
+            <dt class="text-[11px] font-semibold text-[#8A948B]">CNPJ</dt>
+            <dd class="mt-1 text-[#17211A]">{{ unit.cnpj }}</dd>
+        </div>
+        <div>
+            <dt class="text-[11px] font-semibold text-[#8A948B]">Inscrição estadual</dt>
+            <dd class="mt-1 text-[#17211A]">{{ unit.state_registration }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+            <dt class="text-[11px] font-semibold text-[#8A948B]">Endereço</dt>
+            <dd class="mt-1 text-[#17211A]">{{ unit.address }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+            <dt class="text-[11px] font-semibold text-[#8A948B]">Status do cadastro local</dt>
+            <dd class="mt-1 text-[#5C685E]">{% if unit.active %}Ativa{% else %}Inativa{% endif %}</dd>
+        </div>
+    </dl>
+</section>
+
+<section class="mt-[18px] max-w-3xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+    <div class="border-b border-[#E2E5DE] px-4 py-3">
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Registro blockchain</h2>
+    </div>
+    <div class="space-y-4 p-4 text-[13px]">
+        {% if unit.registration_hash %}
+            <div>
+                <div class="text-[11px] font-semibold text-[#8A948B]">Hash local calculada</div>
+                <code class="mt-1 block break-all rounded-[7px] border border-[#E2E5DE] bg-[#F9FAF7] px-3 py-2 font-mono text-[11px] leading-5 text-[#5C685E]">{{ unit.registration_hash }}</code>
+            </div>
+        {% else %}
+            <div class="rounded-[8px] border border-[#E2E5DE] bg-[#F9FAF7] px-3 py-2 text-[12px] text-[#8A948B]">
+                A hash local ainda não foi calculada.
+            </div>
+        {% endif %}
+
+        {% if unit.chain_unit_id %}
+            <div class="rounded-[8px] border border-[#CFE4D5] bg-[#E9F2EC] px-3 py-2">
+                <div class="flex items-center gap-2 text-[12px] font-semibold text-[#1E6B3C]">
+                    <i class="fa-solid fa-circle-check text-[13px]" aria-hidden="true"></i>
+                    <span>Registro confirmado na blockchain</span>
+                </div>
+                <div class="mt-1 text-[11px] text-[#5C685E]">
+                    ID da unidade na rede:
+                    <code class="font-mono text-[11px]">{{ unit.chain_unit_id }}</code>
+                </div>
+            </div>
+        {% else %}
+            <div class="rounded-[8px] border border-[#E9D9AE] bg-[#FFF9E9] px-3 py-2">
+                <div class="flex items-center gap-2 text-[12px] font-semibold text-[#856404]">
+                    <i class="fa-solid fa-clock text-[13px]" aria-hidden="true"></i>
+                    <span>Aguardando registro na blockchain</span>
+                </div>
+                <div class="mt-1 text-[11px] text-[#856404]">
+                    Nenhum <code class="font-mono text-[11px]">chain_unit_id</code> foi confirmado.
+                </div>
+            </div>
+        {% endif %}
+
+        {% if blockchain_transaction %}
+            <div class="border-t border-[#E2E5DE] pt-3">
+                <div class="text-[11px] font-semibold text-[#8A948B]">Transação associada</div>
+                <div class="mt-1 text-[12px] text-[#5C685E]">{{ blockchain_transaction.get_status_display }}</div>
+                {% if blockchain_transaction.transaction_hash %}
+                    <code class="mt-1 block break-all font-mono text-[11px] text-[#5C685E]">{{ blockchain_transaction.transaction_hash }}</code>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+<a href="{% url 'companies:unit_list' company_id=company.pk %}" class="mt-4 inline-flex items-center gap-2 text-[12px] font-semibold text-[#1E6B3C]">
+    <i class="fa-solid fa-arrow-left text-[11px]" aria-hidden="true"></i>
+    Voltar para unidades
+</a>
+{% endblock %}

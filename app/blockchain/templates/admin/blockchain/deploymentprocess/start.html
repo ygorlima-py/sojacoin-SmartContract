@@ -1,0 +1,202 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    #content-main.deployment-start-page {
+      float: none;
+      width: 100%;
+      max-width: 760px;
+      margin: 4px auto 28px;
+    }
+
+    .deployment-start-page .page-heading {
+      margin: 0 0 18px;
+    }
+
+    .deployment-start-page .page-heading h1 {
+      margin: 0 0 7px;
+      font-size: 1.35rem;
+      line-height: 1.35;
+    }
+
+    .deployment-start-page .page-heading p {
+      max-width: 620px;
+      margin: 0;
+      color: var(--body-quiet-color);
+      line-height: 1.55;
+    }
+
+    .deployment-start-page .deployment-card {
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--body-bg);
+    }
+
+    .deployment-start-page .deployment-fields {
+      display: grid;
+      gap: 19px;
+      padding: 22px;
+    }
+
+    .deployment-start-page .deployment-field {
+      min-width: 0;
+    }
+
+    .deployment-start-page .deployment-field label {
+      display: block;
+      margin: 0 0 7px;
+      color: var(--body-fg);
+      font-weight: 600;
+    }
+
+    .deployment-start-page .deployment-field input,
+    .deployment-start-page .deployment-field select {
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      min-height: 40px;
+      margin: 0;
+      padding: 8px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      background: var(--body-bg);
+      color: var(--body-fg);
+    }
+
+    .deployment-start-page .deployment-field input:focus,
+    .deployment-start-page .deployment-field select:focus {
+      border-color: var(--body-quiet-color);
+      outline: 2px solid var(--body-quiet-color);
+      outline-offset: 1px;
+    }
+
+    .deployment-start-page .field-help {
+      margin-top: 7px;
+      color: var(--body-quiet-color);
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .deployment-start-page .field-error,
+    .deployment-start-page .form-error {
+      margin-top: 7px;
+      color: var(--error-fg);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .deployment-start-page .form-error {
+      margin: 18px 22px 0;
+    }
+
+    .deployment-start-page .deployment-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 22px;
+      border-top: 1px solid var(--hairline-color);
+      background: var(--darkened-bg);
+    }
+
+    .deployment-start-page .deployment-actions .button,
+    .deployment-start-page .deployment-actions a {
+      box-sizing: border-box;
+      min-height: 38px;
+      margin: 0;
+      padding: 9px 14px;
+      border-radius: 5px;
+      font-size: 0.8125rem;
+      line-height: 1.25rem;
+      text-decoration: none;
+    }
+
+    .deployment-start-page .deployment-actions .button {
+      border: 0;
+      background: var(--default-button-bg);
+      color: var(--primary-fg);
+      cursor: pointer;
+    }
+
+    .deployment-start-page .deployment-actions .button:hover,
+    .deployment-start-page .deployment-actions .button:focus {
+      background: var(--default-button-hover-bg);
+    }
+
+    .deployment-start-page .deployment-actions a {
+      display: inline-flex;
+      align-items: center;
+      color: var(--link-fg);
+    }
+
+    @media (max-width: 767px) {
+      #content-main.deployment-start-page {
+        margin-top: 0;
+      }
+
+      .deployment-start-page .deployment-fields {
+        gap: 16px;
+        padding: 16px;
+      }
+
+      .deployment-start-page .form-error {
+        margin: 16px 16px 0;
+      }
+
+      .deployment-start-page .deployment-actions {
+        padding: 12px 16px;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Início</a>
+    › <a href="{% url 'admin:blockchain_deploymentprocess_changelist' %}">Implantações</a>
+    › {{ title }}
+  </div>
+{% endblock %}
+
+{% block content %}
+  <div id="content-main" class="deployment-start-page">
+    <header class="page-heading">
+      <h1>{{ title }}</h1>
+      <p>Escolha a empresa e a rede. Informe a carteira pública que será dona da SojaCoin e do registro de unidades.</p>
+    </header>
+
+    <section class="deployment-card" aria-label="Dados da implantação">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="form-error" role="alert">
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="deployment-fields">
+          {% for field in form %}
+            <div class="deployment-field{% if field.errors %} has-error{% endif %}">
+              {{ field.label_tag }}
+              {{ field }}
+              {% for error in field.errors %}<div class="field-error" role="alert">{{ error }}</div>{% endfor %}
+              {% if field.help_text %}<div class="field-help">{{ field.help_text }}</div>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <footer class="deployment-actions">
+          <a href="{% url 'admin:blockchain_deploymentprocess_changelist' %}">Cancelar</a>
+          <button type="submit" class="button">Iniciar processo</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+{% endblock %}

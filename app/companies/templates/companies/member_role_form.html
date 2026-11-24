@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Conceder função | SojaCoin{% endblock %}
+{% block page_title %}Conceder função{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Equipe de {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+    <div class="border-b border-[#E2E5DE] px-4 py-3">
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Conceder função ao membro</h2>
+        <p class="mt-1 text-[11.5px] text-[#8A948B]">
+            {{ member.user.profile.full_name|default:member.user.username }} · {{ member.user.username }}
+        </p>
+    </div>
+
+    <form method="post" class="space-y-4 p-4">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div role="alert" class="rounded-[7px] border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div>
+            <label for="{{ form.role.id_for_label }}" class="mb-1 block text-[12px] font-semibold text-[#5C685E]">
+                Função<span class="ml-0.5 text-[#AE3026]" aria-hidden="true">*</span>
+            </label>
+            {{ form.role }}
+            {% for error in form.role.errors %}
+                <p class="mt-1 text-[11px] text-red-700">{{ error }}</p>
+            {% endfor %}
+            <p class="mt-1 text-[11px] text-[#8A948B]">
+                Uma função que já estiver ativa não pode ser concedida novamente.
+            </p>
+        </div>
+
+        <div class="flex items-center gap-2 border-t border-[#E2E5DE] pt-4">
+            <button type="submit" class="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#185A32]">
+                <i class="fa-solid fa-shield-halved text-[12px]" aria-hidden="true"></i>
+                Conceder função
+            </button>
+            <a href="{% url 'companies:member_detail' company_id=company.pk membership_id=member.pk %}" class="inline-flex h-[38px] items-center justify-center rounded-[8px] border border-[#CCD3C9] px-3.5 text-[13px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</section>
+{% endblock %}

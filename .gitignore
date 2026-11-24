@@ -1,5 +1,12 @@
 # Dependências instaladas localmente; mantenha package.json e package-lock.json no Git.
 node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Generated Django static files and Tailwind output.
+app/staticfiles/
+app/static/css/app.css
 
 # Saídas de compilação e dados locais do Wake e do Foundry.
 .wake/
@@ -36,3 +43,6 @@ Thumbs.db
 
 
 LOGICA_ENTREGA_SOJA.md
+
+# Database
+app/db.sqlite3
