@@ -8,9 +8,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 from django.utils import timezone
 from eth_abi import encode as abi_encode
 from eth_account import Account
@@ -28,7 +30,7 @@ from blockchain.services.transactions import (
 from blockchain.services.transaction_confirmation import DecodedContractEvent
 from companies.models import Company, CompanyMembership, MembershipRole, Unit, UnitAccess
 from participants.models import Participant
-from receipts.models import Receipt
+from receipts.models import Receipt, WeighingTicket
 from receipts.views import ReceiptBrowsingAccessMixin, ReceiptListView
 
 from . import services
@@ -1083,3 +1085,386 @@ class IssuanceBatchPersistenceTests(TestCase):
         self.assertFalse(link.is_usable)
         with self.assertRaises(ValidationError):
             services.get_approval_link(raw_token)
+
+
+class IssuanceDashboardTests(TestCase):
+    """Verify dashboard authorization, company/unit isolation and list behavior."""
+
+    def setUp(self) -> None:
+        """Create one issuance operator with access to a single company unit."""
+
+        self.company = Company.objects.create(
+            legal_name="Dashboard Company Ltda.",
+            trade_name="Dashboard Co.",
+            cnpj="11222333000181",
+        )
+        self.admin = User.objects.create_user(username="dashboard-admin", password="test-password")
+        self.issuer = User.objects.create_user(username="dashboard-issuer", password="test-password")
+        self.membership = CompanyMembership.objects.create(company=self.company, user=self.issuer)
+        MembershipRole.objects.create(
+            membership=self.membership,
+            role=MembershipRole.Role.ISSUANCE,
+            granted_by=self.admin,
+        )
+        self.unit = Unit.objects.create(
+            company=self.company,
+            name="Granted warehouse",
+            code="GRANTED-WH",
+            cnpj="11222333000181",
+        )
+        self.other_unit = Unit.objects.create(
+            company=self.company,
+            name="Unassigned warehouse",
+            code="UNASSIGNED-WH",
+            cnpj="11444777000100",
+        )
+        UnitAccess.objects.create(
+            membership=self.membership,
+            unit=self.unit,
+            can_issue=True,
+        )
+        self.network = Network.objects.create(
+            name="Dashboard test network",
+            chain_id=31_337,
+            rpc_url="http://127.0.0.1:8545",
+        )
+        self.participant = Participant.objects.create(
+            company=self.company,
+            name="Test participant",
+            wallet_address=TEST_ACCOUNT.address,
+            created_by=self.admin,
+        )
+        self.soja_coin = self._contract(ContractInstance.Kind.SOJA_COIN, "51")
+        self.unit_registry = self._contract(ContractInstance.Kind.UNIT_REGISTRY, "52")
+        self.batches_contract = self._contract(ContractInstance.Kind.ISSUANCE_BATCHES, "53")
+        self.client.force_login(self.issuer)
+
+    def _contract(self, kind: str, address_byte: str) -> ContractInstance:
+        """Create one persisted deployment required by batch snapshots."""
+
+        return ContractInstance.objects.create(
+            company=self.company,
+            network=self.network,
+            kind=kind,
+            address="0x" + address_byte * 20,
+            version="dashboard-test-v1",
+        )
+
+    def _participant(self, name: str, wallet: str) -> Participant:
+        """Create a participant with a distinct company-scoped wallet."""
+
+        return Participant.objects.create(
+            company=self.company,
+            name=name,
+            wallet_address=wallet,
+            created_by=self.admin,
+        )
+
+    def _receipt(
+        self,
+        *,
+        participant: Participant | None = None,
+        unit: Unit | None = None,
+        status: str = Receipt.Status.BLOCKCHAIN_CONFIRMED,
+        net_weight_kg: int = 42_589,
+    ) -> Receipt:
+        """Create a confirmed receipt and its saved weight for query tests.
+
+        The dashboard reads the persisted net weight; PDF validation belongs to
+        receipt-document tests, so the already-derived weighing row is inserted
+        directly here to keep these tests focused on listing behavior.
+        """
+
+        receipt = Receipt.objects.create(
+            company=self.company,
+            participant=participant or self.participant,
+            unit=unit or self.unit,
+            crop_year="2026/2027",
+            status=status,
+            created_by=self.admin,
+        )
+        WeighingTicket.objects.bulk_create(
+            [
+                WeighingTicket(
+                    receipt=receipt,
+                    gross_weight_kg=83_400,
+                    tare_weight_kg=40_000,
+                    net_weight_kg=net_weight_kg,
+                    moisture_bps=1_550,
+                    impurities_bps=400,
+                    damaged_grain_bps=85,
+                    moisture_deduction_kg=757,
+                    impurities_deduction_kg=54,
+                    damaged_grain_deduction_kg=0,
+                    other_deductions_kg=0,
+                    weighing_ticket_hash=TEST_SUMMARY_HASH,
+                    weighed_at=timezone.now(),
+                )
+            ]
+        )
+        return receipt
+
+    def _batch(
+        self,
+        *,
+        status: str = IssuanceBatch.Status.CREATION_PREPARED,
+        unit: Unit | None = None,
+        participant: Participant | None = None,
+        deadline: int | None = None,
+        chain_batch_id: int | None = None,
+    ) -> IssuanceBatch:
+        """Create a local batch with the minimum immutable deployment snapshot."""
+
+        return IssuanceBatch.objects.create(
+            company=self.company,
+            participant=participant or self.participant,
+            unit=unit or self.unit,
+            network=self.network,
+            soja_coin=self.soja_coin,
+            unit_registry=self.unit_registry,
+            batches_contract=self.batches_contract,
+            created_by=self.issuer,
+            creator_address=OTHER_ACCOUNT.address,
+            chain_batch_id=chain_batch_id,
+            total_net_weight_kg=42_589,
+            approval_deadline=deadline or int(timezone.now().timestamp()) + 86_400,
+            summary_hash=TEST_SUMMARY_HASH,
+            status=status,
+        )
+
+    def _attach_receipt(self, batch: IssuanceBatch, receipt: Receipt) -> IssuanceBatchReceipt:
+        """Link a receipt to a batch with an immutable on-chain snapshot."""
+
+        return IssuanceBatchReceipt.objects.create(
+            batch=batch,
+            receipt=receipt,
+            deposit_id=receipt.pk + 100,
+            unit_chain_id=1,
+            crop_year_bytes32="0x" + "11" * 32,
+            invoice_key_hash="0x" + "22" * 32,
+            weighing_ticket_hash="0x" + "33" * 32,
+            net_weight_kg=42_589,
+        )
+
+    def test_dashboard_requires_issuance_role(self) -> None:
+        """A company member without the issuance role receives the access page."""
+
+        unauthorized_user = User.objects.create_user(
+            username="dashboard-no-issuance",
+            password="test-password",
+        )
+        CompanyMembership.objects.create(company=self.company, user=unauthorized_user)
+        self.client.force_login(unauthorized_user)
+
+        response = self.client.get(reverse("issuance_batches:list", args=(self.company.pk,)))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response, "Você não tem autorização para acessar Emissões", status_code=403)
+
+    def test_dashboard_uses_english_catalog_when_language_is_switched(self) -> None:
+        """Render the new navigation, filters and plural counts in English."""
+
+        self._batch(status=IssuanceBatch.Status.AWAITING_APPROVAL, chain_batch_id=901)
+        self.client.cookies[settings.LANGUAGE_COOKIE_NAME] = "en"
+        response = self.client.get(reverse("issuance_batches:list", args=(self.company.pk,)))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Issuance batches")
+        self.assertContains(response, "Available receipts")
+        self.assertContains(response, "Participant or batch no.")
+        self.assertContains(response, "1 batch")
+        self.assertContains(response, "Awaiting participant")
+        self.assertContains(response, "0 receipts")
+        self.assertNotContains(response, "Lotes de emissão")
+
+    def test_dashboard_requires_access_to_at_least_one_active_issuance_unit(self) -> None:
+        """A role without a unit grant receives the access page, not an empty list."""
+
+        unitless_user = User.objects.create_user(
+            username="dashboard-unitless-issuer",
+            password="test-password",
+        )
+        unitless_membership = CompanyMembership.objects.create(
+            company=self.company,
+            user=unitless_user,
+        )
+        MembershipRole.objects.create(
+            membership=unitless_membership,
+            role=MembershipRole.Role.ISSUANCE,
+            granted_by=self.admin,
+        )
+        self.client.force_login(unitless_user)
+
+        response = self.client.get(reverse("issuance_batches:list", args=(self.company.pk,)))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response, "liberar a unidade", status_code=403)
+
+    def test_dashboard_shows_only_batches_and_receipts_in_granted_units(self) -> None:
+        """An issuance role can browse its unit without a receiving role."""
+
+        visible_batch_receipt = self._receipt()
+        visible_batch = self._batch(
+            status=IssuanceBatch.Status.AWAITING_APPROVAL,
+            chain_batch_id=101,
+        )
+        self._attach_receipt(visible_batch, visible_batch_receipt)
+
+        available_participant = self._participant("Available participant", OTHER_ACCOUNT.address)
+        available_receipt = self._receipt(participant=available_participant)
+
+        hidden_participant = self._participant("Unassigned participant", Account.from_key("0x" + "03" * 32).address)
+        hidden_receipt = self._receipt(participant=hidden_participant, unit=self.other_unit)
+        hidden_batch = self._batch(
+            status=IssuanceBatch.Status.AWAITING_APPROVAL,
+            unit=self.other_unit,
+            participant=hidden_participant,
+            chain_batch_id=102,
+        )
+        self._attach_receipt(hidden_batch, hidden_receipt)
+
+        response = self.client.get(reverse("issuance_batches:list", args=(self.company.pk,)))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Available participant")
+        self.assertContains(response, "#101")
+        self.assertNotContains(response, "Unassigned participant")
+        self.assertNotContains(response, "#102")
+        self.assertContains(
+            response,
+            reverse("receipts:detail", args=(self.company.pk, visible_batch_receipt.pk))
+            + "#issuance-batch-ui",
+        )
+        self.assertContains(
+            response,
+            reverse("receipts:detail", args=(self.company.pk, available_receipt.pk))
+            + "#issuance-batch-ui",
+        )
+
+    def test_candidate_receipts_follow_active_batch_reservation_states(self) -> None:
+        """Pending and review batches reserve loads; confirmed cancellation releases them."""
+
+        reserved_receipt = self._receipt()
+        reserved_batch = self._batch(
+            status=IssuanceBatch.Status.NEEDS_REVIEW,
+            chain_batch_id=201,
+        )
+        self._attach_receipt(reserved_batch, reserved_receipt)
+
+        released_receipt = self._receipt()
+        canceled_batch = self._batch(
+            status=IssuanceBatch.Status.CANCELED,
+            chain_batch_id=202,
+        )
+        self._attach_receipt(canceled_batch, released_receipt)
+        unconfirmed_receipt = self._receipt(status=Receipt.Status.BLOCKCHAIN_IN_PROGRESS)
+        zero_weight_receipt = self._receipt(net_weight_kg=0)
+
+        candidate_ids = set(
+            services.get_issuance_candidate_receipts(
+                company_id=self.company.pk,
+                unit_ids=[self.unit.pk],
+            ).values_list("pk", flat=True)
+        )
+
+        self.assertNotIn(reserved_receipt.pk, candidate_ids)
+        self.assertNotIn(unconfirmed_receipt.pk, candidate_ids)
+        self.assertNotIn(zero_weight_receipt.pk, candidate_ids)
+        self.assertIn(released_receipt.pk, candidate_ids)
+
+    def test_receipt_filter_and_independent_pagination_preserve_filters(self) -> None:
+        """Search and unit filters apply before the candidate receipt paginator."""
+
+        for _index in range(11):
+            self._receipt()
+
+        url = reverse("issuance_batches:list", args=(self.company.pk,))
+        response = self.client.get(
+            url,
+            {
+                "q": "Test participant",
+                "unit": str(self.unit.pk),
+                "status": IssuanceBatch.Status.CANCELED,
+                "receipts_page": "2",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        candidate_page = response.context["available_receipts_page"]
+        self.assertEqual(candidate_page.paginator.count, 11)
+        self.assertEqual(candidate_page.number, 2)
+        self.assertEqual(len(candidate_page.object_list), 1)
+        self.assertContains(response, f"q=Test+participant&amp;unit={self.unit.pk}")
+        self.assertContains(response, "receipts_page=1")
+
+    def test_inaccessible_unit_filter_does_not_expose_rows(self) -> None:
+        """A unit outside the user's grant is rejected before either list is queried."""
+
+        self._receipt(unit=self.other_unit)
+        url = reverse("issuance_batches:list", args=(self.company.pk,))
+
+        response = self.client.get(url, {"unit": str(self.other_unit.pk)})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["invalid_unit_filter"])
+        self.assertEqual(response.context["page_obj"].paginator.count, 0)
+        self.assertEqual(response.context["available_receipts_count"], 0)
+
+    def test_batch_search_filters_and_pagination_preserve_the_other_page(self) -> None:
+        """Batch filters run before pagination and links keep all active filters."""
+
+        for index in range(26):
+            self._batch()
+        awaiting_batch = self._batch(
+            status=IssuanceBatch.Status.AWAITING_APPROVAL,
+            chain_batch_id=301,
+        )
+        self._attach_receipt(awaiting_batch, self._receipt())
+
+        base_url = reverse("issuance_batches:list", args=(self.company.pk,))
+        page_two = self.client.get(
+            base_url,
+            {
+                "q": "Test participant",
+                "unit": str(self.unit.pk),
+                "status": IssuanceBatch.Status.CREATION_PREPARED,
+                "page": "2",
+                "receipts_page": "1",
+            },
+        )
+        self.assertEqual(page_two.status_code, 200)
+        self.assertEqual(page_two.context["page_obj"].paginator.count, 26)
+        self.assertEqual(page_two.context["page_obj"].number, 2)
+        self.assertContains(page_two, "q=Test+participant")
+        self.assertContains(page_two, f"unit={self.unit.pk}")
+        self.assertContains(page_two, "status=creation_prepared")
+        self.assertContains(page_two, "receipts_page=1")
+
+        filtered = self.client.get(
+            base_url,
+            {
+                "q": "Test participant",
+                "unit": str(self.unit.pk),
+                "status": IssuanceBatch.Status.AWAITING_APPROVAL,
+            },
+        )
+        self.assertEqual(filtered.status_code, 200)
+        self.assertEqual(filtered.context["page_obj"].paginator.count, 1)
+        self.assertContains(filtered, "#301")
+        self.assertNotContains(filtered, "Lote preparado")
+
+    def test_expired_batch_is_not_presented_as_canceled(self) -> None:
+        """An expired approval deadline keeps its distinct state and reservation note."""
+
+        expired_batch = self._batch(
+            status=IssuanceBatch.Status.AWAITING_APPROVAL,
+            deadline=int(timezone.now().timestamp()) - 10,
+            chain_batch_id=401,
+        )
+        self._attach_receipt(expired_batch, self._receipt())
+
+        response = self.client.get(reverse("issuance_batches:list", args=(self.company.pk,)))
+
+        self.assertContains(response, "Prazo expirado")
+        self.assertContains(response, "Carga bloqueada até o cancelamento confirmado.")
+        self.assertNotContains(response, "Cancelado</span>")

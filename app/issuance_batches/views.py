@@ -7,17 +7,22 @@ from typing import Any
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
+from django.db.models import Q, QuerySet
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy as _
 from django.views import View
+from django.views.generic import ListView
 from web3.exceptions import Web3Exception
 
 from blockchain.models import BlockchainTransaction
+from companies.models import CompanyMembership, Unit, UnitAccess
 from companies.rules.company_access import CompanyAccessMixin
 from companies.rules.role_access import CompanyAction, require_company_action
-from receipts.models import ReceiptDocument
+from receipts.models import Receipt, ReceiptDocument
 
 from .models import IssuanceBatch, IssuanceBatchAttempt
 from .services import (
@@ -26,6 +31,7 @@ from .services import (
     create_approval_link,
     get_batch_issuance_display,
     get_approval_link,
+    get_issuance_candidate_receipts,
     mark_batch_action_started,
     prepare_batch_cancellation,
     prepare_issuance_batch,
@@ -36,6 +42,193 @@ from .services import (
 
 
 logger = logging.getLogger(__name__)
+
+
+ISSUANCE_STATUS_FILTERS: tuple[tuple[str, str], ...] = (
+    ("all", _("Todas as situações")),
+    (IssuanceBatch.Status.CREATION_PREPARED, _("Preparado")),
+    (IssuanceBatch.Status.CREATION_SUBMITTED, _("Criação aguardando confirmação")),
+    (IssuanceBatch.Status.AWAITING_APPROVAL, _("Aguardando participante")),
+    ("expired", _("Prazo expirado")),
+    (IssuanceBatch.Status.APPROVAL_SUBMITTED, _("Aprovação aguardando confirmação")),
+    (IssuanceBatch.Status.APPROVED, _("Aprovado")),
+    (IssuanceBatch.Status.COMPLETED, _("Emitido")),
+    (IssuanceBatch.Status.CANCEL_SUBMITTED, _("Cancelamento pendente")),
+    (IssuanceBatch.Status.CANCELED, _("Cancelado")),
+    (IssuanceBatch.Status.NEEDS_REVIEW, _("Precisa de conferência")),
+)
+
+
+def _batch_status_presentation(batch: IssuanceBatch) -> tuple[str, str, bool]:
+    """Return a concise label, visual tone and deadline flag for the dashboard."""
+
+    if batch.approval_expired:
+        return gettext("Prazo expirado"), "warning", True
+
+    presentation: dict[str, tuple[str, str]] = {
+        IssuanceBatch.Status.CREATION_PREPARED: (gettext("Preparado"), "warning"),
+        IssuanceBatch.Status.CREATION_SUBMITTED: (gettext("Criação aguardando confirmação"), "warning"),
+        IssuanceBatch.Status.AWAITING_APPROVAL: (gettext("Aguardando participante"), "warning"),
+        IssuanceBatch.Status.APPROVAL_SUBMITTED: (gettext("Aprovação aguardando confirmação"), "warning"),
+        IssuanceBatch.Status.APPROVED: (gettext("Aprovado"), "success"),
+        IssuanceBatch.Status.COMPLETED: (gettext("Emitido"), "success"),
+        IssuanceBatch.Status.CANCEL_SUBMITTED: (gettext("Cancelamento pendente"), "warning"),
+        IssuanceBatch.Status.CANCELED: (gettext("Cancelado"), "neutral"),
+        IssuanceBatch.Status.NEEDS_REVIEW: (gettext("Precisa de conferência"), "danger"),
+    }
+    return (*presentation.get(batch.status, (gettext("Precisa de conferência"), "danger")), False)
+
+
+class IssuanceDashboardView(CompanyAccessMixin, ListView):
+    """List issuance batches and eligible receipts inside the operator's unit grants."""
+
+    template_name = "issuance_batches/issuance_list.html"
+    context_object_name = "issuance_batches"
+    paginate_by = 25
+    issuance_membership: CompanyMembership
+    accessible_unit_ids: QuerySet[Any]
+    selected_query: str = ""
+    selected_unit_id: int | None = None
+    selected_status: str = "all"
+    invalid_unit_filter: bool = False
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Render the existing access-denied presentation for unauthorized staff."""
+
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except PermissionDenied:
+            return render(
+                request,
+                "issuance_batches/permission_denied.html",
+                {"company": getattr(self, "company", None)},
+                status=403,
+            )
+
+    def check_company_permissions(self, request: HttpRequest) -> None:
+        """Require the company's issuance role and cache its active unit grants."""
+
+        self.issuance_membership = require_company_action(
+            request.user,
+            self.company.pk,
+            CompanyAction.CREATE_ISSUANCE,
+        )
+        self.accessible_unit_ids = UnitAccess.objects.filter(
+            membership=self.issuance_membership,
+            active=True,
+            can_issue=True,
+            unit__active=True,
+        ).values_list("unit_id", flat=True)
+        if not self.accessible_unit_ids.exists():
+            raise PermissionDenied("The user has no active issuance unit access.")
+
+    def _read_filters(self) -> None:
+        """Parse search and filter values, rejecting unit IDs outside this membership."""
+
+        self.selected_query = self.request.GET.get("q", "").strip()[:100]
+        requested_unit = self.request.GET.get("unit", "").strip()
+        self.selected_status = self.request.GET.get("status", "all").strip()
+        valid_statuses = {value for value, _label in ISSUANCE_STATUS_FILTERS}
+        if self.selected_status not in valid_statuses:
+            self.selected_status = "all"
+
+        if requested_unit:
+            if requested_unit.isdecimal():
+                unit_id = int(requested_unit)
+                is_accessible = Unit.objects.filter(
+                    pk=unit_id,
+                    company_id=self.company.pk,
+                    pk__in=self.accessible_unit_ids,
+                ).exists()
+                if is_accessible:
+                    self.selected_unit_id = unit_id
+                else:
+                    self.selected_unit_id = -1
+                    self.invalid_unit_filter = True
+            else:
+                self.selected_unit_id = -1
+                self.invalid_unit_filter = True
+
+    def get_queryset(self) -> QuerySet[IssuanceBatch]:
+        """Apply company, active issuance-unit, search and state filters in SQL."""
+
+        self._read_filters()
+        batches = IssuanceBatch.objects.filter(
+            company_id=self.company.pk,
+            unit__active=True,
+            unit_id__in=self.accessible_unit_ids,
+        ).select_related("participant", "unit")
+        batches = batches.prefetch_related("receipt_rows__receipt__unit")
+
+        if self.selected_unit_id is not None:
+            batches = batches.filter(unit_id=self.selected_unit_id)
+        if self.selected_query:
+            search = Q(participant__name__icontains=self.selected_query)
+            numeric_query = self.selected_query.removeprefix("#")
+            if numeric_query.isdecimal():
+                search |= Q(chain_batch_id=int(numeric_query))
+            batches = batches.filter(search)
+
+        if self.selected_status == "expired":
+            batches = batches.filter(
+                status=IssuanceBatch.Status.AWAITING_APPROVAL,
+                approval_deadline__lte=int(timezone.now().timestamp()),
+            )
+        elif self.selected_status != "all":
+            batches = batches.filter(status=self.selected_status)
+
+        return batches.order_by("-created_at", "-pk")
+
+    def _get_available_receipts(self) -> QuerySet[Receipt]:
+        """Return candidate receipts using the shared batch reservation rules."""
+
+        receipts = get_issuance_candidate_receipts(
+            company_id=self.company.pk,
+            unit_ids=self.accessible_unit_ids,
+        )
+        if self.selected_unit_id is not None:
+            receipts = receipts.filter(unit_id=self.selected_unit_id)
+        if self.selected_query:
+            receipts = receipts.filter(participant__name__icontains=self.selected_query)
+        return receipts
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Add independently paginated eligible receipts and filter state."""
+
+        context = super().get_context_data(**kwargs)
+        batches = context["issuance_batches"]
+        for batch in batches:
+            rows = list(batch.receipt_rows.all())
+            batch.dashboard_receipt_rows = rows
+            batch.dashboard_primary_receipt_id = rows[0].receipt_id if rows else None
+            batch.dashboard_status_label, batch.dashboard_status_tone, batch.dashboard_expired = (
+                _batch_status_presentation(batch)
+            )
+
+        candidate_queryset = self._get_available_receipts()
+        candidate_paginator = Paginator(candidate_queryset, 10)
+        candidate_page = candidate_paginator.get_page(self.request.GET.get("receipts_page", 1))
+
+        preserved_parameters = self.request.GET.copy()
+        preserved_parameters.pop("page", None)
+        preserved_parameters.pop("receipts_page", None)
+        context.update(
+            {
+                "available_receipts_page": candidate_page,
+                "available_receipts_count": candidate_paginator.count,
+                "issuance_units": Unit.objects.filter(
+                    pk__in=self.accessible_unit_ids,
+                    active=True,
+                ).order_by("name"),
+                "issuance_status_filters": ISSUANCE_STATUS_FILTERS,
+                "selected_query": self.selected_query,
+                "selected_unit_id": self.selected_unit_id,
+                "selected_status": self.selected_status,
+                "invalid_unit_filter": self.invalid_unit_filter,
+                "filter_querystring": preserved_parameters.urlencode(),
+            }
+        )
+        return context
 
 
 def _validation_messages(error: ValidationError) -> str:

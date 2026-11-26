@@ -25,27 +25,46 @@
             </div>
         {% elif receipts %}
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[760px] border-collapse text-left">
+                <table class="w-full min-w-[980px] table-fixed border-collapse text-left">
+                    <colgroup>
+                        <col class="w-[24%]">
+                        <col class="w-[17%]">
+                        <col class="w-[10%]">
+                        <col class="w-[13%]">
+                        <col class="w-[15%]">
+                        <col class="w-[11%]">
+                        <col class="w-[10%]">
+                    </colgroup>
                     <thead class="bg-[#F8F9F6] text-[10px] font-bold uppercase tracking-[0.6px] text-[#657268]">
                         <tr>
-                            <th class="px-5 py-3">{% translate "Participante" %}</th>
-                            <th class="px-5 py-3">{% translate "Unidade" %}</th>
-                            <th class="px-5 py-3">{% translate "Safra" %}</th>
-                            <th class="px-5 py-3">{% translate "Peso líquido" %}</th>
-                            <th class="px-5 py-3">{% translate "Situação" %}</th>
-                            <th class="px-5 py-3">{% translate "Criado em" %}</th>
-                            <th class="px-5 py-3"><span class="sr-only">{% translate "Ação" %}</span></th>
+                            <th class="px-5 py-3 text-left">{% translate "Participante" %}</th>
+                            <th class="px-5 py-3 text-left">{% translate "Unidade" %}</th>
+                            <th class="px-5 py-3 text-center">{% translate "Safra" %}</th>
+                            <th class="px-5 py-3 text-right">{% translate "Peso líquido" %}</th>
+                            <th class="px-5 py-3 text-center">{% translate "Blockchain" %}</th>
+                            <th class="px-5 py-3 text-center">{% translate "Criado em" %}</th>
+                            <th class="px-5 py-3 text-right"><span class="sr-only">{% translate "Ação" %}</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#E8EBE5] text-[12px]">
                         {% for receipt in receipts %}
                             <tr class="hover:bg-[#FAFBF9]">
-                                <td class="px-5 py-4 font-semibold text-[#17211A]">{{ receipt.participant.name }}</td>
-                                <td class="px-5 py-4 text-[#465349]">{{ receipt.unit.name }}</td>
-                                <td class="px-5 py-4 text-[#465349]">{{ receipt.crop_year }}</td>
-                                <td class="px-5 py-4 font-semibold tabular-nums text-[#17211A]">{{ receipt.weighing_ticket.net_weight_kg }} kg</td>
-                                <td class="px-5 py-4"><span class="rounded-full bg-[#FFF4D8] px-2.5 py-1 text-[10.5px] font-semibold text-[#8B640D]">{{ receipt.get_status_display }}</span></td>
-                                <td class="px-5 py-4 text-[#657268]">{{ receipt.created_at|date }}</td>
+                                <td class="px-5 py-4 text-left font-semibold text-[#17211A]">{{ receipt.participant.name }}</td>
+                                <td class="px-5 py-4 text-left text-[#465349]">{{ receipt.unit.name }}</td>
+                                <td class="px-5 py-4 text-center text-[#465349]">{{ receipt.crop_year }}</td>
+                                <td class="px-5 py-4 text-right font-semibold tabular-nums text-[#17211A]">{{ receipt.weighing_ticket.net_weight_kg }} kg</td>
+                                <td class="px-5 py-4 text-center">
+                                    {% if receipt.status == "blockchain_confirmed" %}
+                                        <span class="inline-flex rounded-full bg-[#E9F2EC] px-2.5 py-1 text-[10.5px] font-semibold text-[#1E6B3C]">{% translate "Confirmado" %}</span>
+                                    {% elif receipt.status == "needs_review" %}
+                                        <span class="inline-flex rounded-full bg-[#FCEBE8] px-2.5 py-1 text-[10.5px] font-semibold text-[#9C352A]">{% translate "Precisa de conferência" %}</span>
+                                    {% elif receipt.status == "ready_for_blockchain" %}
+                                        <span class="inline-flex rounded-full bg-[#FFF1E6] px-2.5 py-1 text-[10.5px] font-semibold text-[#B45309]">{% translate "Pendente" %}</span>
+                                    {% else %}
+                                        <span class="inline-flex rounded-full bg-[#FFF1E6] px-2.5 py-1 text-[10.5px] font-semibold text-[#B45309]">{% translate "Em andamento" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-4 text-center text-[#657268]">{{ receipt.created_at|date }}</td>
                                 <td class="px-5 py-4 text-right"><a href="{% url 'receipts:detail' company_id=company.pk receipt_id=receipt.pk %}" class="inline-flex min-h-[36px] items-center rounded-[6px] border border-[#CBD6CC] px-3 font-semibold text-[#1E6B3C] hover:bg-[#F5F9F5]">{% translate "Abrir" %}</a></td>
                             </tr>
                         {% endfor %}

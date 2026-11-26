@@ -14,7 +14,7 @@ import re
 import secrets
 from dataclasses import dataclass
 from datetime import timedelta
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import Any, Literal
 
 from eth_account import Account
@@ -25,6 +25,7 @@ from eth_utils.exceptions import ValidationError as EthSignatureValidationError
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction as db_transaction
+from django.db.models import QuerySet
 from django.utils import timezone
 from web3 import Web3
 from web3.contract import Contract
@@ -247,6 +248,36 @@ def _unresolved_batch_row(receipt: Receipt) -> IssuanceBatchReceipt | None:
         .filter(receipt=receipt, batch__status__in=ACTIVE_BATCH_STATUSES)
         .order_by("-pk")
         .first()
+    )
+
+
+def get_issuance_candidate_receipts(
+    *,
+    company_id: int,
+    unit_ids: Iterable[int],
+) -> QuerySet[Receipt]:
+    """Return confirmed, positive-weight receipts not reserved by an active batch.
+
+    The reservation exclusion uses ``ACTIVE_BATCH_STATUSES``, the same state set
+    used by ``_unresolved_batch_row`` during batch preparation. Keeping this
+    query in the service prevents the dashboard from offering a load that the
+    creation workflow already considers locked.
+    """
+
+    reserved_receipt_ids = IssuanceBatchReceipt.objects.filter(
+        batch__status__in=ACTIVE_BATCH_STATUSES,
+    ).values("receipt_id")
+    return (
+        Receipt.objects.filter(
+            company_id=company_id,
+            unit_id__in=unit_ids,
+            unit__active=True,
+            status=Receipt.Status.BLOCKCHAIN_CONFIRMED,
+            weighing_ticket__net_weight_kg__gt=0,
+        )
+        .exclude(pk__in=reserved_receipt_ids)
+        .select_related("participant", "unit", "weighing_ticket")
+        .order_by("-created_at", "-pk")
     )
 
 

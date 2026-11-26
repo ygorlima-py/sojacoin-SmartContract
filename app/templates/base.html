@@ -19,14 +19,10 @@
     {% firstof company.trade_name company.legal_name company_name "Conta pessoal" as nav_company_name %}
     <div class="min-h-screen lg:flex lg:h-screen lg:overflow-hidden">
         <aside class="hidden w-[256px] shrink-0 flex-col border-r border-[#E2E5DE] bg-white lg:flex lg:h-screen lg:min-h-0 lg:overflow-hidden">
-            <div class="flex items-center gap-[9px] p-4">
-                <div class="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#1E6B3C]" aria-hidden="true">
-                    <span class="text-[14px] font-bold text-white">S</span>
-                </div>
-                <div class="flex flex-col gap-0">
-                    <a href="{% url 'accounts:profile' %}" class="text-[14.5px] font-bold tracking-[-0.3px]">SojaCoin</a>
-                    <span class="text-[10px] text-[#8A948B]">{% translate "Stored soy" %}</span>
-                </div>
+            <div class="flex items-center p-4">
+                <a href="{% url 'accounts:profile' %}" class="inline-flex items-center" aria-label="SojaCoin">
+                    {% include "includes/brand_logo.html" with logo_class="h-[40px] w-auto object-contain" only %}
+                </a>
             </div>
 
             <div class="px-3 pb-3">
@@ -41,15 +37,17 @@
 
             <nav class="min-h-0 flex-1 space-y-px overflow-y-auto px-2.5 pb-4" aria-label="{% translate 'Navegação principal' %}">
                 {% block sidebar_nav %}
-                    <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
-                        <i class="fa-solid fa-house w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
-                        <span class="flex flex-col items-start gap-[2px] leading-none">
+                    {% if nav_company_id %}
+                        <a href="{% url 'dashboard:home' company_id=nav_company_id %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] {% if request.resolver_match.namespace == 'dashboard' %}bg-[#E9F2EC] font-semibold text-[#1E6B3C]{% else %}font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]{% endif %}">
+                            <i class="fa-solid fa-house w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
                             <span>{% translate "Início" %}</span>
-                            <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="{% translate 'Coming soon' %}">
-                                <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>{% translate "Coming soon" %}
-                            </span>
-                        </span>
-                    </span>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'companies:list' %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]">
+                            <i class="fa-solid fa-house w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
+                            <span>{% translate "Início" %}</span>
+                        </a>
+                    {% endif %}
 
                     <section class="mt-4 border-t border-[#E2E5DE] pt-3" aria-labelledby="sidebar-operations">
                         <h2 id="sidebar-operations" class="flex items-center gap-2 px-2.5 text-[9.5px] font-bold tracking-[0.8px] text-[#5C685E]">
@@ -70,22 +68,19 @@
                             {% endif %}
                             <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
                                 <i class="fa-solid fa-file-lines w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
-                                <span class="flex flex-col items-start gap-[2px] leading-none">
-                                    <span>{% translate "CPRs" %}</span>
-                                    <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="{% translate 'Coming soon' %}">
-                                        <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>{% translate "Coming soon" %}
-                                    </span>
-                                </span>
+                                <span>{% translate "CPRs" %}</span>
                             </span>
-                            <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
-                                <i class="fa-solid fa-boxes-stacked w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
-                                <span class="flex flex-col items-start gap-[2px] leading-none">
+                            {% if nav_company_id %}
+                                <a href="{% url 'issuance_batches:list' company_id=nav_company_id %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] {% if request.resolver_match.namespace == 'issuance_batches' and request.resolver_match.url_name == 'list' %}bg-[#E9F2EC] font-semibold text-[#1E6B3C]{% else %}font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]{% endif %}">
+                                    <i class="fa-solid fa-boxes-stacked w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
                                     <span>{% translate "Emissões" %}</span>
-                                    <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="{% translate 'Coming soon' %}">
-                                        <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>{% translate "Coming soon" %}
-                                    </span>
-                                </span>
-                            </span>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'companies:list' %}" class="flex h-[34px] items-center gap-[9px] rounded-[6px] px-2.5 text-[13px] font-medium text-[#5C685E] transition hover:bg-[#F9FAF7]" title="{% translate 'Escolha uma empresa primeiro' %}">
+                                    <i class="fa-solid fa-boxes-stacked w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
+                                    <span>{% translate "Emissões" %}</span>
+                                </a>
+                            {% endif %}
                         </div>
                     </section>
 
@@ -128,12 +123,7 @@
                         <div class="ml-3 mt-1 pl-2">
                             <span class="flex min-h-[38px] items-center gap-[9px] rounded-[6px] px-2.5 py-1 text-[12.5px] font-medium text-[#8A948B]" aria-disabled="true">
                                 <i class="fa-solid fa-chart-line w-[15px] shrink-0 text-center text-[12px]" aria-hidden="true"></i>
-                                <span class="flex flex-col items-start gap-[2px] leading-none">
-                                    <span>{% translate "Saldos" %}</span>
-                                    <span class="inline-flex items-center gap-1 text-[8px] font-medium text-[#AE3026]" title="{% translate 'Coming soon' %}">
-                                        <i class="fa-solid fa-circle-exclamation text-[8px]" aria-hidden="true"></i>{% translate "Coming soon" %}
-                                    </span>
-                                </span>
+                                <span>{% translate "Saldos" %}</span>
                             </span>
                         </div>
                     </section>
@@ -190,7 +180,10 @@
         <div class="flex min-h-screen min-w-0 flex-1 flex-col lg:h-screen lg:min-h-0">
             <header class="flex min-h-[64px] shrink-0 items-center justify-between gap-4 border-b border-[#E2E5DE] bg-white px-4 sm:px-7">
                 <div class="min-w-0">
-                    <h1 class="truncate text-[17px] font-semibold tracking-[-0.2px] text-[#17211A]">{% block page_title %}SojaCoin{% endblock %}</h1>
+                    <h1 class="flex min-w-0 items-center gap-2 text-[17px] font-semibold tracking-[-0.2px] text-[#17211A]">
+                        {% block page_title_icon %}{% include "includes/page_category_icon.html" with icon_width="w-[15px]" icon_size="text-[14px]" %}{% endblock %}
+                        <span class="truncate">{% block page_title %}SojaCoin{% endblock %}</span>
+                    </h1>
                     {% block page_subtitle %}{% endblock %}
                 </div>
                 <div class="flex shrink-0 items-center gap-3">
@@ -214,7 +207,7 @@
                 {% if messages %}
                     <div class="mb-[18px] space-y-3" aria-live="polite">
                         {% for message in messages %}
-                            <div class="rounded-[8px] border border-[#E2E5DE] bg-white px-4 py-3 text-[12px] text-[#5C685E]">{% translate message %}</div>
+                            <div class="rounded-[8px] border border-[#E2E5DE] bg-white px-4 py-3 text-[12px] text-[#5C685E]">{% translate message.message %}</div>
                         {% endfor %}
                     </div>
                 {% endif %}

@@ -15,18 +15,15 @@
 <body class="min-h-screen bg-white font-[Inter,system-ui,sans-serif] text-[#17211A] antialiased">
     <main class="box-border flex min-h-screen w-full items-center justify-center px-6 py-12 sm:px-20">
         <section class="box-border flex w-full max-w-[380px] flex-col gap-4">
-            <div class="flex w-full items-center gap-[9px]" aria-label="SojaCoin">
-                <div class="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#1E6B3C]" aria-hidden="true">
-                    <span class="text-[15px] font-bold text-white">S</span>
-                </div>
-                <span class="text-[16px] font-bold tracking-[-0.3px]">SojaCoin</span>
+            <div class="flex w-full items-center">
+                {% include "includes/brand_logo.html" with logo_class="h-[40px] w-auto object-contain" only %}
             </div>
             {% include "includes/language_switcher.html" %}
 
             <div class="h-[6px]" aria-hidden="true"></div>
 
             <div>
-                <h1 class="text-[24px] font-semibold leading-normal tracking-[-0.5px]">{% translate "Entrar na sua conta" %}</h1>
+                <h1 class="flex items-center gap-2 text-[24px] font-semibold leading-normal tracking-[-0.5px]"><span class="inline-flex text-current">{% include "includes/page_category_icon.html" with icon_width="w-[20px]" icon_size="text-[18px]" %}</span>{% translate "Entrar na sua conta" %}</h1>
                 <p class="mt-1 text-[13px] leading-5 text-[#5C685E]">{% translate "Use o usuário e a senha fornecidos pelo administrador da sua empresa." %}</p>
             </div>
 

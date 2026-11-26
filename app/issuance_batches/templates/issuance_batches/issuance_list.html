@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Emissões — SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Emissões" %}{% endblock %}
+{% block page_subtitle %}
+    <p class="mt-0.5 text-[11.5px] text-[#7A867D]">{{ company.trade_name|default:company.legal_name }}</p>
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto w-full max-w-[1440px] space-y-5">
+    <section class="rounded-[10px] border border-[#E0E4DC] bg-white p-4 sm:p-5">
+        <form method="get" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(135px,0.8fr)_minmax(145px,0.8fr)_auto] lg:items-end">
+            <div>
+                <label for="issuance-search" class="mb-1.5 block text-[11px] font-semibold text-[#465349]">{% translate "Participante ou nº do lote" %}</label>
+                <input id="issuance-search" name="q" value="{{ selected_query }}" type="search" placeholder="{% translate 'Buscar' %}" class="h-[42px] w-full rounded-[7px] border border-[#D7DDD4] bg-white px-3 text-[12px] outline-none focus:border-[#1E6B3C]">
+            </div>
+            <div>
+                <label for="issuance-unit-filter" class="mb-1.5 block text-[11px] font-semibold text-[#465349]">{% translate "Unidade" %}</label>
+                <select id="issuance-unit-filter" name="unit" class="h-[42px] w-full rounded-[7px] border border-[#D7DDD4] bg-white px-3 text-[12px] outline-none focus:border-[#1E6B3C]">
+                    <option value="">{% translate "Todas as unidades" %}</option>
+                    {% for unit in issuance_units %}
+                        <option value="{{ unit.pk }}" {% if selected_unit_id == unit.pk %}selected{% endif %}>{{ unit.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="issuance-status-filter" class="mb-1.5 block text-[11px] font-semibold text-[#465349]">{% translate "Situação do lote" %}</label>
+                <select id="issuance-status-filter" name="status" class="h-[42px] w-full rounded-[7px] border border-[#D7DDD4] bg-white px-3 text-[12px] outline-none focus:border-[#1E6B3C]">
+                    {% for value, label in issuance_status_filters %}
+                        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="inline-flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-[7px] bg-[#1E6B3C] px-4 text-[12px] font-semibold text-white transition hover:bg-[#185832] lg:flex-none">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>{% translate "Filtrar" %}
+                </button>
+                <a href="{% url 'issuance_batches:list' company_id=company.pk %}" class="inline-flex min-h-[42px] items-center justify-center rounded-[7px] border border-[#CBD6CC] px-3 text-[12px] font-semibold text-[#465349] hover:bg-[#F8F9F6]">{% translate "Limpar" %}</a>
+            </div>
+        </form>
+        {% if invalid_unit_filter %}
+            <p class="mt-3 text-[11px] text-[#A33C2E]" role="status">{% translate "A unidade selecionada não está disponível para seu acesso." %}</p>
+        {% endif %}
+    </section>
+
+    <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
+        <div class="flex items-center justify-between gap-4 border-b border-[#E2E5DE] px-5 py-4">
+            <div class="flex items-center gap-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#E9F2EC] text-[15px] text-[#1E6B3C]" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></span>
+                <div>
+                    <h2 class="text-[14px] font-semibold text-[#17211A]">{% translate "Lotes de emissão" %}</h2>
+                    <p class="mt-0.5 text-[11px] text-[#7A867D]">{% blocktranslate count batch_count=page_obj.paginator.count %}{{ batch_count }} lote{% plural %}{{ batch_count }} lotes{% endblocktranslate %}</p>
+                </div>
+            </div>
+        </div>
+
+        {% if issuance_batches %}
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[940px] table-fixed border-collapse text-left">
+                    <colgroup>
+                        <col class="w-[14%]">
+                        <col class="w-[22%]">
+                        <col class="w-[18%]">
+                        <col class="w-[13%]">
+                        <col class="w-[20%]">
+                        <col class="w-[13%]">
+                    </colgroup>
+                    <thead class="bg-[#F8F9F6] text-[10px] font-bold uppercase tracking-[0.5px] text-[#657268]">
+                        <tr>
+                            <th class="px-4 py-3 text-left">{% translate "Lote" %}</th>
+                            <th class="px-4 py-3 text-left">{% translate "Participante" %}</th>
+                            <th class="px-4 py-3 text-left">{% translate "Unidade" %}</th>
+                            <th class="px-4 py-3 text-left">{% translate "Peso líquido" %}</th>
+                            <th class="px-4 py-3 text-left">{% translate "Situação" %}</th>
+                            <th class="px-4 py-3 text-right">{% translate "Ação" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E8EBE5] text-[12px]">
+                        {% for batch in issuance_batches %}
+                            <tr class="align-middle hover:bg-[#FAFBF9]">
+                                <td class="px-4 py-4 text-left">
+                                    <span class="font-semibold text-[#17211A]">{% if batch.chain_batch_id %}#{{ batch.chain_batch_id }}{% else %}{% translate "Lote preparado" %}{% endif %}</span>
+                                    {% if batch.dashboard_receipt_rows|length > 1 %}
+                                        <details class="mt-1">
+                                            <summary class="cursor-pointer text-[10px] font-medium text-[#1E6B3C]">{% translate "Ver recebimentos" %} ({{ batch.dashboard_receipt_rows|length }})</summary>
+                                            <ul class="mt-1 space-y-1 text-[10px] text-[#657268]">
+                                                {% for row in batch.dashboard_receipt_rows %}
+                                                    <li><a class="text-[#1E6B3C] hover:underline" href="{% url 'receipts:detail' company_id=company.pk receipt_id=row.receipt_id %}#issuance-batch-ui">{% translate "Recebimento" %} #{{ row.receipt_id }}</a> · {{ row.receipt.unit.name }} · {{ row.net_weight_kg }} kg</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </details>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-4 text-left font-semibold text-[#17211A]">{{ batch.participant.name }}</td>
+                                <td class="px-4 py-4 text-left text-[#465349]">{{ batch.unit.name }}</td>
+                                <td class="px-4 py-4 text-left font-semibold tabular-nums text-[#17211A]">{{ batch.total_net_weight_kg }} kg</td>
+                                <td class="px-4 py-4 text-left">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-[10.5px] font-semibold {% if batch.dashboard_status_tone == 'success' %}bg-[#E9F2EC] text-[#1E6B3C]{% elif batch.dashboard_status_tone == 'danger' %}bg-[#FCEBE8] text-[#9C352A]{% elif batch.dashboard_status_tone == 'neutral' %}bg-[#F1F3F0] text-[#657268]{% else %}bg-[#FFF1E6] text-[#B45309]{% endif %}">{{ batch.dashboard_status_label }}</span>
+                                    {% if batch.dashboard_expired %}<p class="mt-1 max-w-[190px] text-left text-[10px] leading-4 text-[#8A5C14]">{% translate "Carga bloqueada até o cancelamento confirmado." %}</p>{% endif %}
+                                </td>
+                                <td class="px-4 py-4 text-right">
+                                    {% if batch.dashboard_primary_receipt_id %}
+                                        <a href="{% url 'receipts:detail' company_id=company.pk receipt_id=batch.dashboard_primary_receipt_id %}#issuance-batch-ui" class="inline-flex min-h-[38px] items-center justify-center gap-2 rounded-[7px] bg-[#1E6B3C] px-4 text-[11px] font-semibold text-white hover:bg-[#185832]">
+                                            {% translate "Abrir" %}<i class="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
+                                        </a>
+                                    {% else %}<span class="text-[10px] text-[#7A867D]">{% translate "Sem recebimento" %}</span>{% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if is_paginated %}
+                <nav class="flex items-center justify-between gap-3 border-t border-[#E2E5DE] px-5 py-3 text-[11px]" aria-label="{% translate 'Paginação dos lotes' %}">
+                    {% if page_obj.has_previous %}<a class="font-semibold text-[#1E6B3C]" href="?{% if filter_querystring %}{{ filter_querystring }}&amp;{% endif %}page={{ page_obj.previous_page_number }}{% if available_receipts_page.number %}&amp;receipts_page={{ available_receipts_page.number }}{% endif %}">{% translate "Anterior" %}</a>{% else %}<span class="text-[#A0A9A1]">{% translate "Anterior" %}</span>{% endif %}
+                    <span class="text-[#657268]">{% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}<a class="font-semibold text-[#1E6B3C]" href="?{% if filter_querystring %}{{ filter_querystring }}&amp;{% endif %}page={{ page_obj.next_page_number }}{% if available_receipts_page.number %}&amp;receipts_page={{ available_receipts_page.number }}{% endif %}">{% translate "Próxima" %}</a>{% else %}<span class="text-[#A0A9A1]">{% translate "Próxima" %}</span>{% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <p class="px-5 py-8 text-center text-[12px] text-[#7A867D]">{% translate "Nenhum lote encontrado para estes filtros." %}</p>
+        {% endif %}
+    </section>
+
+    <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
+        <div class="flex items-center justify-between gap-4 border-b border-[#E2E5DE] px-5 py-4">
+            <div class="flex items-center gap-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#E9F2EC] text-[15px] text-[#1E6B3C]" aria-hidden="true"><i class="fa-solid fa-truck-ramp-box"></i></span>
+                <div>
+                    <h2 class="text-[14px] font-semibold text-[#17211A]">{% translate "Recebimentos disponíveis" %}</h2>
+                    <p class="mt-0.5 text-[11px] text-[#7A867D]">{% blocktranslate count receipt_count=available_receipts_count %}{{ receipt_count }} recebimento{% plural %}{{ receipt_count }} recebimentos{% endblocktranslate %}</p>
+                </div>
+            </div>
+        </div>
+
+        {% if available_receipts_page %}
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[820px] table-fixed border-collapse text-left">
+                    <colgroup>
+                        <col class="w-[27%]">
+                        <col class="w-[22%]">
+                        <col class="w-[15%]">
+                        <col class="w-[18%]">
+                        <col class="w-[18%]">
+                    </colgroup>
+                    <thead class="bg-[#F8F9F6] text-[10px] font-bold uppercase tracking-[0.5px] text-[#657268]">
+                        <tr>
+                            <th class="px-4 py-3 text-left">{% translate "Participante" %}</th>
+                            <th class="px-4 py-3 text-left">{% translate "Unidade" %}</th>
+                            <th class="px-4 py-3 text-left">{% translate "Safra" %}</th>
+                            <th class="px-4 py-3 text-left">{% translate "Peso líquido" %}</th>
+                            <th class="px-4 py-3 text-right">{% translate "Ação" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E8EBE5] text-[12px]">
+                        {% for receipt in available_receipts_page %}
+                            <tr class="hover:bg-[#FAFBF9]">
+                                <td class="px-4 py-4 text-left font-semibold text-[#17211A]">{{ receipt.participant.name }}</td>
+                                <td class="px-4 py-4 text-left text-[#465349]">{{ receipt.unit.name }}</td>
+                                <td class="px-4 py-4 text-left text-[#465349]">{{ receipt.crop_year }}</td>
+                                <td class="px-4 py-4 text-left font-semibold tabular-nums text-[#17211A]">{{ receipt.weighing_ticket.net_weight_kg }} kg</td>
+                                <td class="px-4 py-4 text-right">
+                                    <a href="{% url 'receipts:detail' company_id=company.pk receipt_id=receipt.pk %}#issuance-batch-ui" class="inline-flex min-h-[38px] items-center justify-center gap-2 rounded-[7px] border border-[#CBD6CC] px-4 text-[11px] font-semibold text-[#1E6B3C] hover:bg-[#F5F9F5]">{% translate "Abrir recebimento" %}</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if available_receipts_page.has_other_pages %}
+                <nav class="flex items-center justify-between gap-3 border-t border-[#E2E5DE] px-5 py-3 text-[11px]" aria-label="{% translate 'Paginação dos recebimentos' %}">
+                    {% if available_receipts_page.has_previous %}<a class="font-semibold text-[#1E6B3C]" href="?{% if filter_querystring %}{{ filter_querystring }}&amp;{% endif %}page={{ page_obj.number }}&amp;receipts_page={{ available_receipts_page.previous_page_number }}">{% translate "Anterior" %}</a>{% else %}<span class="text-[#A0A9A1]">{% translate "Anterior" %}</span>{% endif %}
+                    <span class="text-[#657268]">{% translate "Página" %} {{ available_receipts_page.number }} {% translate "de" %} {{ available_receipts_page.paginator.num_pages }}</span>
+                    {% if available_receipts_page.has_next %}<a class="font-semibold text-[#1E6B3C]" href="?{% if filter_querystring %}{{ filter_querystring }}&amp;{% endif %}page={{ page_obj.number }}&amp;receipts_page={{ available_receipts_page.next_page_number }}">{% translate "Próxima" %}</a>{% else %}<span class="text-[#A0A9A1]">{% translate "Próxima" %}</span>{% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <p class="px-5 py-8 text-center text-[12px] text-[#7A867D]">{% translate "Nenhum recebimento confirmado e livre para um lote." %}</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

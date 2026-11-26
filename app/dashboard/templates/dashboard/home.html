@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Início | SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Início" %}{% endblock %}
+{% block page_subtitle %}<p class="mt-0.5 text-[11.5px] text-[#7A867D]">{{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+
+{% block content %}
+<div class="mx-auto w-full max-w-[1440px] space-y-4">
+    {% if not company.active %}
+        <div class="rounded-[9px] border border-[#E2E5DE] bg-white px-4 py-3 text-[12px] text-[#657268]">{% translate "Esta empresa está inativa. As operações estão bloqueadas." %}</div>
+    {% endif %}
+
+    <section class="grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));" aria-label="{% translate 'Resumo da empresa' %}">
+        {% for metric in home.metrics %}
+            {% if metric.url %}
+            <a href="{{ metric.url }}" class="group flex min-h-[104px] items-start justify-between gap-3 rounded-[10px] border border-[#E2E5DE] bg-white p-4 transition hover:border-[#CBD6CC] hover:bg-[#FCFDFC]">
+            {% else %}
+            <div class="flex min-h-[104px] items-start justify-between gap-3 rounded-[10px] border border-[#E2E5DE] bg-white p-4">
+            {% endif %}
+                <div class="min-w-0">
+                    <div class="text-[11px] font-medium leading-4 text-[#657268]">{{ metric.label }}</div>
+                    <div class="mt-2 text-[25px] font-semibold leading-7 tabular-nums tracking-[-0.4px] text-[#17211A]">{{ metric.value }}</div>
+                </div>
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#F3F5F2] text-[14px] text-[#465349] {% if metric.url %}transition group-hover:bg-[#E9F2EC]{% endif %}" aria-hidden="true"><i class="{{ metric.icon }}"></i></span>
+            {% if metric.url %}
+            </a>
+            {% else %}
+            </div>
+            {% endif %}
+        {% endfor %}
+    </section>
+
+    <div class="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(270px,0.85fr)]">
+        <section class="flex flex-col overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+            <div class="flex items-center gap-2.5 border-b border-[#E8EBE5] px-4 py-3.5 sm:px-5">
+                <i class="fa-solid fa-list-check text-[13px] text-[#17211A]" aria-hidden="true"></i>
+                <h2 class="text-[13px] font-semibold text-[#17211A]">{% translate "Pendências" %}</h2>
+            </div>
+            {% if home.tasks %}
+                <ul class="flex-1 divide-y divide-[#EEF0EC] px-4 sm:px-5">
+                    {% for task in home.tasks %}
+                        <li>
+                            {% if task.url %}
+                                <a href="{{ task.url }}" class="flex min-h-[54px] items-center gap-3 py-2.5 transition hover:bg-[#FCFDFC]">
+                            {% else %}
+                                <div class="flex min-h-[54px] items-center gap-3 py-2.5">
+                            {% endif %}
+                                <i class="{{ task.icon }} w-4 shrink-0 text-center text-[13px] {% if task.tone == 'danger' %}text-[#A33C2E]{% else %}text-[#8A5C14]{% endif %}" aria-hidden="true"></i>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block text-[11.5px] font-medium leading-4 text-[#344238]">{{ task.label }}</span>
+                                    {% if task.help_text %}<span class="mt-0.5 block text-[10px] leading-4 text-[#7A867D]">{{ task.help_text }}</span>{% endif %}
+                                </span>
+                                <span class="inline-flex min-w-7 items-center justify-center rounded-full px-2 py-1 text-[10px] font-semibold tabular-nums {% if task.tone == 'danger' %}bg-[#FCEBE8] text-[#9C352A]{% else %}bg-[#FFF1E6] text-[#A14C0A]{% endif %}">{{ task.count }}</span>
+                                {% if task.url %}
+                                    <i class="fa-solid fa-chevron-right text-[9px] text-[#8A948B]" aria-hidden="true"></i>
+                                {% endif %}
+                            {% if task.url %}
+                                </a>
+                            {% else %}
+                                </div>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="flex flex-1 items-center justify-center px-4 py-5 text-center text-[11.5px] text-[#7A867D] sm:px-5">{% translate "Nenhuma pendência no momento." %}</p>
+            {% endif %}
+        </section>
+
+        <section class="flex flex-col overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+            <div class="flex items-center gap-2.5 border-b border-[#E8EBE5] px-4 py-3.5 sm:px-5">
+                <i class="fa-solid fa-arrow-up-right-from-square text-[12px] text-[#17211A]" aria-hidden="true"></i>
+                <h2 class="text-[13px] font-semibold text-[#17211A]">{% translate "Acesso rápido" %}</h2>
+            </div>
+            <nav class="flex-1 divide-y divide-[#EEF0EC] px-4 sm:px-5" aria-label="{% translate 'Acesso rápido' %}">
+                {% for link in home.quick_links %}
+                    <a href="{{ link.url }}" class="flex min-h-[46px] items-center gap-3 py-2 text-[11.5px] font-medium text-[#465349] transition hover:text-[#17211A]">
+                        <i class="{{ link.icon }} w-4 text-center text-[13px] text-[#657268]" aria-hidden="true"></i>
+                        <span class="flex-1">{{ link.label }}</span>
+                        <i class="fa-solid fa-chevron-right text-[9px] text-[#8A948B]" aria-hidden="true"></i>
+                    </a>
+                {% endfor %}
+                {% if home.can_manage_team %}
+                    <a href="{% url 'companies:member_list' company_id=company.pk %}" class="flex min-h-[46px] items-center gap-3 py-2 text-[11.5px] font-medium text-[#465349] transition hover:text-[#17211A]">
+                        <i class="fa-solid fa-user-shield w-4 text-center text-[13px] text-[#657268]" aria-hidden="true"></i>
+                        <span class="flex-1">{% translate "Equipe e permissões" %}</span>
+                        <i class="fa-solid fa-chevron-right text-[9px] text-[#8A948B]" aria-hidden="true"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </section>
+    </div>
+
+    {% if home.can_view_issuance_summary %}
+        <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+            <div class="flex items-center justify-between gap-3 border-b border-[#E8EBE5] px-4 py-3.5 sm:px-5">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-boxes-stacked text-[13px] text-[#17211A]" aria-hidden="true"></i>
+                    <h2 class="text-[13px] font-semibold text-[#17211A]">{% translate "Emissões recentes" %}</h2>
+                </div>
+                {% if home.can_issue %}
+                    <a href="{% url 'issuance_batches:list' company_id=company.pk %}" class="inline-flex min-h-[32px] items-center gap-1.5 rounded-[6px] px-2 text-[10.5px] font-semibold text-[#465349] transition hover:bg-[#F3F5F2]">
+                        {% translate "Ver emissões" %}<i class="fa-solid fa-arrow-right text-[9px]" aria-hidden="true"></i>
+                    </a>
+                {% endif %}
+            </div>
+            {% if home.recent_issuances %}
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[850px] table-fixed border-collapse text-[11.5px]">
+                        <colgroup><col class="w-[13%]"><col class="w-[25%]"><col class="w-[22%]"><col class="w-[18%]"><col class="w-[22%]"></colgroup>
+                        <thead class="bg-[#F8F9F6] text-[9.5px] font-bold uppercase tracking-[0.45px] text-[#657268]">
+                            <tr>
+                                <th class="px-4 py-2.5 text-left sm:px-5">{% translate "Lote" %}</th>
+                                <th class="px-4 py-2.5 text-left">{% translate "Participante" %}</th>
+                                <th class="px-4 py-2.5 text-left">{% translate "Unidade" %}</th>
+                                <th class="px-4 py-2.5 text-right">{% translate "Peso líquido" %}</th>
+                                <th class="px-4 py-2.5 text-right">{% translate "Total emitido" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#EEF0EC]">
+                            {% for issuance in home.recent_issuances %}
+                                <tr class="transition hover:bg-[#FCFDFC]">
+                                    <td class="px-4 py-3.5 text-left font-semibold text-[#17211A] sm:px-5">{% if issuance.chain_batch_id %}#{{ issuance.chain_batch_id }}{% else %}—{% endif %}</td>
+                                    <td class="px-4 py-3.5 text-left font-medium text-[#344238]">{{ issuance.participant_name }}</td>
+                                    <td class="px-4 py-3.5 text-left text-[#465349]">{{ issuance.unit_name }}</td>
+                                    <td class="px-4 py-3.5 text-right font-semibold tabular-nums text-[#17211A]">{{ issuance.net_weight_kg }} kg</td>
+                                    <td class="px-4 py-3.5 text-right font-semibold tabular-nums text-[#1E6B3C]">{% if issuance.issued_amount_sjc %}{{ issuance.issued_amount_sjc }} SJC{% else %}—{% endif %}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="px-4 py-5 text-[11.5px] text-[#7A867D] sm:px-5">{% translate "Nenhuma emissão confirmada ainda." %}</p>
+            {% endif %}
+        </section>
+    {% endif %}
+
+    {% if home.can_browse_receipts %}
+        <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+            <div class="flex items-center justify-between gap-3 border-b border-[#E8EBE5] px-4 py-3.5 sm:px-5">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-truck text-[13px] text-[#17211A]" aria-hidden="true"></i>
+                    <h2 class="text-[13px] font-semibold text-[#17211A]">{% translate "Recebimentos recentes" %}</h2>
+                </div>
+                <a href="{% url 'receipts:list' company_id=company.pk %}" class="inline-flex min-h-[32px] items-center gap-1.5 rounded-[6px] px-2 text-[10.5px] font-semibold text-[#465349] transition hover:bg-[#F3F5F2]">
+                    {% translate "Ver recebimentos" %}<i class="fa-solid fa-arrow-right text-[9px]" aria-hidden="true"></i>
+                </a>
+            </div>
+            {% if home.recent_receipts %}
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[850px] table-fixed border-collapse text-[11.5px]">
+                        <colgroup><col class="w-[27%]"><col class="w-[21%]"><col class="w-[15%]"><col class="w-[17%]"><col class="w-[20%]"></colgroup>
+                        <thead class="bg-[#F8F9F6] text-[9.5px] font-bold uppercase tracking-[0.45px] text-[#657268]">
+                            <tr>
+                                <th class="px-4 py-2.5 text-left sm:px-5">{% translate "Participante" %}</th>
+                                <th class="px-4 py-2.5 text-left">{% translate "Unidade" %}</th>
+                                <th class="px-4 py-2.5 text-right">{% translate "Peso líquido" %}</th>
+                                <th class="px-4 py-2.5 text-center">{% translate "Blockchain" %}</th>
+                                <th class="px-4 py-2.5 text-center">{% translate "Criado em" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#EEF0EC]">
+                            {% for receipt in home.recent_receipts %}
+                                <tr class="transition hover:bg-[#FCFDFC]">
+                                    <td class="px-4 py-3.5 text-left sm:px-5">
+                                        <a href="{% url 'receipts:detail' company_id=company.pk receipt_id=receipt.pk %}" class="font-semibold text-[#17211A] hover:underline">{{ receipt.participant.name }}</a>
+                                        <span class="mt-0.5 block text-[10px] text-[#7A867D]">#{{ receipt.pk }}</span>
+                                    </td>
+                                    <td class="px-4 py-3.5 text-left text-[#465349]">{{ receipt.unit.name }}</td>
+                                    <td class="px-4 py-3.5 text-right font-semibold tabular-nums text-[#17211A]">{{ receipt.weighing_ticket.net_weight_kg }} kg</td>
+                                    <td class="px-4 py-3.5 text-center">
+                                        <span class="inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold {% if receipt.dashboard_status_tone == 'success' %}bg-[#E9F2EC] text-[#1E6B3C]{% elif receipt.dashboard_status_tone == 'danger' %}bg-[#FCEBE8] text-[#9C352A]{% elif receipt.dashboard_status_tone == 'warning' %}bg-[#FFF1E6] text-[#A14C0A]{% else %}bg-[#F1F3F0] text-[#657268]{% endif %}">{{ receipt.dashboard_status_label }}</span>
+                                    </td>
+                                    <td class="px-4 py-3.5 text-center text-[10.5px] text-[#657268]">{{ receipt.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="px-4 py-5 text-[11.5px] text-[#7A867D] sm:px-5">{% translate "Nenhum recebimento registrado ainda." %}</p>
+            {% endif %}
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

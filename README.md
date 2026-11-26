@@ -1,135 +1,146 @@
 # SojaCoin
 
-SojaCoin is a software project for recording soybean storage and related
-obligations. It combines a Django web application with smart contracts for an
-Ethereum-compatible blockchain. The intended users include warehouse
-companies, soybean producers, creditors, auditors and warehouse employees.
+SojaCoin connects soybean warehouse operations to an EVM blockchain. The MVP records a participant, a soybean delivery, its weighing data and documents, then lets the participant approve an issuance batch and receive SJC tokens in a wallet. The application is designed for the Brazilian agricultural market and has been demonstrated on BNB Smart Chain Testnet.
 
-The project is being developed for the Brazilian agricultural market. Its
-contracts and application are at different stages of development: the full
-business workflow is not yet available through the web application.
+**One SJC represents 60 kg of recorded net soybean weight.** The token has six decimal places. Blockchain records make submitted information traceable; they do not independently verify the physical inventory or establish legal rights over it.
 
-## The agricultural context
+## What the MVP does
 
-In Brazil, soybeans are often measured in **sacas**: a saca is a 60 kg bag,
-used as a commercial unit of measure. A producer can deliver soybeans to a
-warehouse for storage and may have an obligation to deliver part of that crop
-to a creditor.
+1. A company registers a warehouse unit and authorizes separate wallets for receiving loads and creating issuance batches.
+2. The company publishes a terms PDF and proposes a participant's registration. The participant reviews the terms and accepts them with their wallet.
+3. A receiving employee records a load, weighing information, deductions, a weighing ticket PDF and an electronic invoice (NF-e). The application calculates the net weight and registers the receipt on-chain in three steps.
+4. An issuance employee creates a batch for one confirmed receipt. The participant reviews it and confirms one transaction that approves the batch and issues SJC.
+5. The application shows the confirmed issuance and the participant's current balance. The token can also be imported into a compatible wallet.
 
-A **CPR** (*Cédula de Produto Rural*, or rural product note) is a Brazilian
-instrument used to formalize an obligation related to agricultural products.
-In the flow modeled here, a producer can owe a quantity of soybeans to a
-creditor. The contracts track the obligation and apply eligible deliveries to
-its outstanding balance.
+The PDF files are stored privately by the application. The contract receives the weighing ticket PDF's hash and the hash of the NF-e access key; the invoice PDF is not sent to the blockchain. Audit preparation is currently manual. CPR and audit management screens are not part of the demonstrated SaaS flow.
 
-The system uses **SJC**, a token representing stored soybean inventory: one
-SJC represents one 60 kg saca. It supports fractions of a saca with six decimal
-places. The token is backed by inventory recorded through the system's audit
-and receipt rules; the blockchain cannot independently inspect the physical
-soybeans.
+## Requirements
 
-## How the intended workflow works
+- Python **3.14** and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+- Node.js and npm for the frontend build.
+- [Foundry](https://getfoundry.sh/introduction/installation/) for Anvil and contract tests.
+- A browser with MetaMask or another compatible browser wallet. Use separate test accounts for the contract owner, receiver, issuer, auditor and participant.
+- Git to clone the repository.
 
-1. A warehouse company is set up with its own contracts and storage units.
-2. An assigned auditor records an audit and the inventory of each unit.
-3. Participants are registered for the company and accept its terms. A participant
-   may be a producer, creditor, or another person involved in the workflow.
-4. A producer's CPR is recorded and signed, identifying the creditor, quantity,
-   unit and crop year.
-5. A warehouse employee records a delivery, including the net weight and its
-   supporting documents. The tax invoice is linked to the delivery.
-6. An authorized employee creates an issuance batch. The producer approves it
-   with a wallet; issuance is a separate operation performed by an authorized
-   wallet.
-7. Once issuance is confirmed, SJC is allocated to creditors for compatible
-   outstanding CPRs, and any remainder goes to the producer.
+## Run the application
 
-For example, if an eligible delivery corresponds to 500 sacas and the producer
-owes a creditor 400 sacas under a compatible CPR, issuance allocates 400 SJC to
-the creditor and 100 SJC to the producer. Compatibility includes the producer,
-storage unit and crop year; the contract applies its CPR ordering rules.
-
-Documents are kept outside the blockchain. Their hashes can be recorded on the
-blockchain to identify the corresponding document or record. A hash alone does
-not prove that the information in a document is accurate.
-
-## Project structure
-
-| Directory | Purpose |
-| --- | --- |
-| [`app/`](app/) | Django application, server-rendered templates and Tailwind CSS. |
-| [`app/accounts/`](app/accounts/) | User accounts, profiles and wallet-related records. |
-| [`app/companies/`](app/companies/) | Companies, storage units, staff roles and unit access. |
-| [`app/participants/`](app/participants/) | Company participants, terms and registration/acceptance workflows. |
-| [`app/receipts/`](app/receipts/) | Local soybean load records, weighing and private receipt documents. |
-| [`app/blockchain/`](app/blockchain/) | Network connections, deployed contract records, transactions and reconciliation. |
-| [`contracts/`](contracts/) | Solidity contracts, Foundry configuration and contract tests. |
-
-Each company has its own contract deployment on a selected network. The
-deployment consists of six logic modules, SojaCoin, UnitRegistry and
-TokenIssuanceBatches. The main SojaCoin contract uses the logic modules; the
-other two contracts manage unit-related operations and issuance batches.
-
-## Current implementation
-
-The Django application includes company and unit management, team membership,
-roles, unit access and access history. Participant registration and local load
-receipt entry are available through company-scoped pages. A locally saved load
-is not yet a chain-confirmed deposit. Initial company and user setup is assisted
-through Django Admin.
-
-The blockchain app can connect to the RPC endpoint configured for a network,
-track transactions and use the Admin deployment flow. The current flow uses a
-browser wallet for nine individual deployments, followed by two configuration
-transactions signed by the SojaCoin owner. The application checks the network
-and transaction receipts before recording confirmations. It does not store user
-private keys.
-
-Remote owner approval, Safe integration, automatic transaction polling and
-automatic chain-reorganization detection are future work. CPR, audit, receipt
-blockchain submission, issuance and balance screens remain to be built. A local
-receipt record does not itself open or confirm an on-chain deposit. Contract
-capabilities should not be assumed to be available in the application
-interface.
-
-## Local development
-
-The application requires Python 3.14 or later, [uv](https://docs.astral.sh/uv/)
-and Node.js. From the repository root:
+From a terminal, clone the repository and install the application dependencies:
 
 ```bash
-cd app
+git clone https://github.com/ygorlima-py/sojacoin-SmartContract.git
+cd sojacoin-SmartContract/app
 uv sync
 npm ci
 npm run css:build
 uv run python manage.py migrate
 uv run python manage.py createsuperuser
-uv run python manage.py runserver
+uv run python manage.py runserver 127.0.0.1:8001
 ```
 
-The local Django database is `app/db.sqlite3`. The default settings are for
-development and need to be changed before production use. See the
-[application README](app/README.md) for frontend development details.
+Keep this terminal open. Visit **http://127.0.0.1:8001/admin/** and sign in with the superuser just created. The regular application login is at **http://127.0.0.1:8001/accounts/login/**. To use port 8000 instead, run `uv run python manage.py runserver` and replace `8001` in the URLs.
 
-For contract development, install [Foundry](https://getfoundry.sh/) and the
-contract dependencies:
+The database is `app/db.sqlite3`; private uploads are stored in `app/private_media/`. These files are local and are not included in the repository. Run `migrate` again after pulling changes that add migrations. The default Django configuration is for local development, not production.
+
+## Prepare a local blockchain
+
+In a second terminal, start Anvil and keep it running:
 
 ```bash
-cd contracts
-npm ci
-forge build
-forge test
+anvil --chain-id 31337 --state /tmp/sojacoin-anvil.json
 ```
 
-For the current local deployment flow, start Anvil, configure its RPC URL and
-chain ID in a Django Admin **Network** record, and connect a test wallet to the
-same network. The [blockchain app README](app/blockchain/README.md) describes
-the Admin flow. The [contracts README](contracts/README.md) provides a separate
-contract-level walkthrough of a delivery and issuance.
+Anvil listens at `http://127.0.0.1:8545` and prints funded test accounts and their private keys. These keys are public test credentials: use them only on the local chain. The state file preserves the chain when Anvil exits normally; keep the Django database and private uploads as well if you want to resume the same demonstration.
 
-## Further documentation
+Add a custom network to MetaMask with RPC URL `http://127.0.0.1:8545`, chain ID `31337`, and currency symbol `ETH`. Import the Anvil test accounts you need and select the owner account for deployment. MetaMask and Django must reach the same Anvil instance. If Anvil is reset but MetaMask still has activity from the old chain, clear the local network's activity/nonce data in MetaMask.
 
-- [Application plan](app/planejamento.md) — intended MVP and remaining work, in Portuguese.
-- [Blockchain plan](app/blockchain/PLAN.md) — integration and deployment work.
-- [Contract architecture](contracts/docs/arquitetura.md) — contract design, in Portuguese.
-- [Contract walkthrough in Portuguese](contracts/README.pt-BR.md).
+Alternatively, configure BNB Smart Chain Testnet (chain ID `97`) in MetaMask and Django, using an accessible testnet RPC. Each wallet that sends a transaction needs testnet BNB for fees.
+
+## First-time company and contract setup
+
+1. In Django Admin, create an active **Company** and an ordinary active user for the company administrator under **Users**. Use a valid test CNPJ for the company.
+2. Under **Company memberships** (vínculos com empresas), create an active membership linking that user to the company. Under **Membership roles** (funções dos vínculos), grant that membership the active **Administrator** role. Select the Django superuser as **Granted by**: the recipient cannot grant a role to themselves. A Django superuser alone does not automatically have a company membership or company role.
+3. Under **Blockchain → Networks**, create an active network with the same chain ID and RPC as the wallet: `31337` and `http://127.0.0.1:8545` for local Anvil, or `97` and the selected RPC for BNB Testnet.
+4. Under **Blockchain → Deployment processes**, start a deployment for the company and network, entering the public address that will own SojaCoin and UnitRegistry. Follow the [deployment steps below](#deploy-and-link-the-contracts).
+5. Sign in to the SaaS as the company administrator, select the company under **Companies**, and create a unit under **Unidades**. Register it on the blockchain from its detail page with the UnitRegistry owner wallet, then confirm the transaction.
+6. Create separate staff users in Django Admin. In the SaaS, add them under **Equipe e permissões**, assign **Recebimento** or **Emissão**, and grant the appropriate access to the unit. Each employee signs in to their own account and verifies their wallet under **Meu perfil → Minha carteira**. Back on the unit page, the administrator grants each verified wallet its corresponding on-chain permission using the UnitRegistry owner wallet.
+7. Prepare an audit using the [manual steps below](#prepare-the-audit-in-remix). Every active unit must have a current audit for the issuance workflow.
+
+The full deployment procedure is documented in the [blockchain app README](app/blockchain/README.md#how-to-run-the-local-deployment-flow).
+
+### Deploy and link the contracts
+
+1. In MetaMask, select the owner wallet and the same network configured in Django Admin. Make sure the wallet has native test currency for deployment fees.
+2. Open **Blockchain → Deployment processes → Iniciar implantação** in Django Admin. Select the company and network, enter the owner's public address and click **Iniciar processo**.
+3. On the process page, click **Conectar carteira e implantar** for the available contract. Confirm the request in MetaMask, then click **Consultar confirmação**. Wait until the contract is confirmed before proceeding to the next available step.
+4. Repeat until all **nine contracts** are confirmed. Their addresses appear in the process and in the contract records in Django Admin. The application prepares each contract and its constructor arguments; no manual constructor input is needed in MetaMask.
+5. In **Configuração dos vínculos**, click **Configurar vínculo** for UnitRegistry and confirm the transaction. Consult the confirmation, then repeat for TokenIssuanceBatches. Both links must be confirmed before the deployment is ready.
+
+This requires **11 transactions** in total: nine deployments and two configuration calls. Copy the SojaCoin and UnitRegistry addresses from this deployment; the SojaCoin address is also the SJC token address. If the wallet returns a transaction hash but the application cannot confirm it yet, use the existing confirmation or hash-recovery control rather than submitting a second transaction.
+
+### Prepare the audit in Remix
+
+The audit is currently a manual contract operation. Complete the unit registration and note its **ID na rede** and the deployed **UnitRegistry address** first. The auditor must use a separate wallet that does not have conflicting receiving or issuance permissions. The wallet submitting each transaction needs native test currency.
+
+1. Open [Remix IDE](https://remix.ethereum.org/) in the browser with MetaMask installed. Create a Solidity file, for example `AuditInterface.sol`, and paste this interface:
+
+   ```solidity
+   // SPDX-License-Identifier: MIT
+   pragma solidity ^0.8.20;
+
+   interface IUnitRegistryAudit {
+       function setUnitAuditor(uint256 unitId, address newAuditor) external;
+       function recordUnitAudit(
+           uint256 unitId,
+           uint256 physicalInventoryKg,
+           bytes32 reportHash
+       ) external;
+       function auditorByUnit(uint256 unitId) external view returns (address);
+       function allUnitAuditsCurrent() external view returns (bool);
+   }
+   ```
+
+2. Compile the file. In **Deploy & Run Transactions**, choose **Browser Extension** with MetaMask as provider; some Remix versions call it **Injected Provider**. Connect MetaMask to the same network as the deployment.
+3. Select `IUnitRegistryAudit` and use **At Address** or **Add Contract** to attach it to the **existing UnitRegistry address**. Do not deploy the interface.
+4. Select the UnitRegistry **owner** wallet in MetaMask. In `setUnitAuditor`, enter the unit's on-chain ID and the auditor's public address, then confirm the transaction. Read `auditorByUnit` with the same ID to check the assignment.
+5. Switch MetaMask to the assigned **auditor** wallet. In `recordUnitAudit`, enter the unit ID, the physical inventory in whole kilograms, and a 32-byte report hash. For a new, empty test unit, the inventory can be `0`; this sample hash is only for demonstration:
+
+   ```text
+   0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+   ```
+
+   Confirm the transaction and wait for success. In a real operation, the hash must correspond to the actual audit report.
+6. Call `allUnitAuditsCurrent()`. It must return `true`; repeat the audit setup for each active unit if necessary. The contract's audit period is 60 days.
+
+For a new load added after an empty-unit audit, use a weighing timestamp after that audit and no later than the current blockchain time. The subsequent receipt updates the recorded inventory.
+
+## Walk through the MVP
+
+1. As the company administrator, open **Empresa → Gerenciar termos** and publish a test terms PDF. Under **Participantes**, register a participant's name and public wallet, then propose the registration using the SojaCoin owner wallet.
+2. Once the proposal is confirmed, create and copy the acceptance link. The participant opens it, reviews the PDF, connects their own wallet, signs the terms and confirms a separate transaction. Check the registration confirmation.
+3. Sign in as the receiving employee. Under **Recebimentos**, create a receipt with the confirmed participant, authorized unit, crop season, weights, deductions, NF-e key and PDFs. Open its detail page and confirm the three blockchain calls: open the receipt, confirm weighing, and link the invoice.
+4. Sign in as the issuance employee. Open **Emissões**, select the confirmed receipt and create an issuance batch with an approval deadline. Once confirmed, create and copy its participant approval link.
+5. The participant opens the link, reviews the load and confirms **Aprovar e receber tokens** with the registered wallet. That transaction approves the single-receipt batch and issues the tokens. Check the confirmation and the amount shown on the receipt page.
+6. In MetaMask, select the participant account and the same network. If SJC is not listed, import the **SojaCoin contract address** from the deployment; the token uses six decimals. The participant also needs native test currency for transactions they send.
+
+Use a distinct weighing ticket PDF for each load: the contract rejects a weighing ticket hash that has already been used. A transaction can remain pending until its receipt is available; use the page's confirmation controls or recover the existing transaction hash before attempting another send.
+
+The local URLs above work on the computer running Django. On another device, `127.0.0.1` points to that device itself. Remote testing requires an appropriately configured reachable Django URL and RPC; see the [participant link documentation](app/participants/README.md#public-link-and-phone-testing).
+
+Contract changes require compiling and updating the application's packaged ABI and bytecode before a new SaaS deployment. Previously deployed contracts and their on-chain state do not update automatically.
+
+## Project structure and documentation
+
+- [`app/`](app/) — Django application, templates and frontend assets.
+- [`app/blockchain/`](app/blockchain/README.md) — network, deployments and transactions.
+- [`app/companies/`](app/companies/README.md) — companies, units, staff and access.
+- [`app/participants/`](app/participants/README.md) — participant registration and terms.
+- [`app/receipts/`](app/receipts/README.md) — load receipts and documents.
+- [`app/issuance_batches/`](app/issuance_batches/README.md) — batches and token issuance.
+- [`contracts/`](contracts/README.md) — Solidity contracts and Foundry walkthrough.
+- [Application plan](app/planejamento.md) and [contract architecture](contracts/docs/arquitetura.md) — Portuguese documentation.
+
+The interface supports Portuguese and English. See the [application README](app/README.md) for frontend builds and translations.
+
+## License
+
+SojaCoin is available under the [MIT License](LICENSE).

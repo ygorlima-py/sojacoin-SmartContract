@@ -33,7 +33,7 @@ A aprovação do lote e a emissão são chamadas separadas nos contratos atuais.
 | `receipts` | Recebimentos, pesagem, classificação, documentos e transações de entrada da carga. | Cadastro SaaS, PDFs privados, cálculo de peso líquido e fluxo on-chain `openLoadReceipt` → `confirmLoadReceipt` → `linkTaxInvoice` implementados. Cada tentativa é persistida; o servidor verifica carteira, rede, contratos, eventos e estado do depósito. Lotes e emissão continuam pendentes. |
 | `issuance` | Lotes, aprovação do produtor e emissão. | Planejado. |
 | `blockchain` | Redes, contratos, transações e sincronização dos eventos. | Persistência, RPC por rede, confirmação de recibos e processamento idempotente de eventos implementados; participantes usam esses serviços. |
-| `dashboard` | Página inicial e consultas por perfil. | Planejado; inicialmente pode usar consultas dos demais apps sem modelos próprios. |
+| `dashboard` | Página inicial da empresa, métricas operacionais, pendências, atalhos e operações recentes por perfil. | Implementado como consulta somente leitura; administradores veem pendências e até cinco emissões confirmadas da empresa, sem ganhar permissão operacional; operadores veem operações nas unidades autorizadas. Não possui modelos próprios. |
 
 Um app Django agrupa uma parte do código; ele não é uma aplicação separada para instalar no celular.
 
@@ -78,7 +78,7 @@ parcial melhorar a operação e não exigir uma aplicação SPA.
 
 ## Telas
 
-São nove áreas principais. Listagem, detalhe e formulário podem compartilhar uma área. As telas e regras abaixo são planejadas: ainda não representam funcionalidades prontas.
+São nove áreas principais. Listagem, detalhe e formulário podem compartilhar uma área. O quadro resume as ações principais e o estado de implementação do MVP.
 
 | Tela | Ações principais | Quem usa |
 | --- | --- | --- |

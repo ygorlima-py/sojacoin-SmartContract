@@ -5,6 +5,25 @@ approval and token issuance. The operator creates the batch; the named
 participant approves it from their own wallet. For the current one-receipt MVP,
 that approval and the SJC issuance happen in one atomic blockchain transaction.
 
+## Emissions dashboard
+
+Open **Emissões** in the company sidebar to review issuance batches and eligible
+receipts. Access requires the active company **Issuance** role and active
+issuance access to at least one unit. The page only lists records for that
+company and those units.
+
+Use the search field for a participant name or on-chain batch number, then
+filter batches by unit or status. Each table has its own pagination. A receipt
+appears under **Recebimentos disponíveis** only after blockchain confirmation,
+with positive net weight, and while no prepared, pending, completed, or review
+batch reserves it. A confirmed cancellation releases the receipt.
+
+**Abrir** on a batch or receipt returns to its receipt detail page and the
+existing batch controls. Batch creation, approval links, confirmation recovery,
+and cancellation remain in that flow; the dashboard does not add a second
+issuance action. An expired approval deadline does not release a receipt until
+the batch cancellation is confirmed on chain.
+
 ## Flow in the SaaS
 
 1. A staff member with the company's issuance role opens **Recebimentos** and

@@ -8,6 +8,7 @@ from . import views
 app_name = "issuance_batches"
 
 urlpatterns = [
+    path("<int:company_id>/", views.IssuanceDashboardView.as_view(), name="list"),
     path("<int:company_id>/<int:receipt_id>/prepare/", views.PrepareBatchView.as_view(), name="prepare"),
     path(
         "<int:company_id>/<int:batch_id>/attempt/<int:attempt_id>/<str:action>/",

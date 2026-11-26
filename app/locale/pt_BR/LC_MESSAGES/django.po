@@ -330,3 +330,200 @@ msgstr "Propriedade da carteira"
 
 msgid "Wallet permission updated"
 msgstr "Permissão da carteira atualizada"
+
+msgid "A unidade selecionada não está disponível para seu acesso."
+msgstr "A unidade selecionada não está disponível para seu acesso."
+
+msgid "Aguardando participante"
+msgstr "Aguardando participante"
+
+msgid "Aprovação aguardando confirmação"
+msgstr "Aprovação aguardando confirmação"
+
+msgid "Criação aguardando confirmação"
+msgstr "Criação aguardando confirmação"
+
+msgid "Cancelamento pendente"
+msgstr "Cancelamento pendente"
+
+msgid "Carga bloqueada até o cancelamento confirmado."
+msgstr "Carga bloqueada até o cancelamento confirmado."
+
+msgid "Emissões de"
+msgstr "Emissões de"
+
+msgid "Emissões — SojaCoin"
+msgstr "Emissões — SojaCoin"
+
+msgid "Filtrar"
+msgstr "Filtrar"
+
+msgid "Limpar"
+msgstr "Limpar"
+
+msgid "Lote preparado"
+msgstr "Lote preparado"
+
+msgid "Nenhum lote encontrado para estes filtros."
+msgstr "Nenhum lote encontrado para estes filtros."
+
+msgid "Nenhum recebimento confirmado e livre para um lote."
+msgstr "Nenhum recebimento confirmado e livre para um lote."
+
+msgid "Paginação dos lotes"
+msgstr "Paginação dos lotes"
+
+msgid "Paginação dos recebimentos"
+msgstr "Paginação dos recebimentos"
+
+msgid "Participante ou nº do lote"
+msgstr "Participante ou nº do lote"
+
+msgid "Peça ao administrador da empresa para conferir sua função e liberar a unidade."
+msgstr "Peça ao administrador da empresa para conferir sua função e liberar a unidade."
+
+msgid "Prazo expirado"
+msgstr "Prazo expirado"
+
+msgid "Preparado"
+msgstr "Preparado"
+
+msgid "Recebimentos disponíveis"
+msgstr "Recebimentos disponíveis"
+
+msgid "Sem recebimento"
+msgstr "Sem recebimento"
+
+msgid "Situação do lote"
+msgstr "Situação do lote"
+
+msgid "Sua conta precisa da função Emissão e de acesso de emissão a pelo menos uma unidade ativa desta empresa."
+msgstr "Sua conta precisa da função Emissão e de acesso de emissão a pelo menos uma unidade ativa desta empresa."
+
+msgid "Todas as situações"
+msgstr "Todas as situações"
+
+msgid "Todas as unidades"
+msgstr "Todas as unidades"
+
+msgid "Ver recebimentos"
+msgstr "Ver recebimentos"
+
+msgid "Você não tem autorização para acessar Emissões"
+msgstr "Você não tem autorização para acessar Emissões"
+
+msgid "Área de emissões"
+msgstr "Área de emissões"
+
+msgid "Acesso não autorizado — Emissões — SojaCoin"
+msgstr "Acesso não autorizado — Emissões — SojaCoin"
+
+msgid "Buscar"
+msgstr "Buscar"
+
+msgid "Emitido"
+msgstr "Emitido"
+
+msgid "lote"
+msgid_plural "lotes"
+msgstr[0] "lote"
+msgstr[1] "lotes"
+
+msgid "recebimento"
+msgid_plural "recebimentos"
+msgstr[0] "recebimento"
+msgstr[1] "recebimentos"
+
+msgid "%(batch_count)s lote"
+msgid_plural "%(batch_count)s lotes"
+msgstr[0] "%(batch_count)s lote"
+msgstr[1] "%(batch_count)s lotes"
+
+msgid "%(receipt_count)s recebimento"
+msgid_plural "%(receipt_count)s recebimentos"
+msgstr[0] "%(receipt_count)s recebimento"
+msgstr[1] "%(receipt_count)s recebimentos"
+
+msgid "Início | SojaCoin"
+msgstr "Início | SojaCoin"
+
+msgid "Esta empresa está inativa. As operações estão bloqueadas."
+msgstr "Esta empresa está inativa. As operações estão bloqueadas."
+
+msgid "Resumo da empresa"
+msgstr "Resumo da empresa"
+
+msgid "Recebimentos confirmados"
+msgstr "Recebimentos confirmados"
+
+msgid "Recebimentos em andamento"
+msgstr "Recebimentos em andamento"
+
+msgid "Lotes aguardando participante"
+msgstr "Lotes aguardando participante"
+
+msgid "Emissões confirmadas"
+msgstr "Emissões confirmadas"
+
+msgid "Participantes cadastrados"
+msgstr "Participantes cadastrados"
+
+msgid "Unidades ativas"
+msgstr "Unidades ativas"
+
+msgid "Recebimentos para conferência"
+msgstr "Recebimentos para conferência"
+
+msgid "Recebimentos aguardando blockchain"
+msgstr "Recebimentos aguardando blockchain"
+
+msgid "Lotes para conferência"
+msgstr "Lotes para conferência"
+
+msgid "Lotes com prazo expirado"
+msgstr "Lotes com prazo expirado"
+
+msgid "A carga continua bloqueada até o cancelamento ser confirmado."
+msgstr "A carga continua bloqueada até o cancelamento ser confirmado."
+
+msgid "Lotes aguardando envio ou confirmação"
+msgstr "Lotes aguardando envio ou confirmação"
+
+msgid "Lotes aprovados aguardando conclusão"
+msgstr "Lotes aprovados aguardando conclusão"
+
+msgid "Pendências"
+msgstr "Pendências"
+
+msgid "Nenhuma pendência no momento."
+msgstr "Nenhuma pendência no momento."
+
+msgid "Acesso rápido"
+msgstr "Acesso rápido"
+
+msgid "Recebimentos recentes"
+msgstr "Recebimentos recentes"
+
+msgid "Nenhum recebimento registrado ainda."
+msgstr "Nenhum recebimento registrado ainda."
+
+msgid "Aguardando blockchain"
+msgstr "Aguardando blockchain"
+
+msgid "Confirmado"
+msgstr "Confirmado"
+
+msgid "Blockchain"
+msgstr "Blockchain"
+
+msgid "Emissões recentes"
+msgstr "Emissões recentes"
+
+msgid "Ver emissões"
+msgstr "Ver emissões"
+
+msgid "Total emitido"
+msgstr "Total emitido"
+
+msgid "Nenhuma emissão confirmada ainda."
+msgstr "Nenhuma emissão confirmada ainda."

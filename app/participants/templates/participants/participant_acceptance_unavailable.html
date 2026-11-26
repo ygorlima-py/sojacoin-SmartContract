@@ -5,7 +5,7 @@
 <body class="min-h-screen bg-[#F6F7F4] p-5 font-[Inter,system-ui,sans-serif] text-[#17211A]">
     <main class="mx-auto mt-16 max-w-xl rounded-[12px] border border-[#E2E5DE] bg-white p-6">
         <div class="mb-5 flex justify-end">{% include "includes/language_switcher.html" %}</div>
-        <h1 class="text-[20px] font-semibold">{% translate "Link indisponível" %}</h1>
+        <h1 class="flex items-center gap-2 text-[20px] font-semibold"><span class="inline-flex text-current">{% include "includes/page_category_icon.html" with icon_width="w-[17px]" icon_size="text-[16px]" %}</span>{% translate "Link indisponível" %}</h1>
         <p class="mt-3 text-[13px] leading-6 text-[#536057]">{% translate message %}</p>
         <p class="mt-3 text-[12px] text-[#78837A]">{% translate "Peça à empresa que confira a proposta e, se necessário, crie um novo link." %}</p>
     </main>

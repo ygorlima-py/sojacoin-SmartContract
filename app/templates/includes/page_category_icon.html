@@ -1,0 +1,23 @@
+{% with page_namespace=request.resolver_match.namespace|default:"" page_name=request.resolver_match.url_name|default:"" %}
+    {% if page_namespace == "dashboard" %}
+        <i class="fa-solid fa-house {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+    {% elif page_namespace == "receipts" %}
+        <i class="fa-solid fa-truck {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+    {% elif page_namespace == "issuance_batches" %}
+        <i class="fa-solid fa-boxes-stacked {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+    {% elif page_namespace == "participants" %}
+        <i class="fa-solid fa-users {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+    {% elif page_namespace == "companies" %}
+        {% if page_name == "history" %}
+            <i class="fa-solid fa-clock-rotate-left {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+        {% elif page_name|slice:":7" == "member_" %}
+            <i class="fa-solid fa-user-shield {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+        {% elif page_name|slice:":5" == "unit_" %}
+            <i class="fa-solid fa-warehouse {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+        {% else %}
+            <i class="fa-solid fa-building {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+        {% endif %}
+    {% elif page_namespace == "accounts" %}
+        <i class="fa-solid fa-user {{ icon_width|default:'w-[15px]' }} shrink-0 text-center {{ icon_size|default:'text-[14px]' }} text-current" aria-hidden="true"></i>
+    {% endif %}
+{% endwith %}

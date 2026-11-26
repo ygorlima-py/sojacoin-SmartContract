@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'participants.apps.ParticipantsConfig',
     'receipts.apps.ReceiptsConfig',
     'issuance_batches.apps.IssuanceBatchesConfig',
+    'dashboard.apps.DashboardConfig',
 ]
 
 MIDDLEWARE = [

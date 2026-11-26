@@ -3395,7 +3395,9 @@ msgid "preparado"
 msgstr "prepared"
 
 msgid "recebimento"
-msgstr "receiving"
+msgid_plural "recebimentos"
+msgstr[0] "receipt"
+msgstr[1] "receipts"
 
 msgid "recebimento(s) disponível(is) nas suas unidades."
 msgstr "receipt(s) available at your units."
@@ -3435,3 +3437,195 @@ msgstr "Receipts area"
 
 msgid "— SojaCoin"
 msgstr "— SojaCoin"
+
+msgid "A unidade selecionada não está disponível para seu acesso."
+msgstr "The selected unit is not available to your account."
+
+msgid "Aguardando participante"
+msgstr "Awaiting participant"
+
+msgid "Aprovação aguardando confirmação"
+msgstr "Approval awaiting confirmation"
+
+msgid "Criação aguardando confirmação"
+msgstr "Creation awaiting confirmation"
+
+msgid "Cancelamento pendente"
+msgstr "Cancellation pending"
+
+msgid "Carga bloqueada até o cancelamento confirmado."
+msgstr "Receipt remains locked until cancellation is confirmed."
+
+msgid "Emissões de"
+msgstr "Issuance for"
+
+msgid "Emissões — SojaCoin"
+msgstr "Issuance — SojaCoin"
+
+msgid "Filtrar"
+msgstr "Filter"
+
+msgid "Limpar"
+msgstr "Clear"
+
+msgid "Lote preparado"
+msgstr "Batch prepared"
+
+msgid "Nenhum lote encontrado para estes filtros."
+msgstr "No batches found for these filters."
+
+msgid "Nenhum recebimento confirmado e livre para um lote."
+msgstr "No confirmed receipt is available for a batch."
+
+msgid "Paginação dos lotes"
+msgstr "Batch pagination"
+
+msgid "Paginação dos recebimentos"
+msgstr "Receipt pagination"
+
+msgid "Participante ou nº do lote"
+msgstr "Participant or batch no."
+
+msgid "Peça ao administrador da empresa para conferir sua função e liberar a unidade."
+msgstr "Ask the company administrator to check your role and grant unit access."
+
+msgid "Prazo expirado"
+msgstr "Deadline expired"
+
+msgid "Preparado"
+msgstr "Prepared"
+
+msgid "Recebimentos disponíveis"
+msgstr "Available receipts"
+
+msgid "Sem recebimento"
+msgstr "No receipt"
+
+msgid "Situação do lote"
+msgstr "Batch status"
+
+msgid "Sua conta precisa da função Emissão e de acesso de emissão a pelo menos uma unidade ativa desta empresa."
+msgstr "Your account needs the Issuance role and issuance access to at least one active unit in this company."
+
+msgid "Todas as situações"
+msgstr "All statuses"
+
+msgid "Todas as unidades"
+msgstr "All units"
+
+msgid "Ver recebimentos"
+msgstr "View receipts"
+
+msgid "Você não tem autorização para acessar Emissões"
+msgstr "You do not have permission to access Issuance"
+
+msgid "Área de emissões"
+msgstr "Issuance area"
+
+msgid "Acesso não autorizado — Emissões — SojaCoin"
+msgstr "Access denied — Issuance — SojaCoin"
+
+msgid "Buscar"
+msgstr "Search"
+
+msgid "Emitido"
+msgstr "Issued"
+
+msgid "lote"
+msgid_plural "lotes"
+msgstr[0] "batch"
+msgstr[1] "batches"
+
+msgid "%(batch_count)s lote"
+msgid_plural "%(batch_count)s lotes"
+msgstr[0] "%(batch_count)s batch"
+msgstr[1] "%(batch_count)s batches"
+
+msgid "%(receipt_count)s recebimento"
+msgid_plural "%(receipt_count)s recebimentos"
+msgstr[0] "%(receipt_count)s receipt"
+msgstr[1] "%(receipt_count)s receipts"
+
+msgid "Início | SojaCoin"
+msgstr "Home | SojaCoin"
+
+msgid "Esta empresa está inativa. As operações estão bloqueadas."
+msgstr "This company is inactive. Operations are blocked."
+
+msgid "Resumo da empresa"
+msgstr "Company overview"
+
+msgid "Recebimentos confirmados"
+msgstr "Confirmed receipts"
+
+msgid "Recebimentos em andamento"
+msgstr "Receipts in progress"
+
+msgid "Lotes aguardando participante"
+msgstr "Batches awaiting participant"
+
+msgid "Emissões confirmadas"
+msgstr "Confirmed issuances"
+
+msgid "Participantes cadastrados"
+msgstr "Registered participants"
+
+msgid "Unidades ativas"
+msgstr "Active units"
+
+msgid "Recebimentos para conferência"
+msgstr "Receipts to review"
+
+msgid "Recebimentos aguardando blockchain"
+msgstr "Receipts awaiting blockchain confirmation"
+
+msgid "Lotes para conferência"
+msgstr "Batches to review"
+
+msgid "Lotes com prazo expirado"
+msgstr "Batches past their deadline"
+
+msgid "A carga continua bloqueada até o cancelamento ser confirmado."
+msgstr "The load remains locked until cancellation is confirmed."
+
+msgid "Lotes aguardando envio ou confirmação"
+msgstr "Batches awaiting submission or confirmation"
+
+msgid "Lotes aprovados aguardando conclusão"
+msgstr "Approved batches awaiting completion"
+
+msgid "Pendências"
+msgstr "Pending items"
+
+msgid "Nenhuma pendência no momento."
+msgstr "No pending items right now."
+
+msgid "Acesso rápido"
+msgstr "Quick access"
+
+msgid "Recebimentos recentes"
+msgstr "Recent receipts"
+
+msgid "Nenhum recebimento registrado ainda."
+msgstr "No receipts have been recorded yet."
+
+msgid "Aguardando blockchain"
+msgstr "Awaiting blockchain confirmation"
+
+msgid "Confirmado"
+msgstr "Confirmed"
+
+msgid "Blockchain"
+msgstr "Blockchain"
+
+msgid "Emissões recentes"
+msgstr "Recent issuances"
+
+msgid "Ver emissões"
+msgstr "View issuances"
+
+msgid "Total emitido"
+msgstr "Total issued"
+
+msgid "Nenhuma emissão confirmada ainda."
+msgstr "No confirmed issuance yet."

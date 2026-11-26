@@ -27,4 +27,5 @@ urlpatterns = [
     path('participants/', include('participants.urls')),
     path('receipts/', include('receipts.urls')),
     path('issuance/', include('issuance_batches.urls')),
+    path('dashboard/', include('dashboard.urls')),
 ]

@@ -13,8 +13,8 @@
 <body class="min-h-screen bg-[#F6F7F4] p-4 font-[Inter,system-ui,sans-serif] text-[#17211A] sm:p-8">
     <main class="mx-auto max-w-6xl">
         <header class="mb-5 flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-[9px] bg-[#1E6B3C] text-[18px] font-bold text-white">S</div>
-            <div><p class="text-[15px] font-bold">SojaCoin</p><p class="text-[11px] text-[#78837A]">{% translate "Read and accept the terms" %}</p></div>
+            {% include "includes/brand_logo.html" with logo_class="h-12 w-auto object-contain" only %}
+            <div><p class="text-[11px] text-[#78837A]">{% translate "Read and accept the terms" %}</p></div>
             {% include "includes/language_switcher.html" %}
         </header>
 
@@ -33,7 +33,7 @@
             class="overflow-hidden rounded-[12px] border border-[#E2E5DE] bg-white shadow-sm">
             <div class="border-b border-[#E2E5DE] px-5 py-4 sm:px-7">
                 <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#78837A]">{% translate "Proposta de cadastro" %}</p>
-                <h1 class="mt-1 text-[21px] font-semibold">{% translate "Leia o termo antes de assinar" %}</h1>
+                <h1 class="mt-1 flex items-center gap-2 text-[21px] font-semibold"><span class="inline-flex text-current">{% include "includes/page_category_icon.html" with icon_width="w-[18px]" icon_size="text-[17px]" %}</span>{% translate "Leia o termo antes de assinar" %}</h1>
                 <p class="mt-2 text-[12px] leading-5 text-[#647166]">{% translate "O link mostra somente esta proposta. Ele não cria uma conta no SaaS nem dá acesso a dados de outras pessoas." %}</p>
             </div>
 
