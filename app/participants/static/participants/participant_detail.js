@@ -19,7 +19,7 @@
             error: "border-[#E9C5C1] bg-[#FFF0EE] text-[#A52B20]",
         };
         messageBox.className = `rounded-[8px] border px-3 py-2 text-[12px] ${colors[kind] || colors.info}`;
-        messageBox.textContent = message;
+        messageBox.textContent = gettext(message);
         messageBox.classList.remove("hidden");
     }
 
@@ -35,7 +35,7 @@
             body: JSON.stringify(data),
         });
         const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || "A solicitação não pôde ser concluída.");
+        if (!response.ok) throw new Error(result.error || gettext("A solicitação não pôde ser concluída."));
         return result;
     }
 
@@ -46,7 +46,15 @@
     function addHashRecovery(container, url, hash) {
         const form = document.createElement("form");
         form.className = "mt-3 flex flex-wrap gap-2";
-        form.innerHTML = `<input name="transaction_hash" class="min-w-[230px] flex-1 rounded-[7px] border border-[#D7DDD4] px-3 py-2 font-mono text-[10px]" aria-label="Hash da transação" required><button class="min-h-[36px] rounded-[7px] bg-[#1E6B3C] px-3 text-[11px] font-semibold text-white">Tentar registrar esta hash</button>`;
+        const input = document.createElement("input");
+        input.name = "transaction_hash";
+        input.className = "min-w-[230px] flex-1 rounded-[7px] border border-[#D7DDD4] px-3 py-2 font-mono text-[10px]";
+        input.setAttribute("aria-label", gettext("Hash da transação"));
+        input.required = true;
+        const submit = document.createElement("button");
+        submit.className = "min-h-[36px] rounded-[7px] bg-[#1E6B3C] px-3 text-[11px] font-semibold text-white";
+        submit.textContent = gettext("Tentar registrar esta hash");
+        form.append(input, submit);
         form.elements.transaction_hash.value = hash;
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
@@ -61,16 +69,20 @@
     }
 
     async function connectWallet(expectedChainId, expectedAddress = "") {
-        if (!window.ethereum) throw new Error("Não encontrei uma carteira Web3 neste navegador.");
+        if (!window.ethereum) throw new Error(gettext("Não encontrei uma carteira Web3 neste navegador."));
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
         const address = String(accounts?.[0] || "").toLowerCase();
-        if (!address) throw new Error("Nenhuma carteira foi conectada.");
+        if (!address) throw new Error(gettext("Nenhuma carteira foi conectada."));
         if (expectedAddress && address !== expectedAddress.toLowerCase()) {
-            throw new Error("Conecte a carteira dona da SojaCoin usada nesta tentativa.");
+            throw new Error(gettext("Conecte a carteira dona da SojaCoin usada nesta tentativa."));
         }
         const chainId = Number.parseInt(await window.ethereum.request({ method: "eth_chainId" }), 16);
         if (chainId !== Number(expectedChainId)) {
-            throw new Error(`A carteira está na rede ${chainId}. Selecione a rede ${expectedChainId}.`);
+            throw new Error(interpolate(
+                gettext("A carteira está na rede %(chainId)s. Selecione a rede %(expected)s."),
+                { chainId, expected: expectedChainId },
+                true,
+            ));
         }
         return { address, chainId };
     }
@@ -78,7 +90,7 @@
     async function sendPreparedTransaction(prepared, endpoints, container) {
         const started = await postJson(endpoints.started, {});
         if (!started.send_allowed) {
-            showMessage("Esta solicitação da carteira já foi aberta. Se o navegador perdeu a resposta, informe a hash na mesma tentativa.", "info");
+            showMessage(gettext("Esta solicitação da carteira já foi aberta. Se o navegador perdeu a resposta, informe a hash na mesma tentativa."), "info");
             window.location.reload();
             return;
         }
@@ -96,9 +108,9 @@
         } catch (error) {
             if (error?.code === 4001) {
                 await postJson(endpoints.rejected, {});
-                showMessage("A solicitação foi recusada na carteira. Você pode tentar novamente.", "info");
+                showMessage(gettext("A solicitação foi recusada na carteira. Você pode tentar novamente."), "info");
             } else {
-                showMessage("Não recebi uma resposta definitiva da carteira. Não envie outra transação; se ela mostrou uma hash, informe a mesma hash abaixo.", "error");
+                showMessage(gettext("Não recebi uma resposta definitiva da carteira. Não envie outra transação; se ela mostrou uma hash, informe a mesma hash abaixo."), "error");
                 window.location.reload();
             }
             return;
@@ -106,10 +118,10 @@
 
         try {
             await postJson(endpoints.hash, { transaction_hash: transactionHash });
-            showMessage("Hash registrada. A rede ainda precisa confirmar a transação.", "success");
+            showMessage(gettext("Hash registrada. A rede ainda precisa confirmar a transação."), "success");
             window.location.reload();
         } catch (error) {
-            showMessage(`${error.message} A hash retornada foi preservada aqui para você tentar registrá-la na mesma tentativa.`, "error");
+            showMessage(`${error.message} ${gettext("A hash retornada foi preservada aqui para você tentar registrá-la na mesma tentativa.")}`, "error");
             addHashRecovery(container, endpoints.hash, transactionHash);
         }
     }
@@ -119,7 +131,7 @@
         const button = proposalForm.querySelector("button[type=submit]");
         const networkSelect = proposalForm.querySelector("select[name=network_id]");
         const selected = networkSelect?.selectedOptions?.[0];
-        if (!selected) return showMessage("Escolha uma rede que tenha SojaCoin ativa.", "error");
+        if (!selected) return showMessage(gettext("Escolha uma rede que tenha SojaCoin ativa."), "error");
         if (button) button.disabled = true;
         try {
             const wallet = await connectWallet(Number(selected.dataset.chainId));
@@ -129,7 +141,7 @@
                 wallet_chain_id: wallet.chainId,
             });
             if (!prepared.send_allowed) {
-                showMessage("Já existe uma tentativa aberta. Atualize a página e use a ação dessa tentativa para continuar ou informar a hash.", "info");
+                showMessage(gettext("Já existe uma tentativa aberta. Atualize a página e use a ação dessa tentativa para continuar ou informar a hash."), "info");
                 window.location.reload();
                 return;
             }
@@ -210,19 +222,24 @@
             linkResult.innerHTML = "";
             const label = document.createElement("p");
             label.className = "font-semibold text-[#1E6B3C]";
-            label.textContent = `${result.message} Expira em ${new Date(result.expires_at).toLocaleString("pt-BR")}.`;
+            const localizedExpiry = interpolate(
+                gettext("Expires on %(date)s."),
+                { date: new Date(result.expires_at).toLocaleString(document.documentElement.lang || undefined) },
+                true,
+            );
+            label.textContent = `${result.message} ${localizedExpiry}`;
             const input = document.createElement("input");
             input.className = "mt-2 w-full rounded-[7px] border border-[#C9DFD0] bg-white px-3 py-2 font-mono text-[10px]";
             input.readOnly = true;
             input.value = result.url;
-            input.setAttribute("aria-label", "Link de aceite para copiar");
+            input.setAttribute("aria-label", gettext("Link de aceite para copiar"));
             const copy = document.createElement("button");
             copy.type = "button";
             copy.className = "mt-2 min-h-[36px] rounded-[7px] bg-[#1E6B3C] px-3 text-[11px] font-semibold text-white";
-            copy.textContent = "Copiar link";
+            copy.textContent = gettext("Copiar link");
             copy.addEventListener("click", async () => {
                 await navigator.clipboard.writeText(result.url);
-                copy.textContent = "Link copiado";
+                copy.textContent = gettext("Link copiado");
             });
             linkResult.append(label, input, copy);
             linkResult.classList.remove("hidden");

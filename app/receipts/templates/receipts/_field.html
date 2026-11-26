@@ -1,12 +1,13 @@
+{% load i18n %}
 <div class="min-w-0 space-y-1.5">
     <label for="{{ field.id_for_label }}" class="block text-[12px] font-semibold text-[#344138]">
-        {{ field.label }}{% if field.field.required %}<span class="text-[#AE3026]"> *</span>{% endif %}
+        {% translate field.label %}{% if field.field.required %}<span class="text-[#AE3026]"> *</span>{% endif %}
     </label>
     {{ field }}
     {% if field.help_text %}
-        <p class="text-[11px] leading-5 text-[#7A867D]">{{ field.help_text }}</p>
+        <p class="text-[11px] leading-5 text-[#7A867D]">{% translate field.help_text %}</p>
     {% endif %}
     {% for error in field.errors %}
-        <p class="text-[11px] font-medium text-[#AE3026]">{{ error }}</p>
+        <p class="text-[11px] font-medium text-[#AE3026]">{% translate error %}</p>
     {% endfor %}
 </div>

@@ -21,7 +21,7 @@
             error: "border-[#E9C5C1] bg-[#FFF0EE] text-[#A52B20]",
         };
         message.className = `mt-3 rounded-[8px] border px-4 py-3 text-[12px] ${colors[kind] || colors.info}`;
-        message.textContent = text;
+        message.textContent = gettext(text);
         message.classList.remove("hidden");
     }
 
@@ -37,7 +37,7 @@
             body: JSON.stringify(data),
         });
         const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || "Não foi possível concluir esta etapa.");
+        if (!response.ok) throw new Error(result.error || gettext("Não foi possível concluir esta etapa."));
         return result;
     }
 
@@ -46,16 +46,20 @@
     }
 
     async function connectExpectedWallet() {
-        if (!window.ethereum) throw new Error("Abra esta página em um navegador com MetaMask ou outra carteira EVM.");
+        if (!window.ethereum) throw new Error(gettext("Abra esta página em um navegador com MetaMask ou outra carteira EVM."));
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
         const wallet = String(accounts?.[0] || "").toLowerCase();
-        if (!wallet) throw new Error("Nenhuma carteira foi conectada.");
+        if (!wallet) throw new Error(gettext("Nenhuma carteira foi conectada."));
         if (wallet !== expectedWallet) {
-            throw new Error("A carteira conectada não é a carteira indicada no termo. Troque para a carteira do participante.");
+            throw new Error(gettext("A carteira conectada não é a carteira indicada no termo. Troque para a carteira do participante."));
         }
         const chainId = Number.parseInt(await window.ethereum.request({ method: "eth_chainId" }), 16);
         if (chainId !== expectedChain) {
-            throw new Error(`A carteira está na rede ${chainId}. Troque para a rede da proposta (ID ${expectedChain}).`);
+            throw new Error(interpolate(
+                gettext("A carteira está na rede %(chainId)s. Troque para a rede da proposta (ID %(expected)s)."),
+                { chainId, expected },
+                true,
+            ));
         }
         return { wallet, chainId };
     }
@@ -64,7 +68,15 @@
         recovery.replaceChildren();
         const form = document.createElement("form");
         form.className = "flex flex-wrap gap-2";
-        form.innerHTML = `<input name="transaction_hash" class="min-w-[220px] flex-1 rounded-[7px] border border-[#D7DDD4] px-3 py-2 font-mono text-[10px]" aria-label="Hash da transação" required><button class="min-h-[40px] rounded-[7px] bg-[#1E6B3C] px-4 text-[11px] font-semibold text-white">Tentar registrar esta hash</button>`;
+        const input = document.createElement("input");
+        input.name = "transaction_hash";
+        input.className = "min-w-[220px] flex-1 rounded-[7px] border border-[#D7DDD4] px-3 py-2 font-mono text-[10px]";
+        input.setAttribute("aria-label", gettext("Hash da transação"));
+        input.required = true;
+        const submit = document.createElement("button");
+        submit.className = "min-h-[40px] rounded-[7px] bg-[#1E6B3C] px-4 text-[11px] font-semibold text-white";
+        submit.textContent = gettext("Tentar registrar esta hash");
+        form.append(input, submit);
         form.elements.transaction_hash.value = hash;
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
@@ -84,7 +96,7 @@
         const rejectedUrl = attemptUrl(root.dataset.rejectedTemplate, attemptId);
         const started = await postJson(startedUrl, {});
         if (!started.send_allowed) {
-            showMessage("Esta tentativa já abriu a carteira. Se a resposta foi perdida, informe a hash da mesma tentativa.", "error");
+            showMessage(gettext("Esta tentativa já abriu a carteira. Se a resposta foi perdida, informe a hash da mesma tentativa."), "error");
             window.location.reload();
             return;
         }
@@ -103,9 +115,9 @@
         } catch (error) {
             if (error?.code === 4001) {
                 await postJson(rejectedUrl, {});
-                showMessage("Você recusou o envio. O termo não foi confirmado; você poderá assinar novamente.", "info");
+                showMessage(gettext("Você recusou o envio. O termo não foi confirmado; você poderá assinar novamente."), "info");
             } else {
-                showMessage("A carteira não respondeu com certeza. Não inicie outro envio. Se apareceu uma hash, informe-a abaixo.", "error");
+                showMessage(gettext("A carteira não respondeu com certeza. Não inicie outro envio. Se apareceu uma hash, informe-a abaixo."), "error");
                 window.location.reload();
             }
             return;
@@ -113,10 +125,10 @@
 
         try {
             await postJson(hashUrl, { transaction_hash: hash });
-            showMessage("Hash registrada. Aguarde a rede e consulte a confirmação.", "success");
+            showMessage(gettext("Hash registrada. Aguarde a rede e consulte a confirmação."), "success");
             window.location.reload();
         } catch (error) {
-            showMessage(`${error.message} A hash que a carteira retornou ficou disponível para recuperar esta tentativa.`, "error");
+            showMessage(`${error.message} ${gettext("A hash que a carteira retornou ficou disponível para recuperar esta tentativa.")}`, "error");
             addHashRecovery(hashUrl, hash);
         }
         void button;
@@ -139,7 +151,7 @@
                 });
             } catch (error) {
                 if (error?.code === 4001) {
-                    showMessage("Você recusou a assinatura da mensagem. Nenhuma transação foi enviada; você pode tentar novamente.", "info");
+                    showMessage(gettext("Você recusou a assinatura da mensagem. Nenhuma transação foi enviada; você pode tentar novamente."), "info");
                     return;
                 }
                 throw error;

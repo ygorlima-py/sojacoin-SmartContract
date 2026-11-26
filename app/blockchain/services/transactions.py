@@ -143,6 +143,19 @@ def _lock_receipt_blockchain_attempt(
     )
 
 
+def _lock_issuance_batch_attempt(record: BlockchainTransaction) -> Any | None:
+    """Lock an issuance-batch action when this transaction belongs to that app."""
+
+    if record.operation_type != "issuance_batch":
+        return None
+    attempt_model = apps.get_model("issuance_batches", "IssuanceBatchAttempt")
+    return (
+        attempt_model.objects.select_for_update()
+        .filter(transaction_id=record.pk)
+        .first()
+    )
+
+
 def _mark_receipt_operation_for_review(attempt: Any | None) -> None:
     """Keep the local load from appearing complete after one of its calls reorgs."""
 
@@ -161,6 +174,23 @@ def _mark_receipt_operation_for_review(attempt: Any | None) -> None:
     if receipt.status in {"blockchain_in_progress", "blockchain_confirmed"}:
         receipt.status = "needs_review"
         receipt.save(update_fields=("status", "updated_at"))
+
+
+def _mark_issuance_batch_for_review(attempt: Any | None, reason: str) -> None:
+    """Prevent a reorganized batch action from remaining locally confirmed."""
+
+    if attempt is None:
+        return
+    if attempt.is_open:
+        attempt.is_open = False
+        attempt.save(update_fields=("is_open", "updated_at"))
+    batch_model = apps.get_model("issuance_batches", "IssuanceBatch")
+    batch = batch_model.objects.select_for_update().get(pk=attempt.batch_id)
+    if batch.status != "needs_review":
+        batch.status = "needs_review"
+        if not batch.review_reason:
+            batch.review_reason = reason.strip() or "A transação foi reorganizada pela rede."
+        batch.save(update_fields=("status", "review_reason", "updated_at"))
 
 
 def _mark_deployment_process_for_review(record: BlockchainTransaction) -> None:
@@ -226,6 +256,7 @@ def submit_transaction(
             else None
         )
         receipt_attempt = _lock_receipt_blockchain_attempt(record)
+        issuance_batch_attempt = _lock_issuance_batch_attempt(record)
         locked = _lock_transaction(record)
         if locked.status == BlockchainTransaction.Status.SUBMITTED:
             if locked.transaction_hash == canonical_hash:
@@ -297,6 +328,12 @@ def submit_transaction(
             raise ValidationError(
                 "A chamada do recebimento não está aguardando o envio da carteira."
             )
+        if locked.operation_type == "issuance_batch" and (
+            issuance_batch_attempt is None
+            or not issuance_batch_attempt.is_open
+            or issuance_batch_attempt.submission_started_at is None
+        ):
+            raise ValidationError("A tentativa do lote não está aguardando envio da carteira.")
         if (
             locked.operation_type == DEPLOYMENT_OPERATION_TYPE
             and process is not None
@@ -358,6 +395,7 @@ def confirm_transaction(
             else None
         )
         receipt_attempt = _lock_receipt_blockchain_attempt(record)
+        issuance_batch_attempt = _lock_issuance_batch_attempt(record)
         locked = _lock_transaction(record)
         if locked.status == BlockchainTransaction.Status.CONFIRMED:
             if locked.block_number == block_number and locked.block_hash == canonical_block_hash:
@@ -385,6 +423,10 @@ def confirm_transaction(
             RECEIPT_WEIGHING_CONFIRMATION_OPERATION_TYPE,
         } and receipt_attempt is None:
             raise ValidationError("A tentativa do recebimento não foi encontrada.")
+        if locked.operation_type == "issuance_batch" and (
+            issuance_batch_attempt is None or not issuance_batch_attempt.is_open
+        ):
+            raise ValidationError("A tentativa do lote não está aberta para confirmação.")
 
         locked.block_number = block_number
         locked.block_hash = canonical_block_hash
@@ -394,6 +436,9 @@ def confirm_transaction(
         if receipt_attempt is not None and receipt_attempt.is_open:
             receipt_attempt.is_open = False
             receipt_attempt.save(update_fields=("is_open", "updated_at"))
+        if issuance_batch_attempt is not None and issuance_batch_attempt.is_open:
+            issuance_batch_attempt.is_open = False
+            issuance_batch_attempt.save(update_fields=("is_open", "updated_at"))
         return locked
 
 
@@ -429,6 +474,7 @@ def fail_transaction(
             else None
         )
         receipt_attempt = _lock_receipt_blockchain_attempt(record)
+        issuance_batch_attempt = _lock_issuance_batch_attempt(record)
         locked = _lock_transaction(record)
         if locked.status == BlockchainTransaction.Status.FAILED:
             return locked
@@ -458,6 +504,10 @@ def fail_transaction(
             RECEIPT_WEIGHING_CONFIRMATION_OPERATION_TYPE,
         } and receipt_attempt is None:
             raise ValidationError("A tentativa do recebimento não foi encontrada.")
+        if locked.operation_type == "issuance_batch" and (
+            issuance_batch_attempt is None or not issuance_batch_attempt.is_open
+        ):
+            raise ValidationError("A tentativa do lote não pode ser encerrada neste estado.")
 
         locked.error_message = error_message.strip()
         locked.status = BlockchainTransaction.Status.FAILED
@@ -483,6 +533,9 @@ def fail_transaction(
         if receipt_attempt is not None and receipt_attempt.is_open:
             receipt_attempt.is_open = False
             receipt_attempt.save(update_fields=("is_open", "updated_at"))
+        if issuance_batch_attempt is not None and issuance_batch_attempt.is_open:
+            issuance_batch_attempt.is_open = False
+            issuance_batch_attempt.save(update_fields=("is_open", "updated_at"))
         return locked
 
 
@@ -506,11 +559,13 @@ def mark_transaction_reorged(
             else None
         )
         receipt_attempt = _lock_receipt_blockchain_attempt(record)
+        issuance_batch_attempt = _lock_issuance_batch_attempt(record)
         locked = _lock_transaction(record)
         if locked.status == BlockchainTransaction.Status.REORGED:
             _mark_deployment_process_for_review(locked)
             _mark_participant_terms_for_review(participant_attempt)
             _mark_receipt_operation_for_review(receipt_attempt)
+            _mark_issuance_batch_for_review(issuance_batch_attempt, reason)
             return locked
         if locked.status != BlockchainTransaction.Status.CONFIRMED:
             raise ValidationError("Only a confirmed transaction can be reorged.")
@@ -521,6 +576,7 @@ def mark_transaction_reorged(
         _mark_deployment_process_for_review(locked)
         _mark_participant_terms_for_review(participant_attempt)
         _mark_receipt_operation_for_review(receipt_attempt)
+        _mark_issuance_batch_for_review(issuance_batch_attempt, reason)
         return locked
 
 

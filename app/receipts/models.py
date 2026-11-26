@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from web3 import Web3
 
 from blockchain.models import (
@@ -64,10 +65,10 @@ class Receipt(TimestampedModel):
     """A locally recorded soybean load awaiting the later blockchain workflow."""
 
     class Status(models.TextChoices):
-        READY_FOR_BLOCKCHAIN = "ready_for_blockchain", "Aguardando envio à blockchain"
-        BLOCKCHAIN_IN_PROGRESS = "blockchain_in_progress", "Envio à blockchain em andamento"
-        BLOCKCHAIN_CONFIRMED = "blockchain_confirmed", "Confirmado na blockchain"
-        NEEDS_REVIEW = "needs_review", "Precisa de conferência"
+        READY_FOR_BLOCKCHAIN = "ready_for_blockchain", _("Aguardando envio à blockchain")
+        BLOCKCHAIN_IN_PROGRESS = "blockchain_in_progress", _("Envio à blockchain em andamento")
+        BLOCKCHAIN_CONFIRMED = "blockchain_confirmed", _("Confirmado na blockchain")
+        NEEDS_REVIEW = "needs_review", _("Precisa de conferência")
 
     company = models.ForeignKey(
         Company,
@@ -167,9 +168,9 @@ class ReceiptDocument(TimestampedModel):
     """An immutable private PDF attached to one receipt."""
 
     class Kind(models.TextChoices):
-        WEIGHING_TICKET = "weighing_ticket", "Romaneio"
-        CLASSIFICATION_REPORT = "classification_report", "Laudo de classificação"
-        TAX_INVOICE = "tax_invoice", "Nota fiscal"
+        WEIGHING_TICKET = "weighing_ticket", _("Romaneio")
+        CLASSIFICATION_REPORT = "classification_report", _("Laudo de classificação")
+        TAX_INVOICE = "tax_invoice", _("Nota fiscal")
 
     receipt = models.ForeignKey(
         Receipt,
@@ -415,9 +416,9 @@ class ReceiptBlockchainOperation(NonDeletableModel):
     """Pin a receipt to one network, deployment, sender and confirmed deposit."""
 
     class Status(models.TextChoices):
-        IN_PROGRESS = "in_progress", "Em andamento"
-        CONFIRMED = "confirmed", "Confirmado na blockchain"
-        NEEDS_REVIEW = "needs_review", "Precisa de conferência"
+        IN_PROGRESS = "in_progress", _("Em andamento")
+        CONFIRMED = "confirmed", _("Confirmado na blockchain")
+        NEEDS_REVIEW = "needs_review", _("Precisa de conferência")
 
     receipt = models.OneToOneField(
         Receipt,
@@ -566,9 +567,9 @@ class ReceiptBlockchainAttempt(NonDeletableModel):
     """Keep one immutable calldata snapshot for a single contract call."""
 
     class CallKind(models.TextChoices):
-        OPEN = "open", "Abrir recebimento"
-        LINK_INVOICE = "link_invoice", "Vincular nota fiscal"
-        CONFIRM_WEIGHING = "confirm_weighing", "Confirmar pesagem"
+        OPEN = "open", _("Abrir recebimento")
+        LINK_INVOICE = "link_invoice", _("Vincular nota fiscal")
+        CONFIRM_WEIGHING = "confirm_weighing", _("Confirmar pesagem")
 
     operation = models.ForeignKey(
         ReceiptBlockchainOperation,

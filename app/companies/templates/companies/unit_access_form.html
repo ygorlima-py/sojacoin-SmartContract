@@ -1,13 +1,14 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Acesso à unidade | SojaCoin{% endblock %}
-{% block page_title %}Acesso à unidade{% endblock %}
-{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Equipe de {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+{% block title %}{% translate "Acesso à unidade | SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Acesso à unidade" %}{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">{% translate "Equipe de" %} {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
 
 {% block content %}
 <section class="max-w-2xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
     <div class="border-b border-[#E2E5DE] px-4 py-3">
-        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Permissões de acesso</h2>
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">{% translate "Permissões de acesso" %}</h2>
         <p class="mt-1 text-[11.5px] text-[#8A948B]">
             {{ member.user.profile.full_name|default:member.user.username }} · {{ unit.name }} ({{ unit.code }})
         </p>
@@ -18,31 +19,31 @@
 
         {% if form.non_field_errors %}
             <div role="alert" class="rounded-[7px] border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">
-                {{ form.non_field_errors }}
+                {% for error in form.non_field_errors %}<div>{% translate error %}</div>{% endfor %}
             </div>
         {% endif %}
 
         <div class="space-y-2">
-            <p class="text-[12px] font-semibold text-[#5C685E]">Acesso no SaaS</p>
+            <p class="text-[12px] font-semibold text-[#5C685E]">{% translate "Acesso no SaaS" %}</p>
             {% for field in form %}
                 <label for="{{ field.id_for_label }}" class="flex items-center gap-2 rounded-[7px] border border-[#E2E5DE] px-3 py-2.5 text-[12.5px] text-[#17211A] transition hover:bg-[#F9FAF7]">
                     {{ field }}
-                    <span>{{ field.label }}</span>
+                    <span>{% translate field.label %}</span>
                 </label>
-                {% for error in field.errors %}<p class="text-[11px] text-red-700">{{ error }}</p>{% endfor %}
+                {% for error in field.errors %}<p class="text-[11px] text-red-700">{% translate error %}</p>{% endfor %}
             {% endfor %}
             <p class="text-[11px] leading-5 text-[#8A948B]">
-                Essas permissões controlam o acesso no SaaS. Elas não alteram a permissão da carteira no contrato.
+                {% translate "Essas permissões controlam o acesso no SaaS. Elas não alteram a permissão da carteira no contrato." %}
             </p>
         </div>
 
         <div class="flex items-center gap-2 border-t border-[#E2E5DE] pt-4">
             <button type="submit" class="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#185A32]">
                 <i class="fa-solid fa-check text-[12px]" aria-hidden="true"></i>
-                Salvar permissões
+                {% translate "Salvar permissões" %}
             </button>
             <a href="{% url 'companies:member_detail' company_id=company.pk membership_id=member.pk %}" class="inline-flex h-[38px] items-center justify-center rounded-[8px] border border-[#CCD3C9] px-3.5 text-[13px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">
-                Cancelar
+                {% translate "Cancelar" %}
             </a>
         </div>
     </form>

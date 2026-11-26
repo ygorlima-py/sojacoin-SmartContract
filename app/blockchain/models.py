@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from companies.models import (
     Company,
@@ -148,20 +149,20 @@ class ContractInstance(NonDeletableModel):
     """A deployed contract belonging to one company and one network."""
 
     class Kind(models.TextChoices):
-        SOJA_COIN = "sojacoin", "SojaCoin"
-        UNIT_REGISTRY = "unit_registry", "Unit registry"
-        ISSUANCE_BATCHES = "issuance_batches", "Issuance batches"
+        SOJA_COIN = "sojacoin", _("SojaCoin")
+        UNIT_REGISTRY = "unit_registry", _("Unit registry")
+        ISSUANCE_BATCHES = "issuance_batches", _("Issuance batches")
         SOJA_COIN_ADMINISTRATION = (
             "sojacoin_administration",
-            "SojaCoin administration module",
+            _("SojaCoin administration module"),
         )
-        SOJA_COIN_DEPOSITS = "sojacoin_deposits", "SojaCoin deposits module"
-        SOJA_COIN_CPR = "sojacoin_cpr", "SojaCoin CPR module"
-        SOJA_COIN_SERVICES = "sojacoin_services", "SojaCoin services module"
-        SOJA_COIN_LOCKS = "sojacoin_locks", "SojaCoin locks module"
+        SOJA_COIN_DEPOSITS = "sojacoin_deposits", _("SojaCoin deposits module")
+        SOJA_COIN_CPR = "sojacoin_cpr", _("SojaCoin CPR module")
+        SOJA_COIN_SERVICES = "sojacoin_services", _("SojaCoin services module")
+        SOJA_COIN_LOCKS = "sojacoin_locks", _("SojaCoin locks module")
         SOJA_COIN_REDEMPTIONS = (
             "sojacoin_redemptions",
-            "SojaCoin redemptions module",
+            _("SojaCoin redemptions module"),
         )
 
     # Company that owns this deployment and its operational state.
@@ -258,11 +259,11 @@ class BlockchainTransaction(NonDeletableModel):
     """A local lifecycle record for one blockchain transaction."""
 
     class Status(models.TextChoices):
-        PREPARED = "prepared", "Prepared"
-        SUBMITTED = "submitted", "Submitted"
-        CONFIRMED = "confirmed", "Confirmed"
-        FAILED = "failed", "Failed"
-        REORGED = "reorged", "Confirmation reverted"
+        PREPARED = "prepared", _("Prepared")
+        SUBMITTED = "submitted", _("Submitted")
+        CONFIRMED = "confirmed", _("Confirmed")
+        FAILED = "failed", _("Failed")
+        REORGED = "reorged", _("Confirmation reverted")
 
     # Company scope for every operation and history query.
     company = models.ForeignKey(
@@ -596,12 +597,12 @@ class UnitWalletPermissionAttempt(NonDeletableModel):
     """
 
     class PermissionKind(models.TextChoices):
-        RECEIVE = "receive", "Recebimento"
-        ISSUE = "issue", "Emissão"
+        RECEIVE = "receive", _("Recebimento")
+        ISSUE = "issue", _("Emissão")
 
     class Action(models.TextChoices):
-        GRANT = "grant", "Conceder"
-        REVOKE = "revoke", "Revogar"
+        GRANT = "grant", _("Conceder")
+        REVOKE = "revoke", _("Revogar")
 
     unit = models.ForeignKey(
         Unit,
@@ -775,10 +776,10 @@ class DeploymentProcess(NonDeletableModel):
     """Track the deployment of one company's nine contracts on one network."""
 
     class Status(models.TextChoices):
-        IN_PROGRESS = "in_progress", "Em andamento"
-        DEPLOYED = "deployed", "Contratos implantados"
-        CANCELED = "canceled", "Cancelado"
-        NEEDS_REVIEW = "needs_review", "Precisa de revisão"
+        IN_PROGRESS = "in_progress", _("Em andamento")
+        DEPLOYED = "deployed", _("Contratos implantados")
+        CANCELED = "canceled", _("Cancelado")
+        NEEDS_REVIEW = "needs_review", _("Precisa de revisão")
 
     # The company and network determine the scope of every deployment step.
     company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="deployment_processes")
@@ -1011,8 +1012,8 @@ class DeploymentConfigurationAttempt(NonDeletableModel):
     """
 
     class Kind(models.TextChoices):
-        UNIT_REGISTRY = "unit_registry", "Ligar registro de unidades"
-        ISSUANCE_BATCHES = "issuance_batches", "Ligar lotes de emissão"
+        UNIT_REGISTRY = "unit_registry", _("Ligar registro de unidades")
+        ISSUANCE_BATCHES = "issuance_batches", _("Ligar lotes de emissão")
 
     process = models.ForeignKey(
         DeploymentProcess,

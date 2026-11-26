@@ -2,6 +2,7 @@
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 from companies.models import Company
 from utils.identifiers import is_valid_wallet_address, normalize_wallet_address
@@ -23,21 +24,21 @@ class DeploymentProcessStartForm(forms.Form):
 
     company = forms.ModelChoiceField(
         queryset=Company.objects.filter(active=True),
-        label="Empresa",
-        empty_label="Selecione uma empresa",
+        label=_("Empresa"),
+        empty_label=_("Selecione uma empresa"),
     )
     network = NetworkChoiceField(
         queryset=Network.objects.filter(active=True).exclude(rpc_url=""),
-        label="Rede blockchain",
-        empty_label="Selecione uma rede",
+        label=_("Rede blockchain"),
+        empty_label=_("Selecione uma rede"),
     )
     owner_address = forms.CharField(
-        label="Carteira pública do administrador",
+        label=_("Carteira pública do administrador"),
         max_length=42,
         help_text=(
-            "Será definida como dona da SojaCoin e do registro de unidades. Depois de "
+            _("Será definida como dona da SojaCoin e do registro de unidades. Depois de "
             "iniciar, não poderá ser alterada neste processo. Informe somente o endereço "
-            "público, nunca a chave privada."
+            "público, nunca a chave privada.")
         ),
         widget=forms.TextInput(
             attrs={"class": "vTextField", "autocomplete": "off", "spellcheck": "false"}
@@ -50,5 +51,5 @@ class DeploymentProcessStartForm(forms.Form):
         address = normalize_wallet_address(self.cleaned_data["owner_address"])
         zero_address = "0x" + "0" * 40
         if not is_valid_wallet_address(address) or address == zero_address:
-            raise ValidationError("Informe um endereço público de carteira válido.")
+            raise ValidationError(_("Informe um endereço público de carteira válido."))
         return address

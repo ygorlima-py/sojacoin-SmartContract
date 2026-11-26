@@ -8,6 +8,7 @@ from typing import Any
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from companies.models import CompanyMembership, Unit, UnitAccess
 from participants.models import Participant, ParticipantTerms
@@ -43,13 +44,13 @@ class ReceiptCreateForm(forms.Form):
     participant = forms.ModelChoiceField(
         label="Participante",
         queryset=Participant.objects.none(),
-        empty_label="Selecione o participante",
+        empty_label=_("Selecione o participante"),
         help_text="Somente participantes com cadastro confirmado aparecem aqui.",
     )
     unit = RegisteredUnitChoiceField(
         label="Unidade de recebimento",
         queryset=Unit.objects.none(),
-        empty_label="Selecione a unidade",
+        empty_label=_("Selecione a unidade"),
     )
     crop_year = forms.CharField(
         label="Safra",
@@ -150,7 +151,7 @@ class ReceiptCreateForm(forms.Form):
             attrs={
                 "inputmode": "numeric",
                 "autocomplete": "off",
-                "placeholder": "44 dígitos",
+                "placeholder": _("44 dígitos"),
                 "maxlength": "44",
             }
         ),

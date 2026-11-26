@@ -103,6 +103,7 @@ contract MockIssuanceBatchesForCPR is ITokenIssuanceBatches {
     function approve(uint256 depositId) external { _approved[depositId] = true; }
     function isDepositInApprovedBatch(uint256 depositId) external view override returns (bool) { return _approved[depositId]; }
     function isDepositLocked(uint256) external pure override returns (bool) { return false; }
+    function batchCreatorForDeposit(uint256) external pure override returns (address) { return address(0); }
     function recordIssuance(uint256) external view override { require(msg.sender == sojaCoin, "mock: token invalido"); }
 }
 

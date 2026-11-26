@@ -8,6 +8,8 @@ import {ITokenIssuanceBatches} from "../interfaces/ITokenIssuanceBatches.sol";
 interface ISojaCoinIssuanceBatches {
     function owner() external view returns (address);
 
+    function issueTokensFromBatch(uint256 depositId) external;
+
     function validateDepositForBatch(uint256 depositId, address responsibleParty)
         external
         view
@@ -107,6 +109,15 @@ contract TokenIssuanceBatches is EIP712, ITokenIssuanceBatches {
     function isDepositInApprovedBatch(uint256 depositId) external view override returns (bool) {
         uint256 batchId = batchByDeposit[depositId];
         return batchId != 0 && batches[batchId].status == IssuanceBatchStatus.Approved;
+    }
+
+    /// @notice Returns the issuance operator saved when the receipt entered its batch.
+    /// @dev SojaCoin uses this address to recheck current unit permission when the
+    /// participant approves and issues in one transaction. The caller cannot choose it.
+    function batchCreatorForDeposit(uint256 depositId) external view override returns (address) {
+        uint256 batchId = batchByDeposit[depositId];
+        require(batchId != 0, "Deposit is not in a batch");
+        return batches[batchId].createdBy;
     }
 
     /// @notice Returns whether a load is locked against issuance or changes by a batch.
@@ -230,6 +241,25 @@ contract TokenIssuanceBatches is EIP712, ITokenIssuanceBatches {
         nonces[batch.producer] = nonce + 1;
         batch.status = IssuanceBatchStatus.Approved;
         emit BatchApproved(batchId, batch.producer, msg.sender, batch.summaryHash, block.timestamp);
+    }
+
+    /// @notice Approves a one-receipt batch and issues its SJC in one transaction.
+    /// @dev The participant's wallet pays for this call. Solidity reverts the approval,
+    /// event, and issuance together if any SojaCoin, audit, stock, CPR, or unit check fails.
+    /// The original batch creator remains the responsible party for the unit permission.
+    /// @param batchId Sequential batch identifier assigned by this contract.
+    function approveAndIssueBatch(uint256 batchId) external {
+        IssuanceBatch storage batch = batches[batchId];
+        require(batch.status == IssuanceBatchStatus.PendingApproval, "Batch is not awaiting approval");
+        require(block.timestamp <= batch.deadline, "Approval has expired");
+        require(msg.sender == batch.producer, "Producer only");
+        require(batch.amountDeposits == 1, "Automatic issuance supports one deposit");
+
+        // SojaCoin checks that the receipt belongs to an approved batch. If issuance
+        // fails, transaction atomicity restores this status and removes this event.
+        batch.status = IssuanceBatchStatus.Approved;
+        emit BatchApproved(batchId, batch.producer, msg.sender, batch.summaryHash, block.timestamp);
+        _sojaCoin.issueTokensFromBatch(_depositsByBatch[batchId][0]);
     }
 
     /// @notice Cancels an unapproved batch and releases its loads for a new batch.

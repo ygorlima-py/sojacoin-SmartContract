@@ -12,6 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from web3 import Web3
 
 from blockchain.models import (
@@ -239,15 +240,15 @@ class ParticipantTerms(TimestampedModel):
     """Store one exact, versioned terms document and its on-chain hash."""
 
     class Status(models.TextChoices):
-        DRAFT = "draft", "Cadastro criado"
-        PROPOSAL_PREPARED = "proposal_prepared", "Proposta preparada"
-        PROPOSAL_SUBMITTED = "proposal_submitted", "Proposta enviada"
-        AWAITING_ACCEPTANCE = "awaiting_acceptance", "Aguardando aceite do participante"
-        ACCEPTANCE_PREPARED = "acceptance_prepared", "Aceite preparado"
-        ACCEPTANCE_SUBMITTED = "acceptance_submitted", "Aceite enviado"
-        CONFIRMED = "confirmed", "Cadastro confirmado"
-        FAILED = "failed", "Falha na transação"
-        NEEDS_REVIEW = "needs_review", "Precisa de conferência"
+        DRAFT = "draft", _("Cadastro criado")
+        PROPOSAL_PREPARED = "proposal_prepared", _("Proposta preparada")
+        PROPOSAL_SUBMITTED = "proposal_submitted", _("Proposta enviada")
+        AWAITING_ACCEPTANCE = "awaiting_acceptance", _("Aguardando aceite do participante")
+        ACCEPTANCE_PREPARED = "acceptance_prepared", _("Aceite preparado")
+        ACCEPTANCE_SUBMITTED = "acceptance_submitted", _("Aceite enviado")
+        CONFIRMED = "confirmed", _("Cadastro confirmado")
+        FAILED = "failed", _("Falha na transação")
+        NEEDS_REVIEW = "needs_review", _("Precisa de conferência")
 
     participant = models.ForeignKey(
         Participant,
@@ -462,9 +463,9 @@ class ParticipantAcceptanceChallenge(TimestampedModel):
     """Persist the exact EIP-712 challenge shown to the participant's wallet."""
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Aguardando assinatura"
-        SIGNED = "signed", "Assinado"
-        INVALIDATED = "invalidated", "Invalidado"
+        PENDING = "pending", _("Aguardando assinatura")
+        SIGNED = "signed", _("Assinado")
+        INVALIDATED = "invalidated", _("Invalidado")
 
     link = models.ForeignKey(
         ParticipantAcceptanceLink,
@@ -525,8 +526,8 @@ class ParticipantRegistrationAttempt(TimestampedModel):
     """Preserve each unsigned call and its blockchain transaction lifecycle."""
 
     class Kind(models.TextChoices):
-        PROPOSAL = "proposal", "Proposta de cadastro"
-        ACCEPTANCE = "acceptance", "Aceite do participante"
+        PROPOSAL = "proposal", _("Proposta de cadastro")
+        ACCEPTANCE = "acceptance", _("Aceite do participante")
 
     terms = models.ForeignKey(
         ParticipantTerms,

@@ -6,6 +6,7 @@ from typing import Any
 
 from django import forms
 from django.core.files.uploadedfile import UploadedFile
+from django.utils.translation import gettext_lazy as _
 
 from utils.identifiers import is_valid_wallet_address, normalize_wallet_address
 
@@ -47,7 +48,7 @@ class ParticipantForm(forms.ModelForm):
         for field in self.fields.values():
             field.widget.attrs["class"] = INPUT_CLASSES
         self.fields["name"].widget.attrs.update(
-            {"autocomplete": "name", "placeholder": "Nome completo"}
+            {"autocomplete": "name", "placeholder": _("Nome completo")}
         )
         self.fields["wallet_address"].widget.attrs.update(
             {

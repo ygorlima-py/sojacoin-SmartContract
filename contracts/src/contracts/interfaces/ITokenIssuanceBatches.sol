@@ -9,5 +9,7 @@ interface ITokenIssuanceBatches {
 
     function isDepositLocked(uint256 depositId) external view returns (bool);
 
+    function batchCreatorForDeposit(uint256 depositId) external view returns (address);
+
     function recordIssuance(uint256 depositId) external;
 }

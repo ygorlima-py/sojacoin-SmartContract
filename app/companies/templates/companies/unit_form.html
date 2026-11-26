@@ -1,50 +1,51 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}{% if unit and unit.pk %}Editar unidade{% else %}Nova unidade{% endif %} | SojaCoin{% endblock %}
-{% block page_title %}{% if unit and unit.pk %}Editar unidade{% else %}Nova unidade{% endif %}{% endblock %}
-{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Cadastro local de {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+{% block title %}{% if unit and unit.pk %}{% translate "Editar unidade" %}{% else %}{% translate "Nova unidade" %}{% endif %} {% translate "| SojaCoin" %}{% endblock %}
+{% block page_title %}{% if unit and unit.pk %}{% translate "Editar unidade" %}{% else %}{% translate "Nova unidade" %}{% endif %}{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">{% translate "Cadastro local de" %} {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
 
 {% block header_actions %}
     <a href="{% url 'companies:unit_list' company_id=company.pk %}" class="inline-flex h-[32px] items-center gap-2 rounded-[8px] border border-[#CCD3C9] bg-white px-3 text-[12px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">
         <i class="fa-solid fa-arrow-left text-[12px] text-[#5C685E]" aria-hidden="true"></i>
-        Voltar
+        {% translate "Voltar" %}
     </a>
 {% endblock %}
 
 {% block content %}
 <section class="max-w-3xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
     <div class="border-b border-[#E2E5DE] px-4 py-3">
-        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Dados da unidade</h2>
-        <p class="mt-1 text-[11px] text-[#8A948B]">O registro é salvo localmente nesta etapa.</p>
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">{% translate "Dados da unidade" %}</h2>
+        <p class="mt-1 text-[11px] text-[#8A948B]">{% translate "O registro é salvo localmente nesta etapa." %}</p>
     </div>
 
     <form method="post" class="space-y-4 p-4">
         {% csrf_token %}
         {% if form.non_field_errors %}
             <div class="rounded-[8px] border border-[#F0C8C4] bg-[#FFF7F6] px-3 py-2 text-[12px] text-[#AE3026]">
-                {{ form.non_field_errors }}
+                {% for error in form.non_field_errors %}<div>{% translate error %}</div>{% endfor %}
             </div>
         {% endif %}
 
         {% for field in form %}
             <div>
                 <label for="{{ field.id_for_label }}" class="mb-1 block text-[12px] font-semibold text-[#5C685E]">
-                    {{ field.label }}{% if field.field.required %}<span class="ml-0.5 text-[#AE3026]" aria-hidden="true">*</span>{% endif %}
+                    {% translate field.label %}{% if field.field.required %}<span class="ml-0.5 text-[#AE3026]" aria-hidden="true">*</span>{% endif %}
                 </label>
                 {{ field }}
                 {% for error in field.errors %}
-                    <p class="mt-1 text-[11px] text-[#AE3026]">{{ error }}</p>
+                    <p class="mt-1 text-[11px] text-[#AE3026]">{% translate error %}</p>
                 {% endfor %}
             </div>
         {% endfor %}
 
         <div class="flex items-center justify-end gap-2 border-t border-[#E2E5DE] pt-4">
             <a href="{% url 'companies:unit_list' company_id=company.pk %}" class="inline-flex h-[38px] items-center rounded-[8px] border border-[#CCD3C9] bg-white px-4 text-[13px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">
-                Cancelar
+                {% translate "Cancelar" %}
             </a>
             <button type="submit" class="inline-flex h-[38px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-4 text-[13px] font-semibold text-white transition hover:bg-[#185A32]">
                 <i class="fa-solid fa-check text-[12px]" aria-hidden="true"></i>
-                Salvar unidade
+                {% translate "Salvar unidade" %}
             </button>
         </div>
     </form>

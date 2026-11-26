@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% translate "Aprovar lote — SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Confira e aprove o lote" %}{% endblock %}
+{% block page_subtitle %}<p class="mt-0.5 text-[11.5px] text-[#7A867D]">{% translate "Aprovação do participante para" %} {{ batch.company.trade_name|default:batch.company.legal_name }}</p>{% endblock %}
+
+{% block content %}
+<main id="participant-batch-approval" class="mx-auto w-full max-w-[1440px] space-y-5 px-1"
+    data-chain-id="{{ batch.network.chain_id }}"
+    data-prepare-url="{{ prepare_approval_url }}"
+    data-cancel-url="{{ prepare_cancel_url }}"
+    data-attempt-url-prefix="{{ attempt_url_prefix }}"
+    data-batch-id="{{ batch.pk }}">
+    <form class="hidden" aria-hidden="true">{% csrf_token %}</form>
+
+    <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
+        <div class="border-b border-[#E2E5DE] px-5 py-5 sm:px-7">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#7A867D]">{% translate "Participante" %}</p>
+            <h1 class="mt-1 text-[20px] font-semibold text-[#17211A]">{{ batch.participant.name }}</h1>
+            <p class="mt-1 break-all font-mono text-[11px] text-[#657268]">{% translate "Carteira esperada:" %} {{ batch.participant.wallet_address_normalized }}</p>
+        </div>
+        <div class="grid gap-4 p-5 sm:grid-cols-2 sm:p-7">
+            <div><div class="text-[10px] text-[#7A867D]">{% translate "Empresa" %}</div><div class="mt-1 text-[12px] font-medium">{{ batch.company.trade_name|default:batch.company.legal_name }}</div></div>
+            <div><div class="text-[10px] text-[#7A867D]">{% translate "Unidade" %}</div><div class="mt-1 text-[12px] font-medium">{{ batch.unit.name }}</div></div>
+            <div><div class="text-[10px] text-[#7A867D]">{% translate "Safra" %}</div><div class="mt-1 text-[12px] font-medium">{{ receipts.0.crop_year }}</div></div>
+            <div><div class="text-[10px] text-[#7A867D]">{% translate "Peso líquido total" %}</div><div class="mt-1 text-[16px] font-semibold tabular-nums">{{ batch.total_net_weight_kg }} kg</div></div>
+            <div><div class="text-[10px] text-[#7A867D]">{% translate "Prazo para aprovação" %}</div><div class="mt-1 text-[12px] font-medium">{{ batch.approval_deadline_at|date }}</div></div>
+            <div><div class="text-[10px] text-[#7A867D]">{% translate "Rede" %}</div><div class="mt-1 text-[12px] font-medium">{{ batch.network.name }} {% translate "· ID" %} {{ batch.network.chain_id }}</div></div>
+            <div class="sm:col-span-2"><div class="text-[10px] text-[#7A867D]">{% translate "Resumo assinado pelo contrato" %}</div><div class="mt-1 break-all font-mono text-[10px]">{{ batch.summary_hash }}</div></div>
+        </div>
+    </section>
+
+    {% for receipt in receipts %}
+        <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
+            <div class="border-b border-[#E2E5DE] px-5 py-4 sm:px-7">
+                <h2 class="text-[14px] font-semibold">{% translate "Recebimento #" %}{{ receipt.pk }}</h2>
+                <p class="mt-1 text-[11px] text-[#7A867D]">{{ receipt.unit.name }} {% translate "· Safra" %} {{ receipt.crop_year }} {% translate "· Depósito na rede #" %}{{ batch.receipt_rows.all.0.deposit_id }}</p>
+            </div>
+            <div class="grid gap-5 p-5 sm:grid-cols-2 sm:p-7">
+                <div class="rounded-[8px] border border-[#E4E7E1] bg-[#F8F9F7] p-4">
+                    <h3 class="text-[11px] font-semibold">{% translate "Pesagem confirmada" %}</h3>
+                    <dl class="mt-3 space-y-2 text-[11px]">
+                        <div class="flex justify-between gap-3"><dt class="text-[#7A867D]">{% translate "Peso bruto" %}</dt><dd>{{ receipt.weighing_ticket.gross_weight_kg }} kg</dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-[#7A867D]">{% translate "Tara" %}</dt><dd>{{ receipt.weighing_ticket.tare_weight_kg }} kg</dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-[#7A867D]">{% translate "Descontos totais" %}</dt><dd>{{ receipt.weighing_ticket.total_deductions_kg }} kg</dd></div>
+                        <div class="flex justify-between gap-3 border-t border-[#E0E4DC] pt-2 font-semibold"><dt>{% translate "Peso líquido" %}</dt><dd>{{ receipt.weighing_ticket.net_weight_kg }} kg</dd></div>
+                    </dl>
+                </div>
+                <div class="rounded-[8px] border border-[#E4E7E1] bg-[#F8F9F7] p-4">
+                    <h3 class="text-[11px] font-semibold">{% translate "Nota fiscal" %}</h3>
+                    <p class="mt-2 break-all font-mono text-[10px]">{% translate "Chave:" %} {{ receipt.tax_invoice.access_key }}</p>
+                    <p class="mt-2 break-all font-mono text-[9px] text-[#657268]">{% translate "Hash:" %} {{ receipt.tax_invoice.access_key_hash }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                    <h3 class="text-[11px] font-semibold">{% translate "Documentos para conferência" %}</h3>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        {% for document in receipt.documents.all %}
+                            <a href="{% url 'issuance_batches:participant-document' token=link_token receipt_id=receipt.pk document_id=document.pk %}" class="inline-flex min-h-[40px] items-center gap-2 rounded-[7px] border border-[#CBD6CC] bg-white px-4 text-[11px] font-semibold text-[#1E6B3C] hover:bg-[#F5F9F5]">
+                                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>{{ document.get_kind_display }} {% translate "· Abrir PDF" %}
+                            </a>
+                        {% empty %}
+                            <p class="text-[11px] text-[#7A867D]">{% translate "Nenhum PDF está anexado ao recebimento." %}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endfor %}
+
+    <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
+        <div class="border-b border-[#E2E5DE] px-5 py-4 sm:px-7"><h2 class="text-[14px] font-semibold">{% translate "Situação" %}</h2></div>
+        <div class="space-y-4 p-5 sm:p-7">
+            <div id="participant-batch-message" class="hidden rounded-[7px] border px-3 py-2 text-[12px]" role="status" aria-live="polite"></div>
+            <div class="rounded-[8px] border {% if batch.status == 'completed' %}border-[#CFE2D3] bg-[#F4F8F4]{% elif batch.status == 'needs_review' %}border-[#E8C5C0] bg-[#FFF6F4]{% else %}border-[#E0E4DC] bg-[#F8F9F7]{% endif %} p-4">
+                <div class="text-[12px] font-semibold">{{ batch.get_status_display }}</div>
+                {% if batch.status == 'completed' %}<p class="mt-1 text-[11px] text-[#657268]">{% translate "A aprovação e a emissão foram confirmadas na blockchain." %}</p>
+                {% elif batch.status == 'needs_review' %}<p class="mt-1 text-[11px] text-[#A33C2E]">{% translate "A empresa precisa conferir o lote antes de continuar." %}</p>
+                {% elif batch.status == 'canceled' %}<p class="mt-1 text-[11px] text-[#657268]">{% translate "O lote foi cancelado e o recebimento foi liberado após a confirmação." %}</p>
+                {% elif expired %}<p class="mt-1 text-[11px] text-[#76530E]">{% translate "O prazo de aprovação terminou. O lote ainda bloqueia a carga até que um cancelamento seja confirmado." %}</p>
+                {% elif batch.status == 'approval_submitted' %}<p class="mt-1 text-[11px] text-[#657268]">{% translate "Aguardando confirmação da aprovação e emissão." %}</p>
+                {% elif batch.status == 'approved' %}<p class="mt-1 text-[11px] text-[#657268]">{% translate "Este lote foi aprovado pelo fluxo anterior. Confira o histórico antes de prosseguir." %}</p>
+                {% else %}<p class="mt-1 text-[11px] text-[#657268]">{% translate "Confirme uma transação com a carteira indicada. A taxa é paga por essa carteira." %}</p>{% endif %}
+            </div>
+
+            {% if approval_available %}
+                <button type="button" data-participant-approve class="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white shadow-sm hover:bg-[#185832] sm:w-auto sm:min-w-[300px]"><i class="fa-solid fa-wallet" aria-hidden="true"></i>{% translate "Aprovar e receber tokens" %}</button>
+            {% endif %}
+            {% if issuance_display %}
+                <dl class="grid gap-4 rounded-[8px] border border-[#CFE2D3] bg-[#F8FBF8] p-4 text-[11px] sm:grid-cols-2">
+                    <div><dt class="text-[#657268]">{% translate "Emitido nesta operação" %}</dt><dd class="mt-1 text-[16px] font-semibold text-[#1E6B3C]">{{ issuance_display.issued_amount }} SJC</dd></div>
+                    <div><dt class="text-[#657268]">{% translate "Recebido pelo participante" %}</dt><dd class="mt-1 text-[16px] font-semibold text-[#1E6B3C]">{{ issuance_display.participant_amount }} SJC</dd></div>
+                    <div><dt class="text-[#657268]">{% translate "Saldo atual na carteira" %}</dt><dd class="mt-1 font-semibold">{% if issuance_display.balance != None %}{{ issuance_display.balance }} SJC{% else %}{% translate "Indisponível nesta consulta" %}{% endif %}</dd>{% if issuance_display.balance_block_number != None %}<dd class="mt-1 text-[10px] text-[#7A867D]">{% translate "Consulta no bloco" %} {{ issuance_display.balance_block_number }}</dd>{% endif %}</div>
+                    <div><dt class="text-[#657268]">{% translate "Contrato do token" %}</dt><dd class="mt-1 break-all font-mono text-[10px]">{{ issuance_display.token_address }}</dd></div>
+                    <div class="sm:col-span-2"><dt class="text-[#657268]">{% translate "Transação confirmada · bloco" %} {{ issuance_display.block_number }}</dt><dd class="mt-1 break-all font-mono text-[10px]">{{ issuance_display.transaction_hash }}</dd></div>
+                </dl>
+            {% endif %}
+            {% if cancellation_available and batch.status == 'awaiting_approval' %}
+                <div class="border-t border-[#E8EBE5] pt-4">
+                    <p class="text-[11px] leading-5 text-[#657268]">{% translate "Se não concordar com os dados, você pode cancelar o lote pela carteira indicada. A carga só será liberada após a rede confirmar." %}</p>
+                    <button type="button" data-participant-cancel class="mt-3 inline-flex min-h-[42px] items-center justify-center gap-2 rounded-[7px] border border-[#E8C5C0] bg-white px-4 text-[11px] font-semibold text-[#A33C2E] hover:bg-[#FFF6F4]"><i class="fa-solid fa-ban" aria-hidden="true"></i>{% translate "Cancelar lote" %}</button>
+                </div>
+            {% endif %}
+
+            <div class="space-y-3 border-t border-[#E8EBE5] pt-4">
+                <h3 class="text-[11px] font-semibold">{% translate "Histórico da carteira" %}</h3>
+                {% for attempt in attempts %}
+                    <div class="flex flex-col gap-3 rounded-[8px] border border-[#E4E7E1] p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="text-[11px] font-medium">{{ attempt.get_kind_display }} · {{ attempt.transaction.get_status_display }}</div>
+                            {% if attempt.transaction.transaction_hash %}<div class="mt-1 break-all font-mono text-[9px] text-[#657268]">{{ attempt.transaction.transaction_hash }}</div>{% endif %}
+                            {% if attempt.transaction.error_message %}<p class="mt-1 text-[10px] text-[#A33C2E]">{% translate attempt.transaction.error_message %}</p>{% endif %}
+                        </div>
+                        <div class="flex shrink-0 flex-col gap-2">
+                            {% if attempt.transaction.status == 'submitted' and attempt.kind == 'approve' or attempt.transaction.status == 'submitted' and attempt.kind == 'approve_issue' or attempt.transaction.status == 'submitted' and attempt.kind == 'cancel' and attempt.link_id %}
+                                <button type="button" data-participant-confirm="{{ attempt.pk }}" class="inline-flex min-h-[40px] items-center justify-center rounded-[7px] border border-[#C7D9CB] bg-white px-4 text-[11px] font-semibold text-[#1E6B3C]">{% translate "Consultar confirmação" %}</button>
+                            {% endif %}
+                            {% if attempt.transaction.status == 'prepared' and attempt.submission_started_at and attempt.kind != 'create' %}
+                                <form data-participant-hash-form="{{ attempt.pk }}" class="flex w-full flex-col gap-2 sm:w-[270px]">
+                                    <label for="participant-hash-{{ attempt.pk }}" class="text-[10px] text-[#657268]">{% translate "Hash retornada pela carteira" %}</label>
+                                    <input id="participant-hash-{{ attempt.pk }}" name="transaction_hash" required placeholder="0x…" class="h-[38px] rounded-[7px] border border-[#D7DDD4] px-3 font-mono text-[10px]">
+                                    <button class="inline-flex min-h-[38px] items-center justify-center rounded-[7px] border border-[#C7D9CB] text-[11px] font-semibold text-[#1E6B3C]">{% translate "Conferir hash" %}</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-[11px] text-[#7A867D]">{% translate "Ainda não há transações de aprovação." %}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'issuance_batches/participant_approval.js' %}" defer></script>
+{% endblock %}

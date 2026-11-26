@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from utils.identifiers import (
     is_valid_bytes32_hash,
     is_valid_cnpj,
@@ -170,15 +171,15 @@ class MembershipRole(TimestampedModel):
 
     class Role(models.TextChoices):
         # Company-level administrator who manages staff and configuration.
-        ADMINISTRATOR = "administrator", "Administrator"
+        ADMINISTRATOR = "administrator", _("Administrator")
         # User who prepares participant and CPR records.
-        REGISTRATION = "registration", "Registration operator"
+        REGISTRATION = "registration", _("Registration operator")
         # User who receives and confirms physical loads.
-        RECEIVING = "receiving", "Receiving operator"
+        RECEIVING = "receiving", _("Receiving operator")
         # User who creates issuance batches and sends issuance operations.
-        ISSUANCE = "issuance", "Issuance operator"
+        ISSUANCE = "issuance", _("Issuance operator")
         # User who records stock audits and cannot operate inventory flows.
-        AUDITOR = "auditor", "Auditor"
+        AUDITOR = "auditor", _("Auditor")
 
     # Membership to which this role belongs.
     membership = models.ForeignKey(
@@ -388,13 +389,13 @@ class UnitWalletPermission(TimestampedModel):
 
     class SyncStatus(models.TextChoices):
         # Permission change is prepared locally and has not been confirmed.
-        PENDING = "pending", "Pending"
+        PENDING = "pending", _("Pending")
         # Permission transaction was confirmed on the configured network.
-        CONFIRMED = "confirmed", "Confirmed"
+        CONFIRMED = "confirmed", _("Confirmed")
         # Permission transaction was rejected or reverted.
-        FAILED = "failed", "Failed"
+        FAILED = "failed", _("Failed")
         # Permission was revoked while retaining the previous audit record.
-        REVOKED = "revoked", "Revoked"
+        REVOKED = "revoked", _("Revoked")
 
     # Unit whose on-chain permission mask is being tracked.
     unit = models.ForeignKey(
@@ -490,17 +491,17 @@ class AccessChange(ImmutableHistoryModel):
 
     class Action(models.TextChoices):
         # A company membership was created or reactivated.
-        MEMBERSHIP_GRANTED = "membership_granted", "Membership granted"
+        MEMBERSHIP_GRANTED = "membership_granted", _("Membership granted")
         # A company membership was deactivated.
-        MEMBERSHIP_REVOKED = "membership_revoked", "Membership revoked"
+        MEMBERSHIP_REVOKED = "membership_revoked", _("Membership revoked")
         # A role was granted to a membership.
-        ROLE_GRANTED = "role_granted", "Role granted"
+        ROLE_GRANTED = "role_granted", _("Role granted")
         # A role was revoked from a membership.
-        ROLE_REVOKED = "role_revoked", "Role revoked"
+        ROLE_REVOKED = "role_revoked", _("Role revoked")
         # Unit-level SaaS access flags changed.
-        UNIT_ACCESS_UPDATED = "unit_access_updated", "Unit access updated"
+        UNIT_ACCESS_UPDATED = "unit_access_updated", _("Unit access updated")
         # An on-chain wallet permission mask changed or was synchronized.
-        WALLET_PERMISSION_UPDATED = "wallet_permission_updated", "Wallet permission updated"
+        WALLET_PERMISSION_UPDATED = "wallet_permission_updated", _("Wallet permission updated")
 
     # Company scope used to prevent cross-company audit records.
     company = models.ForeignKey(

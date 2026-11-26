@@ -5,6 +5,7 @@ from typing import Any
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
+from django.utils.translation import gettext_lazy as _
 
 from .models import (
     Company,
@@ -157,7 +158,7 @@ class CompanyMembershipForm(forms.Form):
     user = forms.ModelChoiceField(
         queryset=User.objects.none(),
         label="Usuário",
-        empty_label="Selecione um usuário",
+        empty_label=_("Selecione um usuário"),
     )
 
     def __init__(
@@ -202,13 +203,7 @@ class CompanyMembershipForm(forms.Form):
 class MembershipRoleForm(forms.Form):
     """Select one SaaS function to grant to a company member."""
 
-    ROLE_CHOICES = (
-        (MembershipRole.Role.ADMINISTRATOR, "Administrador"),
-        (MembershipRole.Role.REGISTRATION, "Cadastro"),
-        (MembershipRole.Role.RECEIVING, "Recebimento"),
-        (MembershipRole.Role.ISSUANCE, "Emissão"),
-        (MembershipRole.Role.AUDITOR, "Auditoria"),
-    )
+    ROLE_CHOICES = MembershipRole.Role.choices
 
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,

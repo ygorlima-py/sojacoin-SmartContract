@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% url 'javascript-catalog' %}"></script>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        .sojacoin-language-switcher {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0 0 0 10px;
+            vertical-align: middle;
+        }
+        .sojacoin-language-switcher select {
+            box-sizing: border-box;
+            min-height: 30px;
+            margin: 0;
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--body-bg);
+            color: var(--body-fg);
+            font: inherit;
+        }
+        .sojacoin-language-switcher select { cursor: pointer; }
+    </style>
+{% endblock %}
+
+{% block userlinks %}
+    {{ block.super }}
+    {% include "includes/language_switcher.html" %}
+{% endblock %}

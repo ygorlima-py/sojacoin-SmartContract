@@ -1,17 +1,18 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Unidades | SojaCoin{% endblock %}
-{% block page_title %}Unidades{% endblock %}
-{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Unidades de {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+{% block title %}{% translate "Unidades | SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Unidades" %}{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">{% translate "Unidades de" %} {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
 
 {% block content %}
 <section class="max-w-4xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
     <div class="flex items-center justify-between gap-4 border-b border-[#E2E5DE] px-4 pb-4 pt-3">
-        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Unidades cadastradas</h2>
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">{% translate "Unidades cadastradas" %}</h2>
         {% if units and can_manage_units %}
             <a href="{% url 'companies:unit_new' company_id=company.pk %}" class="inline-flex h-[30px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-2.5 text-[11px] font-semibold text-white transition hover:bg-[#185A32]">
                 <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>
-                Nova unidade
+                {% translate "Nova unidade" %}
             </a>
         {% endif %}
     </div>
@@ -21,23 +22,23 @@
                 <a href="{% url 'companies:unit_detail' company_id=company.pk unit_id=unit.pk %}" class="flex items-center justify-between gap-4 px-4 py-3 transition hover:bg-[#F9FAF7]">
                     <span class="min-w-0">
                         <span class="block truncate text-[13px] font-semibold text-[#17211A]">{{ unit.name }}</span>
-                        <span class="block text-[11px] text-[#8A948B]">Código {{ unit.code }} · CNPJ {{ unit.cnpj }}</span>
+                        <span class="block text-[11px] text-[#8A948B]">{% translate "Código" %} {{ unit.code }} {% translate "· CNPJ" %} {{ unit.cnpj }}</span>
                     </span>
                     {% if unit.active %}
-                        <span class="shrink-0 text-[11px] font-semibold text-[#1E6B3C]">Ativa</span>
+                        <span class="shrink-0 text-[11px] font-semibold text-[#1E6B3C]">{% translate "Ativa" %}</span>
                     {% else %}
-                        <span class="shrink-0 text-[11px] font-semibold text-[#8A948B]">Inativa</span>
+                        <span class="shrink-0 text-[11px] font-semibold text-[#8A948B]">{% translate "Inativa" %}</span>
                     {% endif %}
                 </a>
             {% endfor %}
         </div>
     {% else %}
         <div class="flex flex-col items-center gap-3 px-4 py-8 text-center">
-            <p class="text-[13px] text-[#5C685E]">Nenhuma unidade cadastrada.</p>
+            <p class="text-[13px] text-[#5C685E]">{% translate "Nenhuma unidade cadastrada." %}</p>
             {% if can_manage_units %}
                 <a href="{% url 'companies:unit_new' company_id=company.pk %}" class="inline-flex h-[34px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-3 text-[12px] font-semibold text-white transition hover:bg-[#185A32]">
                     <i class="fa-solid fa-plus text-[11px]" aria-hidden="true"></i>
-                    Nova unidade
+                    {% translate "Nova unidade" %}
                 </a>
             {% endif %}
         </div>

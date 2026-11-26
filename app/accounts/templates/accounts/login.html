@@ -1,15 +1,16 @@
-{% load static %}
+{% load static i18n %}
 <!doctype html>
-<html lang="pt-BR">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Login do sistema SojaCoin">
-    <title>Entrar | SojaCoin</title>
+    <title>{% translate "Entrar | SojaCoin" %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <script src="{% url 'javascript-catalog' %}"></script>
 </head>
 <body class="min-h-screen bg-white font-[Inter,system-ui,sans-serif] text-[#17211A] antialiased">
     <main class="box-border flex min-h-screen w-full items-center justify-center px-6 py-12 sm:px-20">
@@ -20,24 +21,25 @@
                 </div>
                 <span class="text-[16px] font-bold tracking-[-0.3px]">SojaCoin</span>
             </div>
+            {% include "includes/language_switcher.html" %}
 
             <div class="h-[6px]" aria-hidden="true"></div>
 
             <div>
-                <h1 class="text-[24px] font-semibold leading-normal tracking-[-0.5px]">Entrar na sua conta</h1>
-                <p class="mt-1 text-[13px] leading-5 text-[#5C685E]">Use o usuário e a senha fornecidos pelo administrador da sua empresa.</p>
+                <h1 class="text-[24px] font-semibold leading-normal tracking-[-0.5px]">{% translate "Entrar na sua conta" %}</h1>
+                <p class="mt-1 text-[13px] leading-5 text-[#5C685E]">{% translate "Use o usuário e a senha fornecidos pelo administrador da sua empresa." %}</p>
             </div>
 
             <form method="post" class="flex flex-col gap-4" novalidate>
                 {% csrf_token %}
                 {% if form.non_field_errors %}
                     <div role="alert" class="rounded-[7px] border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">
-                        {{ form.non_field_errors }}
+                        {% for error in form.non_field_errors %}<div>{% translate error %}</div>{% endfor %}
                     </div>
                 {% endif %}
 
                 <div class="flex flex-col gap-[5px]">
-                    <label for="id_username" class="text-[12px] font-semibold text-[#5C685E]">Usuário<span class="ml-0.5 text-[#AE3026]" aria-hidden="true">*</span></label>
+                    <label for="id_username" class="text-[12px] font-semibold text-[#5C685E]">{% translate "Usuário" %}<span class="ml-0.5 text-[#AE3026]" aria-hidden="true">*</span></label>
                     <input
                         class="h-[38px] w-full rounded-[7px] border border-[#E2E5DE] bg-white px-[11px] text-[13px] text-[#17211A] outline-none transition focus:border-[#1E6B3C] focus:ring-2 focus:ring-[#1E6B3C]/15"
                         type="text"
@@ -49,11 +51,11 @@
                         required
                         autofocus
                     >
-                    {% for error in form.username.errors %}<p class="text-[12px] leading-4 text-red-700">{{ error }}</p>{% endfor %}
+                    {% for error in form.username.errors %}<p class="text-[12px] leading-4 text-red-700">{% translate error %}</p>{% endfor %}
                 </div>
 
                 <div class="flex flex-col gap-[5px]">
-                    <label for="id_password" class="text-[12px] font-semibold text-[#5C685E]">Senha<span class="ml-0.5 text-[#AE3026]" aria-hidden="true">*</span></label>
+                    <label for="id_password" class="text-[12px] font-semibold text-[#5C685E]">{% translate "Senha" %}<span class="ml-0.5 text-[#AE3026]" aria-hidden="true">*</span></label>
                     <div class="flex h-[38px] items-center gap-2 rounded-[7px] border border-[#E2E5DE] bg-white px-[11px] transition focus-within:border-[#1E6B3C] focus-within:ring-2 focus-within:ring-[#1E6B3C]/15">
                         <input
                             class="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] text-[#17211A] outline-none"
@@ -64,24 +66,24 @@
                             aria-invalid="{% if form.password.errors %}true{% else %}false{% endif %}"
                             required
                         >
-                        <button type="button" id="toggle-password" class="flex h-6 w-6 items-center justify-center rounded text-[#8A948B] hover:text-[#1E6B3C] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30" aria-label="Mostrar senha" aria-pressed="false">
+                        <button type="button" id="toggle-password" class="flex h-6 w-6 items-center justify-center rounded text-[#8A948B] hover:text-[#1E6B3C] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30" aria-label="{% translate 'Mostrar senha' %}" aria-pressed="false">
                             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
                                 <circle cx="12" cy="12" r="2.5"></circle>
                             </svg>
                         </button>
                     </div>
-                    {% for error in form.password.errors %}<p class="text-[12px] leading-4 text-red-700">{{ error }}</p>{% endfor %}
+                    {% for error in form.password.errors %}<p class="text-[12px] leading-4 text-red-700">{% translate error %}</p>{% endfor %}
                 </div>
 
                 <input type="hidden" name="next" value="{{ next }}">
-                <a href="{% url 'accounts:password_reset' %}" class="text-right text-[12px] font-medium text-[#1E6B3C]">Esqueci minha senha</a>
-                <button type="submit" class="flex h-[38px] items-center justify-center rounded-[8px] bg-[#1E6B3C] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#17552F] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30 focus:ring-offset-2">Entrar</button>
+                <a href="{% url 'accounts:password_reset' %}" class="text-right text-[12px] font-medium text-[#1E6B3C]">{% translate "Esqueci minha senha" %}</a>
+                <button type="submit" class="flex h-[38px] items-center justify-center rounded-[8px] bg-[#1E6B3C] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#17552F] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30 focus:ring-offset-2">{% translate "Entrar" %}</button>
             </form>
 
             <div class="flex flex-col gap-2 rounded-[8px] border border-[#E2E5DE] bg-[#F9FAF7] p-3">
-                <p class="w-full text-[10.5px] font-semibold tracking-[0.6px] text-[#8A948B]">ACESSO ADMINISTRADO</p>
-                <p class="text-[12px] leading-[17px] text-[#5C685E]">As contas são criadas pelo administrador da empresa. Se você ainda não recebeu acesso, solicite o cadastro à sua empresa.</p>
+                <p class="w-full text-[10.5px] font-semibold tracking-[0.6px] text-[#8A948B]">{% translate "ACESSO ADMINISTRADO" %}</p>
+                <p class="text-[12px] leading-[17px] text-[#5C685E]">{% translate "As contas são criadas pelo administrador da empresa. Se você ainda não recebeu acesso, solicite o cadastro à sua empresa." %}</p>
             </div>
 
         </section>

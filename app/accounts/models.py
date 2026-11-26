@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from utils.identifiers import (
     is_valid_bytes32_hash,
     is_valid_wallet_address,
@@ -60,8 +61,8 @@ class Wallet(models.Model):
     """A public EVM address that can be linked to one or more users."""
 
     class WalletType(models.TextChoices):
-        INDIVIDUAL = "individual", "Individual wallet"
-        CONTRACT = "contract", "Contract wallet"
+        INDIVIDUAL = "individual", _("Individual wallet")
+        CONTRACT = "contract", _("Contract wallet")
 
     # The value shown to users; no private key material is ever stored here.
     address = models.CharField("Address", max_length=42)
@@ -120,9 +121,9 @@ class UserWallet(models.Model):
     """A user-specific link to a public wallet and its verification state."""
 
     class VerificationStatus(models.TextChoices):
-        PENDING = "pending", "Pending"
-        VERIFIED = "verified", "Verified"
-        REVOKED = "revoked", "Revoked"
+        PENDING = "pending", _("Pending")
+        VERIFIED = "verified", _("Verified")
+        REVOKED = "revoked", _("Revoked")
 
     # User account to which this wallet link belongs.
     user = models.ForeignKey(
@@ -212,12 +213,12 @@ class WalletVerificationChallenge(models.Model):
     """A versioned, network-bound challenge used to verify a wallet link."""
 
     class Purpose(models.TextChoices):
-        WALLET_OWNERSHIP = "wallet_ownership", "Wallet ownership"
+        WALLET_OWNERSHIP = "wallet_ownership", _("Wallet ownership")
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        CONSUMED = "consumed", "Consumed"
-        CANCELLED = "cancelled", "Cancelled"
+        PENDING = "pending", _("Pending")
+        CONSUMED = "consumed", _("Consumed")
+        CANCELLED = "cancelled", _("Cancelled")
 
     # The exact user-wallet relationship that requested this challenge.
     user_wallet = models.ForeignKey(

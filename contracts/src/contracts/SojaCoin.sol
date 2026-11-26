@@ -182,6 +182,15 @@ contract SojaCoin is TokenModule {
         _delegate(depositsModule);
     }
 
+    /// @notice Issues an approved batch receipt using its saved batch creator as issuer.
+    /// @dev Only the configured batch contract may enter this route. DepositsModule
+    /// reuses the regular issuance checks and revalidates that creator's unit permission.
+    /// @param depositId Identifier of the single receipt in the batch.
+    function issueTokensFromBatch(uint256 depositId) external {
+        require(issuanceBatchModule != address(0) && msg.sender == issuanceBatchModule, "Issuance batch module only");
+        _delegate(depositsModule);
+    }
+
     /// @dev Internal call from the deposits module; external wallets cannot initiate it.
     function distributeIssuanceByCPR(uint256 depositId, uint256 amountSJC) external returns (uint256 unencumberedAmountSJC) {
         require(msg.sender == address(this), "Internal operation only");

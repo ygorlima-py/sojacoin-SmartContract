@@ -1,0 +1,332 @@
+msgid ""
+msgstr "Project-Id-Version: SojaCoin SaaS\nReport-Msgid-Bugs-To: \nPOT-Creation-Date: 2026-11-26 00:00+0000\nPO-Revision-Date: 2026-11-26 00:00+0000\nLanguage: pt_BR\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Abrir recebimento"
+msgstr "Abrir recebimento"
+
+msgid "Aceite do participante"
+msgstr "Aceite do participante"
+
+msgid "Aceite enviado"
+msgstr "Aceite enviado"
+
+msgid "Aceite preparado"
+msgstr "Aceite preparado"
+
+msgid "Acesso à unidade atualizado."
+msgstr "Acesso à unidade atualizado."
+
+msgid "Administrator"
+msgstr "Administrador"
+
+msgid "Aguardando aceite do participante"
+msgstr "Aguardando aceite do participante"
+
+msgid "Aguardando aprovação"
+msgstr "Aguardando aprovação"
+
+msgid "Aguardando assinatura"
+msgstr "Aguardando assinatura"
+
+msgid "Aguardando envio à blockchain"
+msgstr "Aguardando envio à blockchain"
+
+msgid "An optional contact telephone number."
+msgstr "Telefone de contato opcional."
+
+msgid "Aprovado"
+msgstr "Aprovado"
+
+msgid "Aprovar e emitir tokens"
+msgstr "Aprovar e emitir tokens"
+
+msgid "Aprovar lote"
+msgstr "Aprovar lote"
+
+msgid "Aprovação e emissão enviadas"
+msgstr "Aprovação e emissão enviadas"
+
+msgid "Assinado"
+msgstr "Assinado"
+
+msgid "Auditing"
+msgstr "Auditoria"
+
+msgid "Auditor"
+msgstr "Auditor"
+
+msgid "Cadastro confirmado"
+msgstr "Cadastro confirmado"
+
+msgid "Cadastro criado"
+msgstr "Cadastro criado"
+
+msgid "Cancelado"
+msgstr "Cancelado"
+
+msgid "Cancelamento enviado"
+msgstr "Cancelamento enviado"
+
+msgid "Cancelar lote"
+msgstr "Cancelar lote"
+
+msgid "Cancelled"
+msgstr "Cancelado"
+
+msgid "Coming soon"
+msgstr "Em breve"
+
+msgid "Conceder"
+msgstr "Conceder"
+
+msgid "Confirmado na blockchain"
+msgstr "Confirmado na blockchain"
+
+msgid "Confirmar pesagem"
+msgstr "Confirmar pesagem"
+
+msgid "Confirmation reverted"
+msgstr "Confirmação revertida"
+
+msgid "Confirmed"
+msgstr "Confirmado"
+
+msgid "Consumed"
+msgstr "Consumido"
+
+msgid "Contract wallet"
+msgstr "Carteira de contrato"
+
+msgid "Contracts deployed"
+msgstr "Contratos implantados"
+
+msgid "Contratos implantados"
+msgstr "Contratos implantados"
+
+msgid "Could not complete the operation."
+msgstr "Não foi possível concluir a operação."
+
+msgid "Criar lote"
+msgstr "Criar lote"
+
+msgid "Criação enviada"
+msgstr "Criação enviada"
+
+msgid "Criação preparada"
+msgstr "Criação preparada"
+
+msgid "Dados da empresa atualizados com sucesso."
+msgstr "Dados da empresa atualizados com sucesso."
+
+msgid "Em andamento"
+msgstr "Em andamento"
+
+msgid "Emissão"
+msgstr "Emissão"
+
+msgid "Envio à blockchain em andamento"
+msgstr "Envio à blockchain em andamento"
+
+msgid "Expires on %(date)s."
+msgstr "Expira em %(date)s."
+
+msgid "Failed"
+msgstr "Falhou"
+
+msgid "Falha na transação"
+msgstr "Falha na transação"
+
+msgid "Função concedida ao membro."
+msgstr "Função concedida ao membro."
+
+msgid "Função revogada do membro."
+msgstr "Função revogada do membro."
+
+msgid "Grant"
+msgstr "Conceder"
+
+msgid "In progress"
+msgstr "Em andamento"
+
+msgid "Individual wallet"
+msgstr "Carteira individual"
+
+msgid "Invalidado"
+msgstr "Invalidado"
+
+msgid "Issuance"
+msgstr "Emissão"
+
+msgid "Issuance batches"
+msgstr "Lotes de emissão"
+
+msgid "Issuance operator"
+msgstr "Operador de emissão"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Language selection"
+msgstr "Seleção de idioma"
+
+msgid "Laudo de classificação"
+msgstr "Laudo de classificação"
+
+msgid "Ligar lotes de emissão"
+msgstr "Ligar lotes de emissão"
+
+msgid "Ligar registro de unidades"
+msgstr "Ligar registro de unidades"
+
+msgid "Link cancelado. O participante não poderá mais abrir esta proposta por ele."
+msgstr "Link cancelado. O participante não poderá mais abrir esta proposta por ele."
+
+msgid "Link issuance batches"
+msgstr "Ligar lotes de emissão"
+
+msgid "Link unit registry"
+msgstr "Ligar registro de unidades"
+
+msgid "Membership granted"
+msgstr "Vínculo concedido"
+
+msgid "Membership revoked"
+msgstr "Vínculo revogado"
+
+msgid "Needs review"
+msgstr "Precisa de revisão"
+
+msgid "Not provided"
+msgstr "Não informada"
+
+msgid "Nota fiscal"
+msgstr "Nota fiscal"
+
+msgid "PDF only, up to %(size)s MB."
+msgstr "Somente PDF, até %(size)s MB."
+
+msgid "Pending"
+msgstr "Pendente"
+
+msgid "Perfil atualizado com sucesso."
+msgstr "Perfil atualizado com sucesso."
+
+msgid "Precisa de conferência"
+msgstr "Precisa de conferência"
+
+msgid "Precisa de revisão"
+msgstr "Precisa de revisão"
+
+msgid "Prepared"
+msgstr "Preparada"
+
+msgid "Processo cancelado. O histórico foi preservado."
+msgstr "Processo cancelado. O histórico foi preservado."
+
+msgid "Processo iniciado. Nenhuma transação foi enviada à blockchain."
+msgstr "Processo iniciado. Nenhuma transação foi enviada à blockchain."
+
+msgid "Proposta de cadastro"
+msgstr "Proposta de cadastro"
+
+msgid "Proposta enviada"
+msgstr "Proposta enviada"
+
+msgid "Proposta preparada"
+msgstr "Proposta preparada"
+
+msgid "Recebimento"
+msgstr "Recebimento"
+
+msgid "Recebimento salvo no SaaS. Nenhuma transação foi enviada à blockchain."
+msgstr "Recebimento salvo no SaaS. Nenhuma transação foi enviada à blockchain."
+
+msgid "Receiving"
+msgstr "Recebimento"
+
+msgid "Receiving operator"
+msgstr "Operador de recebimento"
+
+msgid "Registration operator"
+msgstr "Operador de cadastro"
+
+msgid "Revogar"
+msgstr "Revogar"
+
+msgid "Revoke"
+msgstr "Revogar"
+
+msgid "Revoked"
+msgstr "Revogada"
+
+msgid "Role granted"
+msgstr "Função concedida"
+
+msgid "Role revoked"
+msgstr "Função revogada"
+
+msgid "Romaneio"
+msgstr "Romaneio"
+
+msgid "SojaCoin"
+msgstr "SojaCoin"
+
+msgid "SojaCoin CPR module"
+msgstr "Módulo de CPR da SojaCoin"
+
+msgid "SojaCoin administration module"
+msgstr "Módulo de administração da SojaCoin"
+
+msgid "SojaCoin deposits module"
+msgstr "Módulo de recebimentos da SojaCoin"
+
+msgid "SojaCoin locks module"
+msgstr "Módulo de bloqueios da SojaCoin"
+
+msgid "SojaCoin redemptions module"
+msgstr "Módulo de resgates da SojaCoin"
+
+msgid "SojaCoin services module"
+msgstr "Módulo de serviços da SojaCoin"
+
+msgid "Stored soy"
+msgstr "Soja armazenada"
+
+msgid "Submitted"
+msgstr "Enviada"
+
+msgid "The name displayed in the application."
+msgstr "Nome exibido na aplicação."
+
+msgid "Tokens emitidos"
+msgstr "Tokens emitidos"
+
+msgid "Unidade atualizada localmente."
+msgstr "Unidade atualizada localmente."
+
+msgid "Unidade cadastrada localmente."
+msgstr "Unidade cadastrada localmente."
+
+msgid "Unit access updated"
+msgstr "Acesso à unidade atualizado"
+
+msgid "Unit registry"
+msgstr "Registro de unidades"
+
+msgid "Usuário adicionado à equipe."
+msgstr "Usuário adicionado à equipe."
+
+msgid "Verified"
+msgstr "Verificada"
+
+msgid "Viewing"
+msgstr "Visualização"
+
+msgid "Vincular nota fiscal"
+msgstr "Vincular nota fiscal"
+
+msgid "Wallet ownership"
+msgstr "Propriedade da carteira"
+
+msgid "Wallet permission updated"
+msgstr "Permissão da carteira atualizada"

@@ -119,6 +119,91 @@ contract SojaCoinOperationsTest is SojaCoinTestBase {
         _eq(registry.pendingDepositsByUnit(1), 0, "issued deposit closes unit tracking");
     }
 
+    function test_participantApprovesAndIssuesInOneTransaction() public {
+        uint256 depositId = _receivedLoad(6_000, "approve-and-issue");
+        uint256[] memory depositIds = new uint256[](1);
+        depositIds[0] = depositId;
+        vm.prank(issuer);
+        uint256 batchId = batches.createIssuanceBatch(depositIds, block.timestamp + 1 days);
+
+        vm.prank(producer);
+        batches.approveAndIssueBatch(batchId);
+
+        _eq(coin.balanceOf(producer), 100 * UNITS_PER_SACK, "participant receives issued SJC");
+        _eq(_batchStatus(batchId), 3, "batch completes atomically");
+        require(batches.depositIssued(depositId), "batch records the issued receipt");
+        _eq(registry.pendingDepositsByUnit(1), 0, "issued receipt closes unit tracking");
+    }
+
+    function test_automaticIssuanceRechecksCreatorPermissionAndRollsBackApproval() public {
+        uint256 depositId = _receivedLoad(6_000, "approve-and-issue-revoked");
+        uint256[] memory depositIds = new uint256[](1);
+        depositIds[0] = depositId;
+        vm.prank(issuer);
+        uint256 batchId = batches.createIssuanceBatch(depositIds, block.timestamp + 1 days);
+
+        registry.setPermissions(1, issuer, 0);
+        vm.expectRevert(UnitRegistry.InsufficientOperationalPermission.selector);
+        vm.prank(producer);
+        batches.approveAndIssueBatch(batchId);
+
+        _eq(_batchStatus(batchId), 1, "failed issue rolls approval back");
+        require(!batches.depositIssued(depositId), "failed issue remains unrecorded");
+        _eq(coin.balanceOf(producer), 0, "failed issue mints no tokens");
+        _eq(registry.pendingDepositsByUnit(1), 1, "failed issue keeps receipt open");
+    }
+
+    function test_automaticIssuanceRejectsWrongParticipantAndExpiredBatch() public {
+        uint256 depositId = _receivedLoad(6_000, "approve-and-issue-guards");
+        uint256[] memory depositIds = new uint256[](1);
+        depositIds[0] = depositId;
+        vm.prank(issuer);
+        uint256 batchId = batches.createIssuanceBatch(depositIds, block.timestamp + 1 days);
+
+        vm.expectRevert(abi.encodeWithSignature("Error(string)", "Producer only"));
+        vm.prank(creditor);
+        batches.approveAndIssueBatch(batchId);
+
+        vm.warp(block.timestamp + 1 days + 1);
+        vm.expectRevert(abi.encodeWithSignature("Error(string)", "Approval has expired"));
+        vm.prank(producer);
+        batches.approveAndIssueBatch(batchId);
+        _eq(_batchStatus(batchId), 1, "rejected calls keep batch pending");
+    }
+
+    function test_automaticIssuanceRejectsMultiReceiptBatchWithoutApprovingIt() public {
+        uint256 firstDeposit = _receivedLoad(6_000, "approve-and-issue-multi-one");
+        uint256 secondDeposit = _receivedLoad(6_000, "approve-and-issue-multi-two");
+        uint256[] memory depositIds = new uint256[](2);
+        depositIds[0] = firstDeposit;
+        depositIds[1] = secondDeposit;
+        vm.prank(issuer);
+        uint256 batchId = batches.createIssuanceBatch(depositIds, block.timestamp + 1 days);
+
+        vm.expectRevert(abi.encodeWithSignature("Error(string)", "Automatic issuance supports one deposit"));
+        vm.prank(producer);
+        batches.approveAndIssueBatch(batchId);
+
+        _eq(_batchStatus(batchId), 1, "multi-receipt batch remains pending");
+        require(!batches.depositIssued(firstDeposit) && !batches.depositIssued(secondDeposit), "no receipt is issued");
+    }
+
+    function test_automaticIssuanceRevertsAfterAuditExpires() public {
+        uint256 depositId = _receivedLoad(6_000, "approve-and-issue-expired-audit");
+        uint256[] memory depositIds = new uint256[](1);
+        depositIds[0] = depositId;
+        vm.prank(issuer);
+        uint256 batchId = batches.createIssuanceBatch(depositIds, block.timestamp + 90 days);
+
+        vm.warp(block.timestamp + registry.AUDIT_PERIOD() + 1);
+        vm.expectRevert(abi.encodeWithSignature("Error(string)", "Audit has expired"));
+        vm.prank(producer);
+        batches.approveAndIssueBatch(batchId);
+
+        _eq(_batchStatus(batchId), 1, "expired audit rolls approval back");
+        _eq(coin.balanceOf(producer), 0, "expired audit mints no SJC");
+    }
+
     function test_batchCannotBeCreatedWithoutTaxInvoice() public {
         vm.prank(receiver);
         uint256 depositId = coin.openLoadReceipt(producer, 1, CROP_YEAR);
@@ -263,5 +348,10 @@ contract SojaCoinOperationsTest is SojaCoinTestBase {
             depositId,
             _ticket(netWeightKg, 0, 0, keccak256(abi.encode("ticket", label)))
         );
+    }
+
+    function _batchStatus(uint256 batchId) private view returns (uint256 status) {
+        (,,,,,,, TokenIssuanceBatches.IssuanceBatchStatus chainStatus) = batches.batches(batchId);
+        return uint256(chainStatus);
     }
 }

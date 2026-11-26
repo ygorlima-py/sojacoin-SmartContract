@@ -81,6 +81,17 @@ contents or the physical load are accurate.
 The browser preview is informational. The server is authoritative for the
 stored weight and all validation.
 
+## Issuance batch handoff
+
+After the three receipt calls are confirmed, a user with the company's issuance
+role and issuance access to that unit can open the receipt detail and create a
+batch. The user does not need the receiving role to view the receipt or start a
+batch. The next step uses the separately configured `TokenIssuanceBatches`
+contract and checks the load, unit, audit, issuance permission and deployment
+links against the same saved network as the receipt. See
+[`issuance_batches/README.md`](../issuance_batches/README.md) for the batch and
+participant approval flow.
+
 ## On-chain call order and recovery
 
 The calls run in this order, matching the current SaaS workflow:

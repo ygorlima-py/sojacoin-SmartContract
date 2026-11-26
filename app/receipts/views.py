@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import IntegrityError
 from django.db.models import QuerySet
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, FormView, ListView
 from web3.exceptions import Web3Exception
@@ -20,6 +23,7 @@ from companies.rules.company_access import CompanyAccessMixin
 from companies.rules.role_access import (
     CompanyAction,
     require_company_action,
+    require_issuance_access,
     require_receiving_access,
 )
 
@@ -35,6 +39,7 @@ from .documents import receipt_pdf_max_size
 from .forms import ReceiptCreateForm
 from .models import Receipt, ReceiptDocument
 from .services import create_receipt
+from issuance_batches.services import get_batch_status_label, get_receipt_issuance_context
 
 
 logger = logging.getLogger(__name__)
@@ -76,8 +81,70 @@ class ReceivingCompanyAccessMixin(CompanyAccessMixin):
         )
 
 
-class ReceiptListView(ReceivingCompanyAccessMixin, ListView):
-    """List receipts only for units where the signed-in user can receive loads."""
+class ReceiptBrowsingAccessMixin(CompanyAccessMixin):
+    """Allow receipt reading for users with receive or issuance access."""
+
+    receiving_membership: CompanyMembership | None = None
+    issuance_membership: CompanyMembership | None = None
+
+    def dispatch(
+        self,
+        request: HttpRequest,
+        *args: Any,
+        **kwargs: Any,
+    ) -> HttpResponse:
+        """Render a clear access-denied page without exposing receipt data."""
+
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except PermissionDenied:
+            return render(
+                request,
+                "receipts/permission_denied.html",
+                {"company": getattr(self, "company", None)},
+                status=403,
+            )
+
+    def check_company_permissions(self, request: HttpRequest) -> None:
+        """Accept either operational role while retaining the company URL scope."""
+
+        try:
+            self.receiving_membership = require_company_action(
+                request.user, self.company.pk, CompanyAction.RECEIVE_LOAD
+            )
+        except PermissionDenied:
+            self.receiving_membership = None
+        try:
+            self.issuance_membership = require_company_action(
+                request.user, self.company.pk, CompanyAction.CREATE_ISSUANCE
+            )
+        except PermissionDenied:
+            self.issuance_membership = None
+        if self.receiving_membership is None and self.issuance_membership is None:
+            raise PermissionDenied("A função de recebimento ou emissão é necessária para consultar cargas.")
+
+    def check_unit_browsing_access(self, unit_id: int) -> None:
+        """Require the matching per-unit grant for at least one allowed role."""
+
+        allowed = False
+        if self.receiving_membership is not None:
+            try:
+                require_receiving_access(self.request.user, self.company.pk, unit_id)
+                allowed = True
+            except PermissionDenied:
+                pass
+        if self.issuance_membership is not None:
+            try:
+                require_issuance_access(self.request.user, self.company.pk, unit_id)
+                allowed = True
+            except PermissionDenied:
+                pass
+        if not allowed:
+            raise PermissionDenied("O usuário não tem acesso a esta unidade.")
+
+
+class ReceiptListView(ReceiptBrowsingAccessMixin, ListView):
+    """List receipts in units where the user can receive or issue loads."""
 
     template_name = "receipts/receipt_list.html"
     context_object_name = "receipts"
@@ -86,29 +153,64 @@ class ReceiptListView(ReceivingCompanyAccessMixin, ListView):
     def get_queryset(self) -> QuerySet[Receipt]:
         """Apply company and active unit-receiving filters at the database layer."""
 
-        accessible_unit_ids = UnitAccess.objects.filter(
-            membership=self.receiving_membership,
-            active=True,
-            can_receive=True,
-            unit__active=True,
-        ).values_list("unit_id", flat=True)
+        access_filters = []
+        if self.receiving_membership is not None:
+            access_filters.append(
+                UnitAccess.objects.filter(
+                    membership=self.receiving_membership,
+                    active=True,
+                    can_receive=True,
+                    unit__active=True,
+                ).values_list("unit_id", flat=True)
+            )
+        if self.issuance_membership is not None:
+            access_filters.append(
+                UnitAccess.objects.filter(
+                    membership=self.issuance_membership,
+                    active=True,
+                    can_issue=True,
+                    unit__active=True,
+                ).values_list("unit_id", flat=True)
+            )
+        accessible_unit_ids = set().union(*(set(queryset) for queryset in access_filters))
         return (
             Receipt.objects.filter(company=self.company, unit_id__in=accessible_unit_ids)
             .select_related("participant", "unit", "created_by", "weighing_ticket")
             .order_by("-created_at", "-pk")
         )
 
+    def _has_accessible_registered_units(self) -> bool:
+        """Return whether either authorized role has a grant to an active on-chain unit."""
+
+        access_filters: list[QuerySet[UnitAccess]] = []
+        if self.receiving_membership is not None:
+            access_filters.append(
+                UnitAccess.objects.filter(
+                    membership=self.receiving_membership,
+                    active=True,
+                    can_receive=True,
+                    unit__active=True,
+                    unit__chain_unit_id__gt=0,
+                )
+            )
+        if self.issuance_membership is not None:
+            access_filters.append(
+                UnitAccess.objects.filter(
+                    membership=self.issuance_membership,
+                    active=True,
+                    can_issue=True,
+                    unit__active=True,
+                    unit__chain_unit_id__gt=0,
+                )
+            )
+        return any(access_filter.exists() for access_filter in access_filters)
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Show whether the operator has an eligible registered unit and participant."""
+        """Show whether the operator has a registered unit for any authorized role."""
 
         context = super().get_context_data(**kwargs)
-        context["has_receiving_units"] = UnitAccess.objects.filter(
-            membership=self.receiving_membership,
-            active=True,
-            can_receive=True,
-            unit__active=True,
-            unit__chain_unit_id__gt=0,
-        ).exists()
+        context["has_accessible_units"] = self._has_accessible_registered_units()
+        context["can_create_receipt"] = self.receiving_membership is not None
         return context
 
 
@@ -194,8 +296,8 @@ class ReceiptCreateView(ReceivingCompanyAccessMixin, FormView):
         return redirect(self.get_success_url())
 
 
-class ReceiptDetailView(ReceivingCompanyAccessMixin, DetailView):
-    """Show local receipt data after rechecking access to its specific unit."""
+class ReceiptDetailView(ReceiptBrowsingAccessMixin, DetailView):
+    """Show receipt details to receiving staff and authorized issuers."""
 
     template_name = "receipts/receipt_detail.html"
     context_object_name = "receipt"
@@ -216,18 +318,32 @@ class ReceiptDetailView(ReceivingCompanyAccessMixin, DetailView):
             pk=self.kwargs[self.pk_url_kwarg],
             company=self.company,
         )
-        require_receiving_access(
-            self.request.user,
-            self.company.pk,
-            receipt.unit_id,
-        )
+        self.check_unit_browsing_access(receipt.unit_id)
         return receipt
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Show the ordered transaction state and eligible saved networks."""
 
         context = super().get_context_data(**kwargs)
-        context.update(get_receipt_blockchain_context(self.object))
+        context["can_manage_receipt_blockchain"] = self.receiving_membership is not None
+        if self.receiving_membership is not None:
+            context.update(get_receipt_blockchain_context(self.object))
+        else:
+            context.update({"blockchain_operation": getattr(self.object, "blockchain_operation", None), "blockchain_steps": []})
+        if self.issuance_membership is not None:
+            context.update(get_receipt_issuance_context(self.object))
+            context["can_create_issuance_batch"] = True
+            default_deadline = timezone.localtime(timezone.now() + timedelta(days=2))
+            batch = context.get("issuance_batch")
+            if batch is not None:
+                default_deadline = timezone.localtime(
+                    datetime.fromtimestamp(batch.approval_deadline, tz=timezone.get_current_timezone())
+                )
+            context["issuance_deadline_input"] = default_deadline.strftime("%Y-%m-%dT%H:%M")
+            if batch is not None:
+                context["issuance_batch_status_label"] = get_batch_status_label(batch)
+        else:
+            context["can_create_issuance_batch"] = False
         return context
 
 
@@ -360,8 +476,8 @@ class ReceiptBlockchainActionView(ReceivingCompanyAccessMixin, View):
             )
 
 
-class ReceiptDocumentFileView(ReceivingCompanyAccessMixin, View):
-    """Serve a receipt PDF only after company, receipt and unit authorization."""
+class ReceiptDocumentFileView(ReceiptBrowsingAccessMixin, View):
+    """Serve a private receipt PDF to authorized receiving or issuance staff."""
 
     def get(
         self,
@@ -377,7 +493,7 @@ class ReceiptDocumentFileView(ReceivingCompanyAccessMixin, View):
             pk=receipt_id,
             company=self.company,
         )
-        require_receiving_access(request.user, self.company.pk, receipt.unit_id)
+        self.check_unit_browsing_access(receipt.unit_id)
         document = get_object_or_404(
             ReceiptDocument,
             pk=document_id,

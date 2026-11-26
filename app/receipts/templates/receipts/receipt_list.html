@@ -1,39 +1,40 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Recebimentos — SojaCoin{% endblock %}
-{% block page_title %}Recebimentos{% endblock %}
-{% block page_subtitle %}<p class="mt-0.5 text-[11.5px] text-[#7A867D]">Cargas registradas no SaaS para {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+{% block title %}{% translate "Recebimentos — SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Recebimentos" %}{% endblock %}
+{% block page_subtitle %}<p class="mt-0.5 text-[11.5px] text-[#7A867D]">{% translate "Cargas registradas no SaaS para" %} {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
 
 {% block content %}
 <div class="mx-auto w-full max-w-[1440px] space-y-5">
     <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
         <div class="flex flex-col gap-4 border-b border-[#E2E5DE] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h2 class="text-[15px] font-semibold text-[#17211A]">Cargas recebidas</h2>
-                <p class="mt-1 text-[12px] text-[#7A867D]">{{ paginator.count }} recebimento(s) disponível(is) nas suas unidades.</p>
+                <h2 class="text-[15px] font-semibold text-[#17211A]">{% translate "Cargas recebidas" %}</h2>
+                <p class="mt-1 text-[12px] text-[#7A867D]">{{ paginator.count }} {% translate "recebimento(s) disponível(is) nas suas unidades." %}</p>
             </div>
-            <a href="{% url 'receipts:create' company_id=company.pk %}" class="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#185832] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30 sm:w-auto sm:min-w-[230px]">
+            {% if can_create_receipt %}<a href="{% url 'receipts:create' company_id=company.pk %}" class="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#185832] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30 sm:w-auto sm:min-w-[230px]">
                 <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                <span>Novo recebimento</span>
-            </a>
+                <span>{% translate "Novo recebimento" %}</span>
+            </a>{% endif %}
         </div>
 
-        {% if not has_receiving_units %}
+        {% if not has_accessible_units %}
             <div class="m-5 rounded-[8px] border border-[#F0D6A4] bg-[#FFF9EA] p-4 text-[12px] leading-5 text-[#76530E]">
-                Para registrar uma carga, você precisa de acesso de recebimento a uma unidade ativa que já tenha sido registrada na blockchain.
+                {% if can_create_receipt %}{% translate "Para registrar uma carga, você precisa de acesso de recebimento a uma unidade ativa que já tenha sido registrada na blockchain." %}{% else %}{% translate "Você ainda não tem acesso de emissão a uma unidade ativa. Peça ao administrador para revisar seu acesso." %}{% endif %}
             </div>
         {% elif receipts %}
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[760px] border-collapse text-left">
                     <thead class="bg-[#F8F9F6] text-[10px] font-bold uppercase tracking-[0.6px] text-[#657268]">
                         <tr>
-                            <th class="px-5 py-3">Participante</th>
-                            <th class="px-5 py-3">Unidade</th>
-                            <th class="px-5 py-3">Safra</th>
-                            <th class="px-5 py-3">Peso líquido</th>
-                            <th class="px-5 py-3">Situação</th>
-                            <th class="px-5 py-3">Criado em</th>
-                            <th class="px-5 py-3"><span class="sr-only">Ação</span></th>
+                            <th class="px-5 py-3">{% translate "Participante" %}</th>
+                            <th class="px-5 py-3">{% translate "Unidade" %}</th>
+                            <th class="px-5 py-3">{% translate "Safra" %}</th>
+                            <th class="px-5 py-3">{% translate "Peso líquido" %}</th>
+                            <th class="px-5 py-3">{% translate "Situação" %}</th>
+                            <th class="px-5 py-3">{% translate "Criado em" %}</th>
+                            <th class="px-5 py-3"><span class="sr-only">{% translate "Ação" %}</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#E8EBE5] text-[12px]">
@@ -44,8 +45,8 @@
                                 <td class="px-5 py-4 text-[#465349]">{{ receipt.crop_year }}</td>
                                 <td class="px-5 py-4 font-semibold tabular-nums text-[#17211A]">{{ receipt.weighing_ticket.net_weight_kg }} kg</td>
                                 <td class="px-5 py-4"><span class="rounded-full bg-[#FFF4D8] px-2.5 py-1 text-[10.5px] font-semibold text-[#8B640D]">{{ receipt.get_status_display }}</span></td>
-                                <td class="px-5 py-4 text-[#657268]">{{ receipt.created_at|date:"d/m/Y H:i" }}</td>
-                                <td class="px-5 py-4 text-right"><a href="{% url 'receipts:detail' company_id=company.pk receipt_id=receipt.pk %}" class="inline-flex min-h-[36px] items-center rounded-[6px] border border-[#CBD6CC] px-3 font-semibold text-[#1E6B3C] hover:bg-[#F5F9F5]">Abrir</a></td>
+                                <td class="px-5 py-4 text-[#657268]">{{ receipt.created_at|date }}</td>
+                                <td class="px-5 py-4 text-right"><a href="{% url 'receipts:detail' company_id=company.pk receipt_id=receipt.pk %}" class="inline-flex min-h-[36px] items-center rounded-[6px] border border-[#CBD6CC] px-3 font-semibold text-[#1E6B3C] hover:bg-[#F5F9F5]">{% translate "Abrir" %}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -53,19 +54,19 @@
             </div>
             {% if is_paginated %}
                 <div class="flex items-center justify-between border-t border-[#E2E5DE] px-5 py-4 text-[12px]">
-                    {% if page_obj.has_previous %}<a class="font-semibold text-[#1E6B3C]" href="?page={{ page_obj.previous_page_number }}">Página anterior</a>{% else %}<span class="text-[#A0A9A1]">Página anterior</span>{% endif %}
-                    <span class="text-[#657268]">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-                    {% if page_obj.has_next %}<a class="font-semibold text-[#1E6B3C]" href="?page={{ page_obj.next_page_number }}">Próxima página</a>{% else %}<span class="text-[#A0A9A1]">Próxima página</span>{% endif %}
+                    {% if page_obj.has_previous %}<a class="font-semibold text-[#1E6B3C]" href="?page={{ page_obj.previous_page_number }}">{% translate "Página anterior" %}</a>{% else %}<span class="text-[#A0A9A1]">{% translate "Página anterior" %}</span>{% endif %}
+                    <span class="text-[#657268]">{% translate "Página" %} {{ page_obj.number }} {% translate "de" %} {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}<a class="font-semibold text-[#1E6B3C]" href="?page={{ page_obj.next_page_number }}">{% translate "Próxima página" %}</a>{% else %}<span class="text-[#A0A9A1]">{% translate "Próxima página" %}</span>{% endif %}
                 </div>
             {% endif %}
         {% else %}
             <div class="mx-5 my-5 rounded-[8px] border border-dashed border-[#D7DDD4] bg-[#FBFCFA] px-5 py-12 text-center">
                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#E9F2EC] text-[18px] text-[#1E6B3C]" aria-hidden="true"><i class="fa-solid fa-truck"></i></div>
-                <h3 class="mt-4 text-[14px] font-semibold text-[#17211A]">Nenhum recebimento cadastrado</h3>
-                <p class="mt-1 text-[12px] text-[#7A867D]">Cadastre a primeira carga com os dados da pesagem e os documentos.</p>
-                <a href="{% url 'receipts:create' company_id=company.pk %}" class="mt-5 inline-flex min-h-[46px] min-w-[230px] items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#185832]">
-                    <i class="fa-solid fa-plus" aria-hidden="true"></i> Novo recebimento
-                </a>
+                <h3 class="mt-4 text-[14px] font-semibold text-[#17211A]">{% translate "Nenhum recebimento cadastrado" %}</h3>
+                <p class="mt-1 text-[12px] text-[#7A867D]">{% if can_create_receipt %}{% translate "Cadastre a primeira carga com os dados da pesagem e os documentos." %}{% else %}{% translate "Nenhuma carga está disponível nas unidades liberadas para emissão." %}{% endif %}</p>
+                {% if can_create_receipt %}<a href="{% url 'receipts:create' company_id=company.pk %}" class="mt-5 inline-flex min-h-[46px] min-w-[230px] items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#185832]">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i> {% translate "Novo recebimento" %}
+                </a>{% endif %}
             </div>
         {% endif %}
     </section>

@@ -1,0 +1,1868 @@
+msgid ""
+msgstr "Project-Id-Version: SojaCoin SaaS\nReport-Msgid-Bugs-To: \nPOT-Creation-Date: 2026-11-26 00:00+0000\nPO-Revision-Date: 2026-11-26 00:00+0000\nLanguage: en\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "44 dígitos"
+msgstr "44 digits"
+
+msgid "A MetaMask está na rede %(chainId)s. Troque para a rede do processo (ID %(expected)s)."
+msgstr "MetaMask is on network %(chainId)s. Switch to the process network (ID %(expected)s)."
+
+msgid "A MetaMask está na rede %(chainId)s. Troque para a rede do recebimento (ID %(expected)s)."
+msgstr "MetaMask is on network %(chainId)s. Switch to the receipt network (ID %(expected)s)."
+
+msgid "A MetaMask está na rede %(network)s. Troque para a rede do processo (ID %(chainId)s)."
+msgstr "MetaMask is on network %(network)s. Switch to the process network (ID %(chainId)s)."
+
+msgid "A MetaMask não será aberta; recarregue a página antes de continuar."
+msgstr "MetaMask will not open. Reload the page before continuing."
+
+msgid "A MetaMask não será aberta; recarregue antes de continuar."
+msgstr "MetaMask will not open. Reload before continuing."
+
+msgid "A SojaCoin mudou desde a criação desta proposta."
+msgstr "The SojaCoin contract has changed since this proposal was created."
+
+msgid "A SojaCoin não aponta para o UnitRegistry salvo no recebimento."
+msgstr "SojaCoin does not point to the UnitRegistry saved on the receipt."
+
+msgid "A SojaCoin não está ligada a este TokenIssuanceBatches."
+msgstr "SojaCoin is not linked to this TokenIssuanceBatches contract."
+
+msgid "A SojaCoin não reconhece o módulo de lotes salvo."
+msgstr "SojaCoin does not recognize the saved batch module."
+
+msgid "A alteração de permissão não pode transferir saldo nativo."
+msgstr "A permission change must not transfer native currency."
+
+msgid "A aprovação com emissão automática está disponível para um recebimento por lote."
+msgstr "Approval with automatic issuance supports one receipt per batch."
+
+msgid "A assinatura EIP-712 não pôde ser validada."
+msgstr "The EIP-712 signature could not be validated."
+
+msgid "A assinatura calculada não corresponde ao contrato. Nenhum aceite foi preparado."
+msgstr "The calculated signature does not match the contract. No acceptance was prepared."
+
+msgid "A assinatura excede o tamanho permitido."
+msgstr "The signature exceeds the allowed length."
+
+msgid "A assinatura expirou antes de preparar a transação."
+msgstr "The signature expired before the transaction could be prepared."
+
+msgid "A assinatura expirou. Gere uma nova solicitação."
+msgstr "The signature has expired. Create a new request."
+
+msgid "A assinatura expirou. Solicite um novo desafio."
+msgstr "The signature has expired. Request a new challenge."
+
+msgid "A assinatura foi feita por outra carteira. Conecte a carteira indicada no termo."
+msgstr "The signature was made by a different wallet. Connect the wallet named in the terms."
+
+msgid "A assinatura foi feita por uma carteira diferente da do participante."
+msgstr "The signature was made by a wallet other than the participant’s."
+
+msgid "A assinatura não tem o formato EIP-712 esperado."
+msgstr "The signature does not use the expected EIP-712 format."
+
+msgid "A assinatura é maior do que o formato aceito."
+msgstr "The signature is longer than the accepted format."
+
+msgid "A autorização de depósito ainda não está ativa no contrato."
+msgstr "The deposit authorization is not active in the contract yet."
+
+msgid "A carga está bloqueada por outra operação de lote."
+msgstr "The load is locked by another batch operation."
+
+msgid "A carga já está associada a um lote na blockchain."
+msgstr "The load is already linked to a blockchain batch."
+
+msgid "A carga mudou desde a tentativa anterior. O lote requer conferência."
+msgstr "The load changed after the previous attempt. The batch needs review."
+
+msgid "A carteira conectada mudou desde a preparação desta chamada."
+msgstr "The connected wallet changed after this call was prepared."
+
+msgid "A carteira conectada mudou. Prepare a chamada novamente com a carteira correta."
+msgstr "The connected wallet changed. Prepare the call again with the correct wallet."
+
+msgid "A carteira conectada não corresponde ao participante do lote."
+msgstr "The connected wallet does not match the batch participant."
+
+msgid "A carteira conectada não é a carteira da proposta."
+msgstr "The connected wallet is not the wallet in the proposal."
+
+msgid "A carteira conectada não é a carteira indicada no termo. Troque para a carteira do participante."
+msgstr "The connected wallet is not the one named in the terms. Switch to the participant's wallet."
+
+msgid "A carteira designada como auditora não pode operar o estoque."
+msgstr "A wallet assigned as auditor cannot operate inventory."
+
+msgid "A carteira está em outra rede."
+msgstr "The wallet is connected to a different network."
+
+msgid "A carteira está na rede %(chainId)s. Selecione a rede %(expected)s."
+msgstr "The wallet is on network %(chainId)s. Select network %(expected)s."
+
+msgid "A carteira está na rede %(chainId)s. Troque para a rede da proposta (ID %(expected)s)."
+msgstr "The wallet is on network %(chainId)s. Switch to the proposal network (ID %(expected)s)."
+
+msgid "A carteira está na rede %(network)s. Troque para %(chainId)s e tente novamente."
+msgstr "The wallet is on network %(network)s. Switch to %(chainId)s and try again."
+
+msgid "A carteira está na rede %(network)s. Troque para %(chainId)s."
+msgstr "The wallet is on network %(network)s. Switch to %(chainId)s."
+
+msgid "A carteira já tem a permissão da outra categoria. Use carteiras diferentes."
+msgstr "This wallet already has the other category’s permission. Use separate wallets."
+
+msgid "A carteira não informou o resultado. Consulte a atividade e recupere a mesma hash."
+msgstr "The wallet did not report the result. Check its activity and recover the same hash."
+
+msgid "A carteira não informou se transmitiu a chamada. Não envie de novo: recupere esta tentativa usando a hash, se ela aparecer na carteira."
+msgstr "The wallet did not confirm whether it submitted the call. Do not send again; recover this attempt with the hash if it appears in the wallet."
+
+msgid "A carteira não informou se transmitiu. Recupere esta tentativa pela hash, sem reenviar."
+msgstr "The wallet did not confirm whether it submitted the transaction. Recover this attempt by its hash; do not resubmit."
+
+msgid "A carteira não pertence à pessoa selecionada."
+msgstr "The wallet does not belong to the selected person."
+
+msgid "A carteira não respondeu com certeza. Não inicie outro envio. Se apareceu uma hash, informe-a abaixo."
+msgstr "The wallet did not confirm the result. Do not start another submission. If a hash appeared, enter it below."
+
+msgid "A carteira não retornou uma conta conectada."
+msgstr "The wallet did not return a connected account."
+
+msgid "A carteira precisa estar na rede salva para este lote."
+msgstr "The wallet must be connected to the network saved for this batch."
+
+msgid "A carteira que enviou a transação não corresponde à tentativa."
+msgstr "The transaction sender does not match this attempt."
+
+msgid "A carteira recusou a alteração de permissão."
+msgstr "The wallet declined the permission change."
+
+msgid "A carteira recusou a configuração. Você pode tentar novamente."
+msgstr "The wallet declined the configuration. You can try again."
+
+msgid "A carteira recusou a solicitação. Você pode iniciar uma nova tentativa."
+msgstr "The wallet declined the request. You can start a new attempt."
+
+msgid "A carteira recusou a solicitação. Você pode tentar novamente."
+msgstr "The wallet declined the request. You can try again."
+
+msgid "A carteira recusou o pedido, mas o servidor ainda não registrou a resposta. Use “Registrar recusa” para repetir essa atualização. %(error)s"
+msgstr "The wallet declined the request, but the server has not recorded the response yet. Choose “Record rejection” to retry this update. %(error)s"
+
+msgid "A chamada do lote não pode transferir saldo nativo."
+msgstr "The batch call must not transfer native currency."
+
+msgid "A chave de acesso da NF-e deve ter exatamente 44 dígitos."
+msgstr "The NF-e access key must contain exactly 44 digits."
+
+msgid "A confirmação diverge do endereço esperado. O processo precisa de revisão."
+msgstr "The confirmation does not match the expected address. The process needs review."
+
+msgid "A confirmação não retornou o endereço do contrato."
+msgstr "The confirmation did not return the contract address."
+
+msgid "A conta selecionada está inativa."
+msgstr "The selected account is inactive."
+
+msgid "A criação do lote ainda não foi confirmada na rede."
+msgstr "The batch creation has not been confirmed on the network yet."
+
+msgid "A empresa ainda não publicou o PDF dos termos do participante. Peça ao administrador para publicá-lo antes de cadastrar participantes."
+msgstr "The company has not published the participant terms PDF. Ask an administrator to publish it before registering participants."
+
+msgid "A empresa e a rede devem estar cadastradas."
+msgstr "The company and network must be registered."
+
+msgid "A empresa e a unidade precisam estar ativas."
+msgstr "The company and unit must be active."
+
+msgid "A empresa está inativa."
+msgstr "The company is inactive."
+
+msgid "A empresa publicou uma nova versão enquanto o formulário estava aberto. Atualize a página e confira o termo vigente."
+msgstr "The company published a new version while this form was open. Reload the page and check the current terms."
+
+msgid "A empresa, unidade ou rede deste recebimento está inativa."
+msgstr "The company, unit, or network for this receipt is inactive."
+
+msgid "A função de recebimento ou emissão é necessária para consultar cargas."
+msgstr "The receiving or issuance role is required to view receipts."
+
+msgid "A hash ainda não apareceu na rede. Confira novamente esta mesma hash."
+msgstr "The hash has not appeared on the network yet. Check this same hash again."
+
+msgid "A hash de termo guardada no contrato é diferente da proposta."
+msgstr "The terms hash stored in the contract does not match the proposal."
+
+msgid "A hash informada pela carteira é inválida."
+msgstr "The hash returned by the wallet is invalid."
+
+msgid "A hash que a carteira retornou ficou disponível para recuperar esta tentativa."
+msgstr "The hash returned by the wallet is available to recover this attempt."
+
+msgid "A hash retornada foi preservada aqui para você tentar registrá-la na mesma tentativa."
+msgstr "The returned hash was saved here so you can register it to the same attempt."
+
+msgid "A operação do recebimento aponta para implantações inválidas."
+msgstr "The receipt operation points to invalid deployments."
+
+msgid "A operação não tem uma rede selecionada."
+msgstr "No network is selected for this operation."
+
+msgid "A permissão atual desta carteira não inclui recebimento."
+msgstr "This wallet does not currently have receiving permission."
+
+msgid "A permissão salva não foi confirmada nesta rede e neste UnitRegistry."
+msgstr "The saved permission was not confirmed on this network and UnitRegistry."
+
+msgid "A pesagem e a NF-e precisam estar salvas no recebimento."
+msgstr "The weighing details and NF-e must be saved on the receipt."
+
+msgid "A pessoa precisa ter a função correspondente no SaaS."
+msgstr "The person must have the corresponding role in the SaaS."
+
+msgid "A pessoa precisa ter um vínculo ativo com a empresa."
+msgstr "The person must have an active membership with the company."
+
+msgid "A pessoa precisa ter uma carteira ativa e verificada no SaaS."
+msgstr "The person must have an active, verified wallet in the SaaS."
+
+msgid "A pessoa selecionada não pertence à equipe ativa da empresa."
+msgstr "The selected person is not on the company’s active team."
+
+msgid "A precisão do token mudou; confira a emissão antes de apresentá-la."
+msgstr "The token decimals changed. Review the issuance before presenting it."
+
+msgid "A proposta não aparece pendente no estado atual do contrato."
+msgstr "The proposal is not pending in the contract’s current state."
+
+msgid "A proposta não está ligada à SojaCoin da empresa."
+msgstr "The proposal is not linked to this company’s SojaCoin contract."
+
+msgid "A proposta não está pendente no contrato."
+msgstr "The proposal is not pending in the contract."
+
+msgid "A proposta não tem rede e contrato salvos."
+msgstr "The proposal has no saved network or contract."
+
+msgid "A página ficou desatualizada. Reabra ou atualize o link e tente novamente."
+msgstr "This page is out of date. Reopen or reload the link and try again."
+
+msgid "A rede ainda não confirmou esta chamada. Consulte novamente depois."
+msgstr "The network has not confirmed this call yet. Check again later."
+
+msgid "A rede ainda não confirmou esta transação. A consulta continuará enquanto a página estiver aberta."
+msgstr "The network has not confirmed this transaction yet. Checking will continue while this page is open."
+
+msgid "A rede ainda não confirmou esta transação. Consulte novamente depois."
+msgstr "The network has not confirmed this transaction yet. Check again later."
+
+msgid "A rede do lote deve ser a mesma rede que confirmou o recebimento."
+msgstr "The batch must use the network that confirmed the receipt."
+
+msgid "A rede está inativa."
+msgstr "The network is inactive."
+
+msgid "A rede informada pelo servidor não corresponde a esta carteira."
+msgstr "The network reported by the server does not match this wallet."
+
+msgid "A rede mudou entre a preparação e a abertura da carteira. Atualize a página."
+msgstr "The network changed after preparation and before opening the wallet. Reload the page."
+
+msgid "A rede ou a SojaCoin desta proposta está inativa."
+msgstr "The network or SojaCoin contract for this proposal is inactive."
+
+msgid "A rede ou os contratos deste lote estão inativos."
+msgstr "The network or contracts for this batch are inactive."
+
+msgid "A rede recusou a pré-validação do lote. Confira auditoria, permissão de emissão e estado da carga."
+msgstr "The network rejected the batch pre-check. Review the audit, issuance permission, and load status."
+
+msgid "A rede recusou a simulação. Confira o prazo, a auditoria, o estoque e a permissão de emissão do lote."
+msgstr "The network rejected the simulation. Check the deadline, audit, inventory, and batch issuance permission."
+
+msgid "A rede recusou o pré-teste do cancelamento deste lote."
+msgstr "The network rejected the cancellation pre-check for this batch."
+
+msgid "A rede rejeitou a criação. Você pode iniciar uma nova tentativa."
+msgstr "The network rejected the deployment. You can start a new attempt."
+
+msgid "A rede reverteu a chamada. Uma nova tentativa pode ser iniciada."
+msgstr "The network reverted the call. You can start a new attempt."
+
+msgid "A solicitação de envio não foi aberta para esta tentativa."
+msgstr "The wallet submission request was not opened for this attempt."
+
+msgid "A solicitação foi recusada na carteira. Você pode tentar novamente."
+msgstr "The wallet declined the request. You can try again."
+
+msgid "A solicitação foi recusada. Você pode tentar novamente."
+msgstr "The request was declined. You can try again."
+
+msgid "A solicitação não pôde ser concluída."
+msgstr "The request could not be completed."
+
+msgid "A tara e os descontos precisam deixar peso líquido maior que zero."
+msgstr "The tare and deductions must leave a net weight greater than zero."
+
+msgid "A tentativa anterior fixou outro prazo. Reabra o recebimento e use o prazo salvo."
+msgstr "The previous attempt fixed a different deadline. Reopen the receipt and use the saved deadline."
+
+msgid "A tentativa não está aguardando uma transação da carteira."
+msgstr "This attempt is not waiting for a wallet transaction."
+
+msgid "A tentativa não pertence a este link de aceite."
+msgstr "This attempt does not belong to this acceptance link."
+
+msgid "A tentativa não pertence a este lote."
+msgstr "This attempt does not belong to this batch."
+
+msgid "A tentativa não pertence a este participante e empresa."
+msgstr "This attempt does not belong to this participant and company."
+
+msgid "A transação ainda aguarda confirmação da rede."
+msgstr "The transaction is still waiting for network confirmation."
+
+msgid "A transação ainda não foi enviada pela carteira."
+msgstr "The transaction has not been submitted by the wallet yet."
+
+msgid "A transação chama outro contrato TokenIssuanceBatches."
+msgstr "The transaction calls a different TokenIssuanceBatches contract."
+
+msgid "A transação da proposta ainda não foi confirmada."
+msgstr "The proposal transaction has not been confirmed yet."
+
+msgid "A transação encontrada pertence a outra rede."
+msgstr "The transaction found belongs to a different network."
+
+msgid "A transação exige conferência: os dados confirmados diferem do esperado. Nenhuma etapa posterior será liberada."
+msgstr "This transaction needs review: the confirmed data differs from what was expected. Later steps remain locked."
+
+msgid "A transação foi enviada por outra carteira."
+msgstr "The transaction was sent by a different wallet."
+
+msgid "A transação foi enviada por uma carteira diferente da dona do contrato."
+msgstr "The transaction was sent by a wallet other than the contract owner."
+
+msgid "A transação foi enviada. Aguardando confirmação da rede."
+msgstr "The transaction was submitted. Waiting for network confirmation."
+
+msgid "A transação foi revertida. A etapa pode ser preparada novamente."
+msgstr "The transaction reverted. You can prepare this step again."
+
+msgid "A transação já foi enviada. Consulte a confirmação abaixo."
+msgstr "The transaction was already sent. Check its confirmation below."
+
+msgid "A transação pertence a outra rede."
+msgstr "The transaction belongs to a different network."
+
+msgid "A transação preparada não deve transferir moeda nativa."
+msgstr "The prepared transaction must not transfer native currency."
+
+msgid "A transação terminou; confira o estado atualizado do lote."
+msgstr "The transaction finished; check the updated batch status."
+
+msgid "A unidade ainda não tem ID confirmado na blockchain."
+msgstr "The unit does not have a confirmed blockchain ID yet."
+
+msgid "A unidade local não corresponde ao registro ativo do UnitRegistry."
+msgstr "The local unit does not match the active UnitRegistry record."
+
+msgid "A user cannot grant a function to themselves."
+msgstr "A user cannot grant a role to themselves."
+
+msgid "Abra esta página em um navegador com MetaMask ou outra carteira EVM."
+msgstr "Open this page in a browser with MetaMask or another EVM wallet."
+
+msgid "Abra esta página em um navegador com uma carteira EVM, como a MetaMask."
+msgstr "Open this page in a browser with an EVM wallet such as MetaMask."
+
+msgid "Abra o link em um navegador com a MetaMask ou outra carteira EVM."
+msgstr "Open this link in a browser with MetaMask or another EVM wallet."
+
+msgid "Abrir o recebimento"
+msgstr "Open receipt"
+
+msgid "Acesso à unidade alterado"
+msgstr "Unit access changed"
+
+msgid "Acesso à unidade atualizado"
+msgstr "Unit access updated"
+
+msgid "Acesso à unidade criada"
+msgstr "Unit access created"
+
+msgid "Acesso à unidade criado"
+msgstr "Unit access added"
+
+msgid "Acesso à unidade reativado"
+msgstr "Unit access restored"
+
+msgid "Acesso à unidade revogado"
+msgstr "Unit access revoked"
+
+msgid "Administrador"
+msgstr "Administrator"
+
+msgid "Administrator"
+msgstr "Administrator"
+
+msgid "Aguardando configuração"
+msgstr "Waiting for configuration"
+
+msgid "Aguardando confirmação"
+msgstr "Awaiting confirmation"
+
+msgid "Aguardando etapa anterior"
+msgstr "Waiting for the previous step"
+
+msgid "Aguardando implantação"
+msgstr "Waiting for deployment"
+
+msgid "Aguardando revogação"
+msgstr "Awaiting revocation"
+
+msgid "Ainda não enviada"
+msgstr "Not submitted yet"
+
+msgid "An optional contact telephone number."
+msgstr "An optional contact telephone number."
+
+msgid "Aprovação e emissão confirmadas."
+msgstr "Approval and issuance confirmed."
+
+msgid "As três transações do recebimento precisam estar confirmadas."
+msgstr "All three receipt transactions must be confirmed."
+
+msgid "Ativa"
+msgstr "Active"
+
+msgid "Ativa; revogação não concluída"
+msgstr "Active; revocation not completed"
+
+msgid "Auditing"
+msgstr "Auditing"
+
+msgid "Auditor"
+msgstr "Auditor"
+
+msgid "Auditoria"
+msgstr "Audit"
+
+msgid "CNPJ"
+msgstr "CNPJ"
+
+msgid "Cadastro"
+msgstr "Registration"
+
+msgid "Cancelar este processo de implantação?"
+msgstr "Cancel this deployment process?"
+
+msgid "Carteira"
+msgstr "Wallet"
+
+msgid "Carteira compatível não encontrada neste navegador."
+msgstr "No compatible wallet was found in this browser."
+
+msgid "Carteira do dono"
+msgstr "Owner wallet"
+
+msgid "Carteira pública do administrador"
+msgstr "Administrator public wallet"
+
+msgid "Carteira pública do participante"
+msgstr "Participant’s public wallet"
+
+msgid "Carteira que enviou"
+msgstr "Sender wallet"
+
+msgid "Carteira verificada. Atualizando a página."
+msgstr "Wallet verified. Reloading the page."
+
+msgid "Carteiras de contrato, como Safe, ainda não são compatíveis com este aceite. Use uma carteira individual compatível com MetaMask."
+msgstr "Contract wallets such as Safe are not supported for this acceptance yet. Use an individual wallet supported by MetaMask."
+
+msgid "Chamada enviada. Aguardando confirmação da rede."
+msgstr "Call submitted. Waiting for network confirmation."
+
+msgid "Chave de acesso da NF-e"
+msgstr "NF-e access key"
+
+msgid "Conceda primeiro o acesso correspondente a esta unidade no SaaS."
+msgstr "First grant this person the corresponding unit access in the SaaS."
+
+msgid "Concedida"
+msgstr "Granted"
+
+msgid "Concluída"
+msgstr "Completed"
+
+msgid "Conectar carteira e implantar"
+msgstr "Connect wallet and deploy"
+
+msgid "Conecte a carteira dona atual da SojaCoin para propor o cadastro."
+msgstr "Connect the current SojaCoin owner wallet to propose the registration."
+
+msgid "Conecte a carteira dona atual do contrato SojaCoin."
+msgstr "Connect the current owner wallet of the SojaCoin contract."
+
+msgid "Conecte a carteira dona da SojaCoin usada nesta tentativa."
+msgstr "Connect the owner wallet of the SojaCoin used for this attempt."
+
+msgid "Conecte a carteira dona do UnitRegistry para continuar."
+msgstr "Connect the UnitRegistry owner wallet to continue."
+
+msgid "Conecte a carteira dona do UnitRegistry."
+msgstr "Connect the UnitRegistry owner wallet."
+
+msgid "Conecte a carteira dona do contrato para continuar."
+msgstr "Connect the contract owner wallet to continue."
+
+msgid "Conecte a carteira e confira a rede selecionada."
+msgstr "Connect a wallet and check the selected network."
+
+msgid "Conecte a carteira informada na proposta do participante."
+msgstr "Connect the wallet listed in the participant proposal."
+
+msgid "Conecte a carteira pública indicada para este participante."
+msgstr "Connect the public wallet listed for this participant."
+
+msgid "Conecte a carteira à mesma rede da proposta."
+msgstr "Connect the wallet to the proposal’s network."
+
+msgid "Conecte uma carteira EVM válida."
+msgstr "Connect a valid EVM wallet."
+
+msgid "Conecte uma carteira para continuar."
+msgstr "Connect a wallet to continue."
+
+msgid "Conecte uma carteira verificada no perfil deste usuário."
+msgstr "Connect a wallet verified on this user’s profile."
+
+msgid "Conecte uma carteira verificada no seu perfil."
+msgstr "Connect a wallet verified on your profile."
+
+msgid "Conferindo a hash na rede…"
+msgstr "Checking the hash on the network…"
+
+msgid "Conferindo a transação no RPC…"
+msgstr "Checking the transaction through the RPC…"
+
+msgid "Conferindo a unidade e preparando a solicitação…"
+msgstr "Checking the unit and preparing the request…"
+
+msgid "Conferir hash"
+msgstr "Check hash"
+
+msgid "Confira a mensagem na MetaMask e assine para vincular a carteira."
+msgstr "Review the message in MetaMask and sign to link the wallet."
+
+msgid "Confirmada"
+msgstr "Confirmed"
+
+msgid "Confirmação revertida"
+msgstr "Confirmation reverted"
+
+msgid "Confirmação revertida; processo precisa de revisão"
+msgstr "Confirmation reverted; the process needs review"
+
+msgid "Confirme a alteração de permissão na carteira dona."
+msgstr "Confirm the permission change with the owner wallet."
+
+msgid "Confirme a configuração na MetaMask."
+msgstr "Confirm the configuration in MetaMask."
+
+msgid "Confirme a criação do contrato na MetaMask."
+msgstr "Confirm contract creation in MetaMask."
+
+msgid "Confirme a nova senha"
+msgstr "Confirm the new password"
+
+msgid "Confirme o registro da unidade na carteira."
+msgstr "Confirm the unit registration in the wallet."
+
+msgid "Confirme que a empresa aprovou este PDF antes de publicá-lo."
+msgstr "Confirm that the company approved this PDF before publishing it."
+
+msgid "Confirmo que a empresa aprovou este PDF para uso com seus participantes."
+msgstr "I confirm that the company approved this PDF for use with its participants."
+
+msgid "Consultando a confirmação da rede…"
+msgstr "Checking network confirmation…"
+
+msgid "Consultando recibo e endereço do contrato no RPC…"
+msgstr "Checking the receipt and contract address through the RPC…"
+
+msgid "Consultando recibo e vínculo no RPC…"
+msgstr "Checking the receipt and registry link through the RPC…"
+
+msgid "Consultar confirmação"
+msgstr "Check confirmation"
+
+msgid "Continuar tentativa"
+msgstr "Continue attempt"
+
+msgid "Contrato"
+msgstr "Contract"
+
+msgid "Contrato confirmado em %(address)s."
+msgstr "Contract confirmed at %(address)s."
+
+msgid "Contratos confirmados"
+msgstr "Confirmed contracts"
+
+msgid "Copiar link"
+msgstr "Copy link"
+
+msgid "Código"
+msgstr "Code"
+
+msgid "Data e hora da pesagem"
+msgstr "Weighing date and time"
+
+msgid "Desconto por grãos avariados (kg)"
+msgstr "Damaged grain deduction (kg)"
+
+msgid "Desconto por impurezas (kg)"
+msgstr "Impurities deduction (kg)"
+
+msgid "Desconto por umidade (kg)"
+msgstr "Moisture deduction (kg)"
+
+msgid "Disponível após a implantação dos nove contratos"
+msgstr "Available after all nine contracts are deployed"
+
+msgid "Documento obrigatório que será guardado em armazenamento privado."
+msgstr "Required document stored in private storage."
+
+msgid "Documento obrigatório. A hash será calculada sobre os bytes exatos do PDF."
+msgstr "Required document. Its hash is calculated from the exact PDF bytes."
+
+msgid "Emissão"
+msgstr "Issuance"
+
+msgid "Empresa ou rede não encontrada."
+msgstr "The company or network could not be found."
+
+msgid "Endereço"
+msgstr "Address"
+
+msgid "Endereço do contrato"
+msgstr "Contract address"
+
+msgid "Envia os campos do romaneio e a hash do PDF para confirmLoadReceipt."
+msgstr "Sends the weighing ticket fields and PDF hash to confirmLoadReceipt."
+
+msgid "Envie este documento em um arquivo PDF."
+msgstr "Upload this document as a PDF file."
+
+msgid "Envie o termo da empresa em um arquivo PDF."
+msgstr "Upload the company terms as a PDF file."
+
+msgid "Envie todos os documentos obrigatórios em PDF."
+msgstr "Upload all required documents as PDF files."
+
+msgid "Envio cancelado na carteira. Você pode tentar novamente."
+msgstr "The wallet canceled the request. You can try again."
+
+msgid "Envio iniciado; hash pendente de conferência"
+msgstr "Submission started; hash needs to be checked"
+
+msgid "Envio recusado pela carteira."
+msgstr "The wallet declined the submission."
+
+msgid "Escolha recebimento ou emissão."
+msgstr "Choose receiving or issuance."
+
+msgid "Escolha uma rede que tenha SojaCoin ativa."
+msgstr "Choose a network with an active SojaCoin contract."
+
+msgid "Esta ação já foi enviada. Atualizando a situação da tentativa existente."
+msgstr "This action was already submitted. Updating the existing attempt."
+
+msgid "Esta carteira já está cadastrada na SojaCoin."
+msgstr "This wallet is already registered in SojaCoin."
+
+msgid "Esta carteira já está cadastrada nesta empresa."
+msgstr "This wallet is already registered for this company."
+
+msgid "Esta carteira já tem uma alteração aguardando conclusão. Resolva-a primeiro."
+msgstr "A change for this wallet is already in progress. Resolve it first."
+
+msgid "Esta carteira não está autorizada pelo contrato a cancelar o lote."
+msgstr "This wallet is not authorized by the contract to cancel the batch."
+
+msgid "Esta carteira não tem essa permissão ativa nesta unidade."
+msgstr "This wallet does not have that permission active for this unit."
+
+msgid "Esta carteira não tem recebimento ativo nesta unidade."
+msgstr "This wallet does not have active receiving permission for this unit."
+
+msgid "Esta conta está inativa."
+msgstr "This account is inactive."
+
+msgid "Esta etapa ainda não aceita carteira de contrato; use uma conta individual EOA."
+msgstr "This step does not support contract wallets yet. Use an individual EOA account."
+
+msgid "Esta etapa já foi enviada. Consulte a confirmação da transação existente."
+msgstr "This step was already submitted. Check the existing transaction confirmation."
+
+msgid "Esta função já está ativa para este membro."
+msgstr "This role is already active for this team member."
+
+msgid "Esta proposta não está mais aguardando o aceite."
+msgstr "This proposal is no longer waiting for acceptance."
+
+msgid "Esta solicitação da carteira já foi aberta. Se o navegador perdeu a resposta, informe a hash na mesma tentativa."
+msgstr "This wallet request was already opened. If the browser lost the response, enter the hash for the same attempt."
+
+msgid "Esta tentativa ainda não tem uma transação enviada para consultar."
+msgstr "This attempt does not have a submitted transaction to check yet."
+
+msgid "Esta tentativa já abriu a carteira. Se a resposta foi perdida, informe a hash da mesma tentativa."
+msgstr "This attempt already opened the wallet. If the response was lost, enter the hash for the same attempt."
+
+msgid "Esta tentativa já está associada a outra hash."
+msgstr "This attempt is already associated with a different hash."
+
+msgid "Esta tentativa já está ligada a outra hash."
+msgstr "This attempt is already linked to a different hash."
+
+msgid "Esta tentativa já foi enviada com outra hash."
+msgstr "This attempt was already submitted with a different hash."
+
+msgid "Esta tentativa não está aguardando resposta da carteira."
+msgstr "This attempt is not waiting for a wallet response."
+
+msgid "Esta tentativa não está pronta para abrir a carteira."
+msgstr "This attempt is not ready to open the wallet."
+
+msgid "Esta tentativa não foi preparada para a carteira do participante."
+msgstr "This attempt was not prepared for the participant’s wallet."
+
+msgid "Esta tentativa não pertence ao link de aprovação aberto."
+msgstr "This attempt does not belong to the open approval link."
+
+msgid "Esta tentativa não pode mais abrir a carteira."
+msgstr "This attempt can no longer open the wallet."
+
+msgid "Esta tentativa não pode receber uma hash."
+msgstr "A hash cannot be added to this attempt."
+
+msgid "Este desafio já foi usado ou invalidado."
+msgstr "This challenge has already been used or invalidated."
+
+msgid "Este desafio já foi usado ou invalidado. Solicite outro."
+msgstr "This challenge has already been used or invalidated. Request another one."
+
+msgid "Este desafio já foi usado. Solicite outro."
+msgstr "This challenge has already been used. Request another one."
+
+msgid "Este link de aceite deixou de estar ativo."
+msgstr "This acceptance link is no longer active."
+
+msgid "Este link de aceite expirou ou foi usado."
+msgstr "This acceptance link has expired or was used."
+
+msgid "Este link de aceite não está mais ativo."
+msgstr "This acceptance link is no longer active."
+
+msgid "Este link de aceite é inválido ou expirou."
+msgstr "This acceptance link is invalid or has expired."
+
+msgid "Este link de aprovação é inválido ou expirou."
+msgstr "This approval link is invalid or has expired."
+
+msgid "Este link foi usado, cancelado ou expirou."
+msgstr "This link has been used, canceled, or expired."
+
+msgid "Este link não pertence ao participante e à empresa."
+msgstr "This link does not belong to this participant and company."
+
+msgid "Este link não pode acessar a tentativa de aceite."
+msgstr "This link cannot access the acceptance attempt."
+
+msgid "Este lote precisa de conferência antes de qualquer aprovação."
+msgstr "This batch must be reviewed before it can be approved."
+
+msgid "Este participante ainda não tem um termo salvo."
+msgstr "This participant does not have saved terms yet."
+
+msgid "Este participante já está registrado na SojaCoin."
+msgstr "This participant is already registered in SojaCoin."
+
+msgid "Este recebimento ainda não tem uma rede confirmada."
+msgstr "This receipt does not have a confirmed network yet."
+
+msgid "Este termo já foi ligado a outra rede."
+msgstr "These terms are already linked to another network."
+
+msgid "Este usuário já está vinculado a esta empresa."
+msgstr "This user is already a member of this company."
+
+msgid "Este vínculo já aponta para %(address)s."
+msgstr "This link already points to %(address)s."
+
+msgid "Etapa confirmada na blockchain."
+msgstr "Step confirmed on the blockchain."
+
+msgid "Etapa confirmada. ID do recebimento na rede: %(depositId)s."
+msgstr "Step confirmed. Receipt ID on the network: %(depositId)s."
+
+msgid "Exemplo: 2026/2027. O valor também será convertido para bytes32."
+msgstr "Example: 2026/2027. This value will also be converted to bytes32."
+
+msgid "Expires on %(date)s."
+msgstr "Expires on %(date)s."
+
+msgid "Falhou"
+msgstr "Failed"
+
+msgid "Falhou; pode tentar novamente"
+msgstr "Failed; you can try again"
+
+msgid "Falta código de contrato em um dos endereços configurados para esta rede."
+msgstr "A configured contract address on this network is missing its contract type."
+
+msgid "Função"
+msgstr "Role"
+
+msgid "Função concedida"
+msgstr "Role granted"
+
+msgid "Função revogada"
+msgstr "Role revoked"
+
+msgid "Grãos avariados (%)"
+msgstr "Damaged grains (%)"
+
+msgid "Hash conferida. A rede ainda precisa confirmar a transação."
+msgstr "Hash checked. The network still needs to confirm the transaction."
+
+msgid "Hash conferida. Aguardando confirmação da rede."
+msgstr "Hash checked. Waiting for network confirmation."
+
+msgid "Hash da carteira"
+msgstr "Wallet hash"
+
+msgid "Hash da chamada de configuração"
+msgstr "Configuration call hash"
+
+msgid "Hash da transação"
+msgstr "Transaction hash"
+
+msgid "Hash recebida pela carteira. Conferindo a transação na rede…"
+msgstr "Hash received from the wallet. Checking the transaction on the network…"
+
+msgid "Hash recebida. Conferindo a transação na rede…"
+msgstr "Hash received. Checking the transaction on the network…"
+
+msgid "Hash recebida: %(hash)s. Conferindo na rede…"
+msgstr "Hash received: %(hash)s. Checking the network…"
+
+msgid "Hash registrada. A rede ainda precisa confirmar a transação."
+msgstr "Hash registered. The network still needs to confirm the transaction."
+
+msgid "Hash registrada. Aguarde a rede e consulte a confirmação."
+msgstr "Hash registered. Wait for the network and check the confirmation."
+
+msgid "Hash retornada pela carteira"
+msgstr "Hash returned by the wallet"
+
+msgid "Há mais de uma SojaCoin ativa para esta empresa e rede. Peça uma conferência."
+msgstr "More than one active SojaCoin contract exists for this company and network. Ask an administrator to review it."
+
+msgid "Há uma tentativa de proposta aberta com dados diferentes. Confira-a antes de continuar."
+msgstr "An open proposal attempt has different data. Review it before continuing."
+
+msgid "Impurezas (%)"
+msgstr "Impurities (%)"
+
+msgid "Informação de classificação; não substitui o desconto em kg."
+msgstr "Quality information; does not replace the deduction in kilograms."
+
+msgid "Informe a hash exibida pela carteira."
+msgstr "Enter the hash shown by the wallet."
+
+msgid "Informe a hash retornada pela carteira"
+msgstr "Enter the hash returned by the wallet"
+
+msgid "Informe a hash retornada pela carteira dona."
+msgstr "Enter the hash returned by the owner wallet."
+
+msgid "Informe a hash retornada pela carteira."
+msgstr "Enter the hash returned by the wallet."
+
+msgid "Informe o endereço público. Nunca informe uma chave privada."
+msgstr "Enter the public address. Never enter a private key."
+
+msgid "Informe o nome do participante."
+msgstr "Enter the participant name."
+
+msgid "Informe o prazo de aprovação do participante."
+msgstr "Enter the participant approval deadline."
+
+msgid "Informe os 44 dígitos da chave, sem espaços ou pontuação."
+msgstr "Enter the 44 digits of the key, with no spaces or punctuation."
+
+msgid "Informe um CNPJ válido."
+msgstr "Enter a valid CNPJ."
+
+msgid "Informe um endereço público de carteira válido."
+msgstr "Enter a valid public wallet address."
+
+msgid "Informe um percentual decimal válido."
+msgstr "Enter a valid decimal percentage."
+
+msgid "Informe um prazo de aprovação válido."
+msgstr "Enter a valid approval deadline."
+
+msgid "Informe uma carteira EVM válida, iniciada por 0x."
+msgstr "Enter a valid EVM wallet address starting with 0x."
+
+msgid "Informe uma hash de transação EVM válida."
+msgstr "Enter a valid EVM transaction hash."
+
+msgid "Iniciado em"
+msgstr "Started at"
+
+msgid "Iniciar implantação de contratos"
+msgstr "Start contract deployment"
+
+msgid "Inscrição estadual"
+msgstr "State registration number"
+
+msgid "Issuance"
+msgstr "Issuance"
+
+msgid "Issuance operator"
+msgstr "Issuance operator"
+
+msgid "Já existe um aceite em andamento. Use essa tentativa para conferir a hash."
+msgstr "An acceptance is already in progress. Use that attempt to check the hash."
+
+msgid "Já existe uma empresa com este CNPJ."
+msgstr "A company with this CNPJ already exists."
+
+msgid "Já existe uma proposta pendente para esta carteira na SojaCoin."
+msgstr "A registration proposal for this wallet is already pending in SojaCoin."
+
+msgid "Já existe uma proposta pendente para esta carteira."
+msgstr "A proposal for this wallet is already pending."
+
+msgid "Já existe uma solicitação aberta para esta carteira. Confira a hash ou a confirmação na página."
+msgstr "There is already an open request for this wallet. Check its hash or confirmation on this page."
+
+msgid "Já existe uma tentativa aberta para este lote."
+msgstr "There is already an open attempt for this batch."
+
+msgid "Já existe uma tentativa aberta. Atualize a página e use a ação dessa tentativa para continuar ou informar a hash."
+msgstr "An attempt is already open. Reload the page and use that attempt's action to continue or enter its hash."
+
+msgid "Já existe uma tentativa de aprovação aguardando resposta da carteira."
+msgstr "An approval attempt is already waiting for a wallet response."
+
+msgid "Já existe uma unidade com este CNPJ."
+msgstr "A unit with this CNPJ already exists."
+
+msgid "Já existe uma unidade com este código."
+msgstr "A unit with this code already exists."
+
+msgid "Laudo de classificação (PDF)"
+msgstr "Grading report (PDF)"
+
+msgid "Link copiado"
+msgstr "Link copied"
+
+msgid "Link copiado."
+msgstr "Link copied."
+
+msgid "Link criado. Copie e encaminhe ao participante; gerar outro invalida este."
+msgstr "Link created. Copy and send it to the participant; creating another link will invalidate this one."
+
+msgid "Link de aceite para copiar"
+msgstr "Acceptance link to copy"
+
+msgid "Link selecionado para copiar."
+msgstr "Link selected for copying."
+
+msgid "Lotes de emissão"
+msgstr "Issuance batches"
+
+msgid "Membro adicionado"
+msgstr "Team member added"
+
+msgid "Membro desativado"
+msgstr "Team member deactivated"
+
+msgid "MetaMask não encontrada neste navegador."
+msgstr "MetaMask was not found in this browser."
+
+msgid "MetaMask não encontrada. Instale ou habilite a extensão no navegador."
+msgstr "MetaMask was not found. Install or enable the browser extension."
+
+msgid "Módulo de CPR"
+msgstr "CPR module"
+
+msgid "Módulo de administração"
+msgstr "Administration module"
+
+msgid "Módulo de bloqueios"
+msgstr "Locks module"
+
+msgid "Módulo de recebimentos"
+msgstr "Receipts module"
+
+msgid "Módulo de resgates"
+msgstr "Redemptions module"
+
+msgid "Módulo de serviços"
+msgstr "Services module"
+
+msgid "Nenhum arquivo selecionado"
+msgstr "No file selected"
+
+msgid "Nenhuma carteira foi conectada."
+msgstr "No wallet was connected."
+
+msgid "Nenhuma conta foi selecionada na carteira."
+msgstr "No account was selected in the wallet."
+
+msgid "Nome completo"
+msgstr "Full name"
+
+msgid "Nome da unidade"
+msgstr "Unit name"
+
+msgid "Nome do participante"
+msgstr "Participant name"
+
+msgid "Nome fantasia"
+msgstr "Trade name"
+
+msgid "Nonce ou prazo mudou. Gere uma nova assinatura para o estado atual."
+msgstr "The nonce or deadline changed. Sign again for the current state."
+
+msgid "Not provided"
+msgstr "Not provided"
+
+msgid "Nota fiscal (PDF)"
+msgstr "Invoice (PDF)"
+
+msgid "Nova senha"
+msgstr "New password"
+
+msgid "Nova tentativa"
+msgstr "New attempt"
+
+msgid "Não cancele o link enquanto uma transação do participante estiver sem resultado."
+msgstr "Do not cancel the link while the participant’s transaction has no result."
+
+msgid "Não concedida"
+msgstr "Not granted"
+
+msgid "Não encontrei uma SojaCoin ativa da empresa na rede escolhida."
+msgstr "No active SojaCoin contract for this company was found on the selected network."
+
+msgid "Não encontrei uma carteira Web3 neste navegador."
+msgstr "No Web3 wallet was found in this browser."
+
+msgid "Não foi encontrado um registro confirmado para esta unidade."
+msgstr "No confirmed blockchain registration was found for this unit."
+
+msgid "Não foi possível cadastrar o contrato: verifique os dados e duplicidades."
+msgstr "The contract could not be registered. Check the details and for duplicates."
+
+msgid "Não foi possível concluir a operação."
+msgstr "Could not complete the operation."
+
+msgid "Não foi possível concluir esta ação."
+msgstr "Could not complete this action."
+
+msgid "Não foi possível concluir esta etapa."
+msgstr "Could not complete this step."
+
+msgid "Não foi possível conferir a hash."
+msgstr "Could not check the hash."
+
+msgid "Não foi possível conferir a transação no RPC. A tentativa foi mantida; envie novamente a mesma hash quando a rede estiver disponível."
+msgstr "Could not check the transaction through the RPC. The attempt was kept; submit the same hash again when the network is available."
+
+msgid "Não foi possível conferir a transação no RPC. A tentativa foi preservada para receber a mesma hash novamente."
+msgstr "Could not check the transaction through the RPC. The attempt was preserved so the same hash can be submitted again."
+
+msgid "Não foi possível confirmar o estado do pedido (%(error)s). %(followup)s"
+msgstr "Could not confirm the request status (%(error)s). %(followup)s"
+
+msgid "Não foi possível confirmar o estado do pedido no servidor (%(error)s). %(followup)s"
+msgstr "Could not confirm the request status on the server (%(error)s). %(followup)s"
+
+msgid "Não foi possível consultar a confirmação no RPC. A tentativa foi preservada para nova consulta."
+msgstr "Could not check the confirmation through the RPC. The attempt was preserved for another check."
+
+msgid "Não foi possível consultar a confirmação."
+msgstr "Could not check the confirmation."
+
+msgid "Não foi possível consultar a transação no RPC."
+msgstr "The transaction could not be queried through the RPC."
+
+msgid "Não foi possível consultar os contratos no RPC. Tente novamente."
+msgstr "Could not query the contracts through the RPC. Try again."
+
+msgid "Não foi possível criar o link."
+msgstr "Could not create the link."
+
+msgid "Não foi possível identificar a rede da carteira."
+msgstr "Could not identify the wallet network."
+
+msgid "Não foi possível montar a assinatura EIP-712."
+msgstr "The EIP-712 signature payload could not be built."
+
+msgid "Não foi possível montar a autorização EIP-712 do lote."
+msgstr "The batch EIP-712 authorization could not be built."
+
+msgid "Não foi possível preparar a chamada setPermissions."
+msgstr "The setPermissions call could not be prepared."
+
+msgid "Não foi possível preparar a transação."
+msgstr "Could not prepare the transaction."
+
+msgid "Não foi possível preparar esta chamada."
+msgstr "Could not prepare this call."
+
+msgid "Não foi possível preparar o cancelamento."
+msgstr "Could not prepare the cancellation."
+
+msgid "Não foi possível preparar o lote."
+msgstr "Could not prepare the batch."
+
+msgid "Não foi possível reservar a aprovação deste lote."
+msgstr "Approval for this batch could not be reserved."
+
+msgid "Não foi possível reservar esta carga para o lote."
+msgstr "This load could not be reserved for the batch."
+
+msgid "Não foi possível reservar o cancelamento do lote."
+msgstr "Cancellation of this batch could not be reserved."
+
+msgid "Não foi possível saber se a carteira enviou a transação. Não envie outra. Se ela mostrar uma hash, informe-a nesta tentativa após recarregar a página."
+msgstr "The wallet did not confirm whether it submitted the transaction. Do not submit another. If it shows a hash, reload the page and enter it for this attempt."
+
+msgid "Não foi possível saber se a carteira enviou a transação. Recarregue e informe a hash nesta tentativa; não inicie outro envio."
+msgstr "The wallet submission status is unknown. Reload and enter the hash for this attempt; do not start another submission."
+
+msgid "Não foi possível saber se a chamada foi enviada. Não envie outra; informe a hash nesta mesma tentativa."
+msgstr "The call submission status is unknown. Do not send another one; enter its hash in this same attempt."
+
+msgid "Não foi possível saber se a transação foi enviada. Não tente enviar outra. "
+msgstr "The transaction submission status is unknown. Do not send another transaction. "
+
+msgid "Não foi possível verificar a carteira."
+msgstr "Could not verify the wallet."
+
+msgid "Não há TokenIssuanceBatches ativo para esta empresa e rede."
+msgstr "There is no active TokenIssuanceBatches contract for this company and network."
+
+msgid "Não há código SojaCoin no endereço cadastrado nesta rede."
+msgstr "There is no SojaCoin contract code at the registered address on this network."
+
+msgid "Não informada"
+msgstr "Not provided"
+
+msgid "Não recebi uma resposta definitiva da carteira. Não envie outra transação; se ela mostrou uma hash, informe a mesma hash abaixo."
+msgstr "The wallet did not return a definite result. Do not send another transaction; if it showed a hash, enter that same hash below."
+
+msgid "Não é possível adicionar membros a uma empresa inativa."
+msgstr "Members cannot be added to an inactive company."
+
+msgid "O ID da carga, o ID da unidade e o peso precisam ser positivos."
+msgstr "The receipt ID, unit ID, and weight must be positive."
+
+msgid "O PDF está vazio ou excede o limite configurado."
+msgstr "The PDF is empty or exceeds the configured size limit."
+
+msgid "O PDF está vazio ou excede o limite permitido."
+msgstr "The PDF is empty or exceeds the allowed size limit."
+
+msgid "O PDF excede o limite configurado."
+msgstr "The PDF exceeds the configured size limit."
+
+msgid "O PDF excede o limite permitido."
+msgstr "The PDF exceeds the allowed size limit."
+
+msgid "O PDF publicado não está disponível no armazenamento."
+msgstr "The published PDF is unavailable in storage."
+
+msgid "O RPC ainda não encontrou a hash. A tentativa foi preservada para nova conferência."
+msgstr "The RPC has not found the hash yet. The attempt has been preserved for another check."
+
+msgid "O RPC ainda não encontrou a hash. A tentativa foi preservada."
+msgstr "The RPC has not found the hash yet. The attempt has been preserved."
+
+msgid "O RPC ainda não encontrou a hash. Consulte novamente."
+msgstr "The RPC has not found the hash yet. Check again."
+
+msgid "O RPC ainda não encontrou essa hash. Confira a hash e tente novamente."
+msgstr "The RPC has not found this hash yet. Check it and try again."
+
+msgid "O RPC ainda não encontrou esta hash. A tentativa foi preservada."
+msgstr "The RPC has not found this hash yet. The attempt has been preserved."
+
+msgid "O RPC ainda não encontrou esta hash. Tente novamente com a mesma hash."
+msgstr "The RPC has not found this hash yet. Try again with the same hash."
+
+msgid "O RPC não encontrou código em um contrato salvo para este lote."
+msgstr "The RPC found no code at a contract address saved for this batch."
+
+msgid "O RPC retornou calldata inválida."
+msgstr "The RPC returned invalid call data."
+
+msgid "O RPC retornou dados de transação inválidos."
+msgstr "The RPC returned invalid transaction data."
+
+msgid "O RPC retornou outra hash de transação."
+msgstr "The RPC returned a different transaction hash."
+
+msgid "O TokenIssuanceBatches está ligado a outra SojaCoin."
+msgstr "TokenIssuanceBatches is linked to a different SojaCoin contract."
+
+msgid "O UnitRegistry não aponta para a SojaCoin do recebimento."
+msgstr "The UnitRegistry does not point to the receipt’s SojaCoin contract."
+
+msgid "O UnitRegistry não reconhece permissão de emissão para esta carteira."
+msgstr "The UnitRegistry does not recognize issuance permission for this wallet."
+
+msgid "O arquivo enviado não parece ser um PDF válido."
+msgstr "The uploaded file does not appear to be a valid PDF."
+
+msgid "O campo do link não está disponível nesta página."
+msgstr "The link field is unavailable on this page."
+
+msgid "O conteúdo do desafio não corresponde ao lote atual."
+msgstr "The challenge data does not match the current batch."
+
+msgid "O contrato não guarda a hash do termo assinado."
+msgstr "The contract does not contain the hash of the signed terms."
+
+msgid "O contrato não reconhece recebimento para esta carteira."
+msgstr "The contract does not recognize receiving permission for this wallet."
+
+msgid "O contrato recebe a hash Keccak da chave de acesso da NF-e. O PDF fica privado no SaaS."
+msgstr "The contract receives the Keccak hash of the NF-e access key. The PDF stays private in the SaaS."
+
+msgid "O contrato retornou um próximo ID de lote inválido."
+msgstr "The contract returned an invalid next batch ID."
+
+msgid "O código da unidade não cabe em bytes32."
+msgstr "The unit code does not fit in bytes32."
+
+msgid "O desafio de assinatura não pertence a este link."
+msgstr "The signing challenge does not belong to this link."
+
+msgid "O destino da transação não é a SojaCoin desta empresa."
+msgstr "The transaction destination is not this company’s SojaCoin contract."
+
+msgid "O digest calculado não corresponde ao contrato. Nenhuma aprovação foi preparada."
+msgstr "The calculated digest does not match the contract. No approval was prepared."
+
+msgid "O digest do contrato mudou. Atualize a página e assine novamente."
+msgstr "The contract digest changed. Reload the page and sign again."
+
+msgid "O documento deste recebimento não está disponível."
+msgstr "The document for this receipt is unavailable."
+
+msgid "O endereço encontrado não corresponde ao processo. Revisão necessária."
+msgstr "The address found does not match this process. Review is required."
+
+msgid "O envio anterior ficou incerto. Use a mesma hash retornada pela carteira; não envie outra transação."
+msgstr "The previous submission has an unknown status. Use the same hash returned by the wallet; do not send another transaction."
+
+msgid "O envio desta etapa ficou incerto. Informe a hash da carteira para recuperar a mesma tentativa; ela não será enviada novamente."
+msgstr "The status of this step is unknown. Enter the wallet hash to recover the same attempt; it will not be submitted again."
+
+msgid "O envio ficou incerto. Recupere a mesma hash; não envie outra transação."
+msgstr "The submission status is unknown. Recover the same hash; do not send another transaction."
+
+msgid "O estado atual do lote na blockchain não permite assinatura."
+msgstr "The batch’s current blockchain state does not allow signing."
+
+msgid "O estado atual do lote na blockchain não permite cancelamento."
+msgstr "The batch’s current blockchain state does not allow cancellation."
+
+msgid "O estado final do lote ou do recebimento diverge dos eventos confirmados."
+msgstr "The final batch or receipt state differs from the confirmed events."
+
+msgid "O evento BatchApproved diverge da assinatura e do lote esperados."
+msgstr "The BatchApproved event differs from the expected signature and batch."
+
+msgid "O evento BatchCanceled não corresponde à carteira autorizada."
+msgstr "The BatchCanceled event does not match the authorized wallet."
+
+msgid "O evento BatchCreated diverge do lote preparado pelo SaaS."
+msgstr "The BatchCreated event differs from the batch prepared by the SaaS."
+
+msgid "O evento BatchCreated não corresponde ao estado das cargas no bloco."
+msgstr "The BatchCreated event does not match the load state at that block."
+
+msgid "O evento BatchCreated retornou um ID de lote inválido."
+msgstr "The BatchCreated event returned an invalid batch ID."
+
+msgid "O evento PermissionsSet não corresponde à alteração preparada."
+msgstr "The PermissionsSet event does not match the prepared change."
+
+msgid "O evento TokensIssued usado na confirmação não corresponde ao recebimento."
+msgstr "The TokensIssued event used for confirmation does not match the receipt."
+
+msgid "O evento da proposta diverge do participante ou do termo salvo."
+msgstr "The proposal event does not match the saved participant or terms."
+
+msgid "O evento de aceite diverge do participante ou do termo salvo."
+msgstr "The acceptance event does not match the saved participant or terms."
+
+msgid "O evento de autorização de depósito não corresponde ao aceite."
+msgstr "The deposit authorization event does not match the acceptance."
+
+msgid "O evento veio de outra transação."
+msgstr "The event came from a different transaction."
+
+msgid "O histórico do recebimento contém uma transação reorganizada."
+msgstr "The receipt history contains a reorganized transaction."
+
+msgid "O link de aprovação deixou de estar ativo."
+msgstr "The approval link is no longer active."
+
+msgid "O link expirou, foi cancelado ou não está mais associado a um lote que possa ser consultado."
+msgstr "The link expired, was canceled, or is no longer associated with a batch that can be viewed."
+
+msgid "O link não autoriza esta tentativa."
+msgstr "This link does not authorize this attempt."
+
+msgid "O link não autoriza operações neste lote."
+msgstr "This link does not authorize operations on this batch."
+
+msgid "O link não corresponde à tentativa de aceite."
+msgstr "The link does not match the acceptance attempt."
+
+msgid "O link não pertence a este lote."
+msgstr "The link does not belong to this batch."
+
+msgid "O link para este documento expirou."
+msgstr "The link to this document has expired."
+
+msgid "O link só pode ser cancelado enquanto o lote aguarda aprovação."
+msgstr "The link can only be canceled while the batch is waiting for approval."
+
+msgid "O link só pode ser criado depois da proposta confirmada."
+msgstr "The link can only be created after the proposal is confirmed."
+
+msgid "O link só pode ser criado enquanto o lote aguarda aprovação."
+msgstr "The link can only be created while the batch is waiting for approval."
+
+msgid "O lote deixou de aguardar aprovação."
+msgstr "The batch is no longer waiting for approval."
+
+msgid "O lote já tem uma aprovação ou cancelamento em andamento."
+msgstr "An approval or cancellation is already in progress for this batch."
+
+msgid "O lote na rede não corresponde ao recebimento salvo no SaaS."
+msgstr "The on-chain batch does not match the receipt saved in the SaaS."
+
+msgid "O lote não aparece aprovado no estado da blockchain deste bloco."
+msgstr "The batch is not approved in the blockchain state at this block."
+
+msgid "O lote não está aguardando aprovação do participante."
+msgstr "The batch is not waiting for participant approval."
+
+msgid "O lote não foi cancelado ou suas cargas ainda não foram liberadas."
+msgstr "The batch was not canceled or its loads have not been released."
+
+msgid "O lote não pertence à empresa selecionada."
+msgstr "The batch does not belong to the selected company."
+
+msgid "O lote salvo no SaaS diverge do estado atual na blockchain."
+msgstr "The batch saved in the SaaS differs from its current blockchain state."
+
+msgid "O módulo de lotes está ligado a outra SojaCoin."
+msgstr "The batch module is linked to a different SojaCoin contract."
+
+msgid "O módulo de lotes não pertence à rede deste recebimento."
+msgstr "The batch module is not on this receipt’s network."
+
+msgid "O nonce mudou desde a assinatura. Solicite uma nova assinatura."
+msgstr "The nonce changed after signing. Request a new signature."
+
+msgid "O número da tentativa é inválido."
+msgstr "The attempt number is invalid."
+
+msgid "O participante ainda não aparece cadastrado no contrato."
+msgstr "The participant is not registered in the contract yet."
+
+msgid "O participante ainda não tem um termo salvo."
+msgstr "The participant does not have saved terms yet."
+
+msgid "O percentual precisa ficar entre 0% e 100%."
+msgstr "The percentage must be between 0% and 100%."
+
+msgid "O prazo de aprovação precisa estar no futuro."
+msgstr "The approval deadline must be in the future."
+
+msgid "O prazo deste lote expirou."
+msgstr "This batch has expired."
+
+msgid "O prazo do lote expirou. A carga continua bloqueada até o cancelamento."
+msgstr "The batch deadline has expired. The load remains locked until cancellation is confirmed."
+
+msgid "O prazo precisa ser posterior ao horário do bloco mais recente da rede."
+msgstr "The deadline must be later than the latest block time on the network."
+
+msgid "O recebimento ainda não foi confirmado na blockchain."
+msgstr "The receipt has not been confirmed on the blockchain yet."
+
+msgid "O recebimento e a unidade precisam pertencer à empresa da URL."
+msgstr "The receipt and unit must belong to the company in the URL."
+
+msgid "O recebimento não está confirmado e livre de revisão."
+msgstr "The receipt is not confirmed or has an unresolved review."
+
+msgid "O recebimento não pertence à empresa autorizada."
+msgstr "The receipt does not belong to the authorized company."
+
+msgid "O recebimento não pertence à empresa selecionada."
+msgstr "The receipt does not belong to the selected company."
+
+msgid "O recebimento não possui ID confirmado na SojaCoin."
+msgstr "The receipt does not have a confirmed ID in SojaCoin."
+
+msgid "O recebimento precisa de conferência antes da criação do lote."
+msgstr "The receipt must be reviewed before creating a batch."
+
+msgid "O resumo do lote contém uma hash bytes32 inválida."
+msgstr "The batch summary contains an invalid bytes32 hash."
+
+msgid "O servidor não concluiu esta etapa. Confira a mensagem e tente novamente com a mesma hash."
+msgstr "The server could not complete this step. Check the message and retry with the same hash."
+
+msgid "O servidor não conseguiu codificar a chamada do lote."
+msgstr "The server could not encode the batch call."
+
+msgid "O servidor não conseguiu concluir esta etapa."
+msgstr "The server could not complete this step."
+
+msgid "O servidor não conseguiu preparar esta alteração."
+msgstr "The server could not prepare this change."
+
+msgid "O servidor não retornou uma resposta válida. Atualize a página e tente novamente."
+msgstr "The server returned an invalid response. Reload the page and try again."
+
+msgid "O servidor não salvou a tentativa de configuração."
+msgstr "The server did not save the configuration attempt."
+
+msgid "O termo deste participante não foi encontrado."
+msgstr "The participant’s terms could not be found."
+
+msgid "O termo pendente no contrato mudou; solicite uma nova proposta."
+msgstr "The pending terms in the contract have changed. Create a new proposal."
+
+msgid "O termo, o nonce, a rede ou o contrato mudou. Peça ao participante uma nova assinatura."
+msgstr "The terms, nonce, network, or contract changed. Ask the participant to sign again."
+
+msgid "O usuário não tem acesso a esta unidade."
+msgstr "The user does not have access to this unit."
+
+msgid "O vínculo do membro está inativo."
+msgstr "The team membership is inactive."
+
+msgid "Opcional. Se enviado, seu hash também ficará vinculado ao recebimento."
+msgstr "Optional. If uploaded, its hash will also be linked to the receipt."
+
+msgid "Os dados enviados diferem da chamada salva no SaaS."
+msgstr "The submitted data differs from the call saved in the SaaS."
+
+msgid "Os dados enviados não correspondem à chamada preparada."
+msgstr "The submitted data does not match the prepared call."
+
+msgid "Os dados enviados não são um JSON válido."
+msgstr "The submitted data is not valid JSON."
+
+msgid "Os dados enviados precisam ser um objeto."
+msgstr "The submitted data must be an object."
+
+msgid "Os dados locais da carga divergem da SojaCoin ou não estão elegíveis."
+msgstr "The local load data differs from SojaCoin or is not eligible."
+
+msgid "Os eventos ERC-20 não correspondem à quantidade de TokensIssued."
+msgstr "The ERC-20 events do not match the TokensIssued amount."
+
+msgid "Os eventos de aprovação e emissão divergem do lote salvo no SaaS."
+msgstr "The approval and issuance events differ from the batch saved in the SaaS."
+
+msgid "Outra solicitação já iniciou um lote para esta carga."
+msgstr "Another request has already started a batch for this load."
+
+msgid "Outra solicitação já reservou este recebimento para um lote."
+msgstr "Another request has already reserved this receipt for a batch."
+
+msgid "Outra solicitação já retomou a criação deste lote."
+msgstr "Another request has already resumed creation of this batch."
+
+msgid "Outra solicitação preparou a proposta ao mesmo tempo. Atualize a página."
+msgstr "Another request prepared the proposal at the same time. Reload the page."
+
+msgid "Outro pedido de aceite começou ao mesmo tempo. Atualize a página."
+msgstr "Another acceptance request started at the same time. Reload the page."
+
+msgid "Outros descontos (kg)"
+msgstr "Other deductions (kg)"
+
+msgid "PDF dos termos"
+msgstr "Terms PDF"
+
+msgid "Permissão"
+msgstr "Permission"
+
+msgid "Permissão de %(permission)s concedida"
+msgstr "%(permission)s permission granted"
+
+msgid "Permissão de %(permission)s revogada"
+msgstr "%(permission)s permission revoked"
+
+msgid "Permissão de Emissão concedida"
+msgstr "Issuance permission granted"
+
+msgid "Permissão de Emissão revogada"
+msgstr "Issuance permission revoked"
+
+msgid "Permissão de Recebimento concedida"
+msgstr "Receiving permission granted"
+
+msgid "Permissão de Recebimento revogada"
+msgstr "Receiving permission revoked"
+
+msgid "Permissão de carteira alterada"
+msgstr "Wallet permission changed"
+
+msgid "Permissão de emissão concedida"
+msgstr "Issuance permission granted"
+
+msgid "Permissão de emissão revogada"
+msgstr "Issuance permission revoked"
+
+msgid "Permissão de issuance concedida"
+msgstr "Issuance permission granted"
+
+msgid "Permissão de issuance revogada"
+msgstr "Issuance permission revoked"
+
+msgid "Permissão de recebimento concedida"
+msgstr "Receiving permission granted"
+
+msgid "Permissão de recebimento revogada"
+msgstr "Receiving permission revoked"
+
+msgid "Permissão de receiving concedida"
+msgstr "Receiving permission granted"
+
+msgid "Permissão de receiving revogada"
+msgstr "Receiving permission revoked"
+
+msgid "Peso bruto (kg)"
+msgstr "Gross weight (kg)"
+
+msgid "Pesos e descontos não podem ser negativos."
+msgstr "Weights and deductions cannot be negative."
+
+msgid "Pode ser informado com ou sem pontuação; será armazenado normalizado."
+msgstr "Enter the number with or without punctuation. It will be stored in normalized form."
+
+msgid "Prazo expirado — a carga segue bloqueada até o cancelamento confirmado"
+msgstr "Deadline expired — the load remains locked until cancellation is confirmed."
+
+msgid "Precisa de revisão"
+msgstr "Needs review"
+
+msgid "Preparada"
+msgstr "Prepared"
+
+msgid "Preparando a confirmação de propriedade da carteira."
+msgstr "Preparing wallet ownership verification."
+
+msgid "Processo cancelado"
+msgstr "Process canceled"
+
+msgid "Processo cancelado. O histórico foi preservado."
+msgstr "Process canceled. Its history was preserved."
+
+msgid "Processo iniciado. Nenhuma transação foi enviada à blockchain."
+msgstr "Process started. No transaction was sent to the blockchain."
+
+msgid "Processo precisa de revisão"
+msgstr "The process needs review"
+
+msgid "Progresso"
+msgstr "Progress"
+
+msgid "Razão social"
+msgstr "Legal name"
+
+msgid "Recebimento"
+msgstr "Receipt"
+
+msgid "Receiving"
+msgstr "Receiving"
+
+msgid "Receiving operator"
+msgstr "Receiving operator"
+
+msgid "Rede blockchain"
+msgstr "Blockchain network"
+
+msgid "Registra o participante, a unidade e a safra na SojaCoin."
+msgstr "Registers the participant, unit, and crop year in SojaCoin."
+
+msgid "Registrar recusa"
+msgstr "Record rejection"
+
+msgid "Registrar romaneio e pesagem"
+msgstr "Record weighing ticket and weight"
+
+msgid "Registration operator"
+msgstr "Registration operator"
+
+msgid "Registre a unidade na blockchain antes de configurar carteiras."
+msgstr "Register the unit on the blockchain before configuring wallets."
+
+msgid "Registro de unidades"
+msgstr "Unit registry"
+
+msgid "Resolva a tentativa aberta do participante antes de gerar outro link."
+msgstr "Resolve the participant’s open attempt before creating another link."
+
+msgid "Retome a criação com a mesma carteira que preparou o lote."
+msgstr "Resume creation with the same wallet that prepared the batch."
+
+msgid "Retome o cancelamento com a mesma carteira que o preparou."
+msgstr "Resume cancellation with the same wallet that prepared it."
+
+msgid "Revogada"
+msgstr "Revoked"
+
+msgid "Romaneio de pesagem (PDF)"
+msgstr "Weighing ticket (PDF)"
+
+msgid "Safra"
+msgstr "Crop year"
+
+msgid "Se a carteira mostrar uma hash, informe-a abaixo para conferir esta tentativa."
+msgstr "If the wallet shows a hash, enter it below to check this attempt."
+
+msgid "Selecione a pessoa e a carteira que receberão a permissão."
+msgstr "Select the person and wallet that will receive the permission."
+
+msgid "Selecione a unidade"
+msgstr "Select a unit"
+
+msgid "Selecione o participante"
+msgstr "Select a participant"
+
+msgid "Selecione um usuário"
+msgstr "Select a user"
+
+msgid "Selecione uma empresa"
+msgstr "Select a company"
+
+msgid "Selecione uma rede"
+msgstr "Select a network"
+
+msgid "Selecione uma rede ativa."
+msgstr "Select an active network."
+
+msgid "Selecione uma rede com UnitRegistry ativo."
+msgstr "Select a network with an active UnitRegistry."
+
+msgid "Selecione uma rede disponível."
+msgstr "Select an available network."
+
+msgid "Sem permissão"
+msgstr "No permission"
+
+msgid "Sem permissão ativa"
+msgstr "No active permission"
+
+msgid "Senha"
+msgstr "Password"
+
+msgid "Senha atual"
+msgstr "Current password"
+
+msgid "Será definida como dona da SojaCoin e do registro de unidades. Depois de iniciar, não poderá ser alterada neste processo. Informe somente o endereço público, nunca a chave privada."
+msgstr "This wallet will own SojaCoin and the unit registry. It cannot be changed after the process starts. Enter only the public address, never a private key."
+
+msgid "Seu usuário não tem autorização para operar este recebimento."
+msgstr "Your account is not authorized to work with this receipt."
+
+msgid "Situação"
+msgstr "Status"
+
+msgid "Situação da transação"
+msgstr "Transaction status"
+
+msgid "Situação desconhecida"
+msgstr "Unknown status"
+
+msgid "Somente PDF, até %(size)s MB."
+msgstr "PDF only, up to %(size)s MB."
+
+msgid "Somente o participante deste link pode cancelar por esta página."
+msgstr "Only the participant on this link can cancel from this page."
+
+msgid "Somente participantes com cadastro confirmado aparecem aqui."
+msgstr "Only participants with a confirmed registration appear here."
+
+msgid "Somente um lote pendente de aprovação pode ser cancelado."
+msgstr "Only a batch pending approval can be canceled."
+
+msgid "Somente uma tentativa preparada pode receber uma hash."
+msgstr "Only a prepared attempt can receive a hash."
+
+msgid "Sua conta não está ativa."
+msgstr "Your account is inactive."
+
+msgid "Só uma transação ainda não enviada pode ser recusada."
+msgstr "Only a transaction that has not been submitted can be marked as declined."
+
+msgid "Tara (kg)"
+msgstr "Tare (kg)"
+
+msgid "Telefone"
+msgstr "Phone"
+
+msgid "Tentar registrar esta hash"
+msgstr "Try registering this hash"
+
+msgid "Tentativa do participante não encontrada."
+msgstr "The participant attempt could not be found."
+
+msgid "Tente novamente com esta mesma hash."
+msgstr "Try again with this same hash."
+
+msgid "The account is inactive."
+msgstr "The account is inactive."
+
+msgid "The linked account is inactive."
+msgstr "The linked account is inactive."
+
+msgid "The name displayed in the application."
+msgstr "The name displayed in the application."
+
+msgid "The user does not have this company function."
+msgstr "The user does not have this role in the company."
+
+msgid "The user is not a company administrator."
+msgstr "The user is not a company administrator."
+
+msgid "The user is not authorized for this unit."
+msgstr "The user is not authorized for this unit."
+
+msgid "The wallet is inactive."
+msgstr "The wallet is inactive."
+
+msgid "The wallet link is not pending verification."
+msgstr "The wallet link is not awaiting verification."
+
+msgid "The wallet must be verified before use."
+msgstr "The wallet must be verified before use."
+
+msgid "The wallet verification challenge is expired or already used."
+msgstr "The wallet verification challenge has expired or was already used."
+
+msgid "This company is inactive."
+msgstr "This company is inactive."
+
+msgid "This unit is inactive."
+msgstr "This unit is inactive."
+
+msgid "Transação confirmada"
+msgstr "Transaction confirmed"
+
+msgid "Transação confirmada na blockchain."
+msgstr "Transaction confirmed on the blockchain."
+
+msgid "Transação confirmada; endereço pendente"
+msgstr "Transaction confirmed; address pending"
+
+msgid "Transação enviada. Aguardando confirmação da rede."
+msgstr "Transaction submitted. Waiting for network confirmation."
+
+msgid "Transação recusada. Você pode tentar novamente enquanto o lote estiver válido."
+msgstr "Transaction declined. You can try again while the batch is valid."
+
+msgid "Troque a MetaMask para a rede selecionada (ID %(chainId)s)."
+msgstr "Switch MetaMask to the selected network (ID %(chainId)s)."
+
+msgid "Troque a carteira para a rede do lote (ID %(chainId)s)."
+msgstr "Switch the wallet to the batch network (ID %(chainId)s)."
+
+msgid "Um link já usado não pode ser cancelado."
+msgstr "A link that has already been used cannot be canceled."
+
+msgid "Um lote anterior deste recebimento precisa de conferência antes de qualquer nova ação."
+msgstr "A previous batch for this receipt must be reviewed before another action."
+
+msgid "Uma transação já enviada não pode ser marcada como recusada."
+msgstr "A submitted transaction cannot be marked as declined."
+
+msgid "Umidade (%)"
+msgstr "Moisture (%)"
+
+msgid "Unidade de recebimento"
+msgstr "Receiving unit"
+
+msgid "Use no máximo duas casas decimais no percentual."
+msgstr "Use no more than two decimal places for the percentage."
+
+msgid "Use o horário registrado no romaneio; a interpretação usa o fuso configurado no SaaS."
+msgstr "Use the time recorded on the weighing ticket. The SaaS time zone is used to interpret it."
+
+msgid "Usuário"
+msgstr "User"
+
+msgid "Usuário ou senha inválidos."
+msgstr "The username or password is incorrect."
+
+msgid "Verificando a assinatura."
+msgstr "Verifying the signature."
+
+msgid "Viewing"
+msgstr "Viewing"
+
+msgid "Vincular a nota fiscal"
+msgstr "Link invoice"
+
+msgid "Visualização"
+msgstr "View"
+
+msgid "Você recusou a assinatura da mensagem. Nenhuma transação foi enviada; você pode tentar novamente."
+msgstr "You declined to sign the message. No transaction was sent; you can try again."
+
+msgid "Você recusou a solicitação na MetaMask. Nenhuma transação foi enviada."
+msgstr "You declined the MetaMask request. No transaction was sent."
+
+msgid "Você recusou o envio. O termo não foi confirmado; você poderá assinar novamente."
+msgstr "You declined the submission. The terms were not confirmed; you can sign again."
+
+msgid "Vínculo confirmado em %(address)s."
+msgstr "Link confirmed at %(address)s."
+
+msgid "desconhecida"
+msgstr "unknown"
+
+msgid "emissão"
+msgstr "issuance"
+
+msgid "recebimento"
+msgstr "receiving"

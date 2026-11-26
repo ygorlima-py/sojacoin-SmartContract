@@ -1,14 +1,15 @@
+{% load i18n %}
 {% for role in member.active_roles %}
     {% if role.role == 'administrator' %}
-        Administrador
+        {% translate "Administrador" %}
     {% elif role.role == 'registration' %}
-        Cadastro
+        {% translate "Cadastro" %}
     {% elif role.role == 'receiving' %}
-        Recebimento
+        {% translate "Recebimento" %}
     {% elif role.role == 'issuance' %}
-        Emissão
+        {% translate "Emissão" %}
     {% elif role.role == 'auditor' %}
-        Auditoria
+        {% translate "Auditoria" %}
     {% else %}
         {{ role.get_role_display }}
     {% endif %}
@@ -17,5 +18,5 @@
         , 
     {% endif %}
     {% empty %}
-    Sem função atribuída
+    {% translate "Sem função atribuída" %}
 {% endfor %}

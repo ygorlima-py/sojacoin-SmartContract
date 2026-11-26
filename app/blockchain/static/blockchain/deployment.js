@@ -35,7 +35,7 @@ async function postForm(url, values = {}) {
     throw new Error(
       result.error ||
         result.message ||
-        "O servidor não concluiu esta etapa. Confira a mensagem e tente novamente com a mesma hash.",
+        gettext("O servidor não concluiu esta etapa. Confira a mensagem e tente novamente com a mesma hash."),
     );
   }
   return result;
@@ -43,7 +43,7 @@ async function postForm(url, values = {}) {
 
 function rowMessage(row, message) {
   const target = row.querySelector(".deployment-row-message");
-  if (target) target.textContent = message;
+  if (target) target.textContent = gettext(message);
 }
 
 function storageKey(attemptId) {
@@ -113,8 +113,8 @@ function recoveryForm(row, attemptId, registerUrl) {
   input = document.createElement("input");
   input.type = "text";
   input.maxLength = 66;
-  input.placeholder = "Hash da carteira";
-  input.setAttribute("aria-label", "Hash da transação");
+  input.placeholder = gettext("Hash da carteira");
+  input.setAttribute("aria-label", gettext("Hash da transação"));
   input.dataset.attemptId = String(attemptId);
   input.dataset.registerUrl = registerUrl;
   input.value = savedHash(attemptId);
@@ -123,7 +123,7 @@ function recoveryForm(row, attemptId, registerUrl) {
   button.type = "button";
   button.className = "button";
   button.dataset.registerHash = "";
-  button.textContent = "Conferir hash";
+  button.textContent = gettext("Conferir hash");
 
   const message = document.createElement("span");
   message.className = "deployment-row-message";
@@ -138,13 +138,17 @@ async function registerHash(row, input, hash = input.value.trim()) {
   const attemptId = input.dataset.attemptId;
   const registerUrl = input.dataset.registerUrl;
   if (!hash) {
-    rowMessage(row, "Informe a hash exibida pela carteira.");
+    rowMessage(row, gettext("Informe a hash exibida pela carteira."));
     return;
   }
 
   saveReturnedHash(attemptId, hash);
   input.value = hash;
-  rowMessage(row, `Hash recebida: ${hash}. Conferindo na rede…`);
+  rowMessage(row, interpolate(
+    gettext("Hash recebida: %(hash)s. Conferindo na rede…"),
+    { hash },
+    true,
+  ));
   try {
     const result = await postForm(registerUrl, { transaction_hash: hash });
     if (result.status === "waiting_for_rpc") {
@@ -156,14 +160,14 @@ async function registerHash(row, input, hash = input.value.trim()) {
     window.location.reload();
   } catch (error) {
     // Do not create another attempt: the saved send-intent remains open for this hash.
-    rowMessage(row, `${error.message} Tente novamente com esta mesma hash.`);
+    rowMessage(row, `${error.message} ${gettext("Tente novamente com esta mesma hash.")}`);
   }
 }
 
 async function beginDeployment(button) {
   const row = button.closest("tr");
   if (!window.ethereum) {
-    rowMessage(row, "MetaMask não encontrada neste navegador.");
+    rowMessage(row, gettext("MetaMask não encontrada neste navegador."));
     return;
   }
 
@@ -171,7 +175,7 @@ async function beginDeployment(button) {
   try {
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
     if (!accounts || !accounts.length) {
-      throw new Error("Conecte uma carteira para continuar.");
+      throw new Error(gettext("Conecte uma carteira para continuar."));
     }
     const operatorAddress = accounts[0];
     const walletChainHex = await window.ethereum.request({ method: "eth_chainId" });
@@ -179,8 +183,11 @@ async function beginDeployment(button) {
     if (!Number.isSafeInteger(walletChainId) || walletChainId !== expectedChainId) {
       rowMessage(
         row,
-        `A MetaMask está na rede ${walletChainId || "desconhecida"}. ` +
-          `Troque para a rede do processo (ID ${expectedChainId}).`,
+        interpolate(
+          gettext("A MetaMask está na rede %(network)s. Troque para a rede do processo (ID %(chainId)s)."),
+          { network: walletChainId || gettext("desconhecida"), chainId: expectedChainId },
+          true,
+        ),
       );
       return;
     }
@@ -190,7 +197,7 @@ async function beginDeployment(button) {
       wallet_chain_id: String(walletChainId),
     });
     if (prepared.chain_id !== expectedChainId) {
-      throw new Error("A rede informada pelo servidor não corresponde a esta carteira.");
+      throw new Error(gettext("A rede informada pelo servidor não corresponde a esta carteira."));
     }
 
     // Mark the attempt uncertain before opening the wallet's transaction prompt.
@@ -200,12 +207,15 @@ async function beginDeployment(button) {
       recoveryForm(row, prepared.attempt_id, prepared.register_url);
       rowMessage(
         row,
-        `Não foi possível confirmar o estado do pedido no servidor (${error.message}). ` +
-          "A MetaMask não será aberta; recarregue a página antes de continuar.",
+        interpolate(
+          gettext("Não foi possível confirmar o estado do pedido no servidor (%(error)s). %(followup)s"),
+          { error: error.message, followup: gettext("A MetaMask não será aberta; recarregue a página antes de continuar.") },
+          true,
+        ),
       );
       return;
     }
-    rowMessage(row, "Confirme a criação do contrato na MetaMask.");
+    rowMessage(row, gettext("Confirme a criação do contrato na MetaMask."));
 
     let transactionHash;
     try {
@@ -222,7 +232,7 @@ async function beginDeployment(button) {
       if (error && error.code === 4001) {
         try {
           await postForm(prepared.rejected_url);
-          rowMessage(row, "Envio cancelado na carteira. Você pode tentar novamente.");
+          rowMessage(row, gettext("Envio cancelado na carteira. Você pode tentar novamente."));
           window.location.reload();
         } catch (recordError) {
           rowMessage(
@@ -236,8 +246,8 @@ async function beginDeployment(button) {
       recoveryForm(row, prepared.attempt_id, prepared.register_url);
       rowMessage(
         row,
-        "Não foi possível saber se a transação foi enviada. Não tente enviar outra. " +
-          "Se a carteira mostrar uma hash, informe-a abaixo para conferir esta tentativa.",
+        gettext("Não foi possível saber se a transação foi enviada. Não tente enviar outra. ") +
+          gettext("Se a carteira mostrar uma hash, informe-a abaixo para conferir esta tentativa."),
       );
       return;
     }
@@ -255,7 +265,7 @@ async function beginDeployment(button) {
 
 async function confirmDeployment(row, button) {
   button.disabled = true;
-  rowMessage(row, "Consultando recibo e endereço do contrato no RPC…");
+  rowMessage(row, gettext("Consultando recibo e endereço do contrato no RPC…"));
   try {
     const result = await postForm(button.dataset.confirmUrl);
     rowMessage(row, result.message);
@@ -276,8 +286,8 @@ function configurationRecoveryForm(row, attemptId, registerUrl) {
   input = document.createElement("input");
   input.type = "text";
   input.maxLength = 66;
-  input.placeholder = "Hash da carteira";
-  input.setAttribute("aria-label", "Hash da chamada de configuração");
+  input.placeholder = gettext("Hash da carteira");
+  input.setAttribute("aria-label", gettext("Hash da chamada de configuração"));
   input.dataset.configurationAttemptId = String(attemptId);
   input.dataset.registerConfigurationUrl = registerUrl;
   input.value = savedConfigurationHash(attemptId);
@@ -286,7 +296,7 @@ function configurationRecoveryForm(row, attemptId, registerUrl) {
   button.type = "button";
   button.className = "button";
   button.dataset.registerConfigurationHash = "";
-  button.textContent = "Conferir hash";
+  button.textContent = gettext("Conferir hash");
 
   const message = document.createElement("span");
   message.className = "deployment-row-message";
@@ -299,13 +309,17 @@ function configurationRecoveryForm(row, attemptId, registerUrl) {
 async function registerConfigurationHash(row, input, hash = input.value.trim()) {
   const attemptId = input.dataset.configurationAttemptId;
   if (!hash) {
-    rowMessage(row, "Informe a hash retornada pela carteira.");
+    rowMessage(row, gettext("Informe a hash retornada pela carteira."));
     return;
   }
 
   saveConfigurationHash(attemptId, hash);
   input.value = hash;
-  rowMessage(row, `Hash recebida: ${hash}. Conferindo na rede…`);
+  rowMessage(row, interpolate(
+    gettext("Hash recebida: %(hash)s. Conferindo na rede…"),
+    { hash },
+    true,
+  ));
   try {
     const result = await postForm(input.dataset.registerConfigurationUrl, {
       transaction_hash: hash,
@@ -318,14 +332,14 @@ async function registerConfigurationHash(row, input, hash = input.value.trim()) 
     rowMessage(row, result.message);
     window.location.reload();
   } catch (error) {
-    rowMessage(row, `${error.message} Tente novamente com esta mesma hash.`);
+    rowMessage(row, `${error.message} ${gettext("Tente novamente com esta mesma hash.")}`);
   }
 }
 
 async function beginConfiguration(button) {
   const row = button.closest("tr");
   if (!window.ethereum) {
-    rowMessage(row, "MetaMask não encontrada neste navegador.");
+    rowMessage(row, gettext("MetaMask não encontrada neste navegador."));
     return;
   }
 
@@ -333,7 +347,7 @@ async function beginConfiguration(button) {
   try {
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
     if (!accounts || !accounts.length) {
-      throw new Error("Conecte a carteira dona do contrato para continuar.");
+      throw new Error(gettext("Conecte a carteira dona do contrato para continuar."));
     }
     const ownerAddress = accounts[0];
     const walletChainHex = await window.ethereum.request({ method: "eth_chainId" });
@@ -341,8 +355,11 @@ async function beginConfiguration(button) {
     if (!Number.isSafeInteger(walletChainId) || walletChainId !== expectedChainId) {
       rowMessage(
         row,
-        `A MetaMask está na rede ${walletChainId || "desconhecida"}. ` +
-          `Troque para a rede do processo (ID ${expectedChainId}).`,
+        interpolate(
+          gettext("A MetaMask está na rede %(network)s. Troque para a rede do processo (ID %(chainId)s)."),
+          { network: walletChainId || gettext("desconhecida"), chainId: expectedChainId },
+          true,
+        ),
       );
       return;
     }
@@ -361,10 +378,10 @@ async function beginConfiguration(button) {
       return;
     }
     if (prepared.chain_id !== expectedChainId) {
-      throw new Error("A rede informada pelo servidor não corresponde a esta carteira.");
+      throw new Error(gettext("A rede informada pelo servidor não corresponde a esta carteira."));
     }
     if (prepared.owner_address.toLowerCase() !== ownerAddress.toLowerCase()) {
-      throw new Error("Conecte a carteira dona atual do contrato SojaCoin.");
+      throw new Error(gettext("Conecte a carteira dona atual do contrato SojaCoin."));
     }
 
     // Record that a wallet prompt is about to open before asking MetaMask to send.
@@ -374,13 +391,16 @@ async function beginConfiguration(button) {
       configurationRecoveryForm(row, prepared.attempt_id, prepared.register_url);
       rowMessage(
         row,
-        `Não foi possível confirmar o estado do pedido (${error.message}). ` +
-          "A MetaMask não será aberta; recarregue antes de continuar.",
+        interpolate(
+          gettext("Não foi possível confirmar o estado do pedido (%(error)s). %(followup)s"),
+          { error: error.message, followup: gettext("A MetaMask não será aberta; recarregue antes de continuar.") },
+          true,
+        ),
       );
       return;
     }
 
-    rowMessage(row, "Confirme a configuração na MetaMask.");
+    rowMessage(row, gettext("Confirme a configuração na MetaMask."));
     let transactionHash;
     try {
       transactionHash = await window.ethereum.request({
@@ -398,7 +418,7 @@ async function beginConfiguration(button) {
       if (error && error.code === 4001) {
         try {
           await postForm(prepared.rejected_url);
-          rowMessage(row, "A carteira recusou a configuração. Você pode tentar novamente.");
+          rowMessage(row, gettext("A carteira recusou a configuração. Você pode tentar novamente."));
           window.location.reload();
         } catch (recordError) {
           rowMessage(
@@ -412,7 +432,7 @@ async function beginConfiguration(button) {
       configurationRecoveryForm(row, prepared.attempt_id, prepared.register_url);
       rowMessage(
         row,
-        "Não foi possível saber se a chamada foi enviada. Não envie outra; informe a hash nesta mesma tentativa.",
+        gettext("Não foi possível saber se a chamada foi enviada. Não envie outra; informe a hash nesta mesma tentativa."),
       );
       return;
     }
@@ -434,7 +454,7 @@ async function beginConfiguration(button) {
 
 async function confirmConfiguration(row, button) {
   button.disabled = true;
-  rowMessage(row, "Consultando recibo e vínculo no RPC…");
+  rowMessage(row, gettext("Consultando recibo e vínculo no RPC…"));
   try {
     const result = await postForm(button.dataset.confirmConfigurationUrl);
     rowMessage(row, result.message);

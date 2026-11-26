@@ -13,6 +13,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import URLPattern, path, reverse
 from django.utils.html import format_html
+from django.utils.translation import gettext as _, gettext_lazy
 from django.views.decorators.http import require_POST
 from web3.exceptions import Web3Exception
 
@@ -196,19 +197,19 @@ class DeploymentConfigurationAttemptAdmin(admin.ModelAdmin):
             "transaction__contract",
         )
 
-    @admin.display(description="Situação da transação")
+    @admin.display(description=gettext_lazy("Situação da transação"))
     def transaction_status(self, attempt: DeploymentConfigurationAttempt) -> str:
         """Show state from the transaction lifecycle record."""
 
         return attempt.transaction.get_status_display()
 
-    @admin.display(description="Hash da transação")
+    @admin.display(description=gettext_lazy("Hash da transação"))
     def transaction_hash(self, attempt: DeploymentConfigurationAttempt) -> str:
         """Show the wallet hash when one has been recorded."""
 
         return attempt.transaction.transaction_hash or "—"
 
-    @admin.display(description="Carteira que enviou")
+    @admin.display(description=gettext_lazy("Carteira que enviou"))
     def sender_address(self, attempt: DeploymentConfigurationAttempt) -> str:
         """Show the public account recorded as the transaction sender."""
 
@@ -275,25 +276,25 @@ class UnitRegistrationAttemptAdmin(admin.ModelAdmin):
             "transaction__contract",
         )
 
-    @admin.display(description="Empresa")
+    @admin.display(description=gettext_lazy("Empresa"))
     def company(self, attempt: UnitRegistrationAttempt) -> str:
         """Show the company that owns the registered unit."""
 
         return str(attempt.unit.company)
 
-    @admin.display(description="Situação da transação")
+    @admin.display(description=gettext_lazy("Situação da transação"))
     def transaction_status(self, attempt: UnitRegistrationAttempt) -> str:
         """Show the shared transaction lifecycle state."""
 
         return attempt.transaction.get_status_display()
 
-    @admin.display(description="Hash da transação")
+    @admin.display(description=gettext_lazy("Hash da transação"))
     def transaction_hash(self, attempt: UnitRegistrationAttempt) -> str:
         """Show the hash returned by the wallet when available."""
 
         return attempt.transaction.transaction_hash or "—"
 
-    @admin.display(description="Carteira que enviou")
+    @admin.display(description=gettext_lazy("Carteira que enviou"))
     def sender_address(self, attempt: UnitRegistrationAttempt) -> str:
         """Show the public sender address kept on the transaction record."""
 
@@ -388,13 +389,13 @@ class UnitWalletPermissionAttemptAdmin(admin.ModelAdmin):
             "transaction__contract",
         )
 
-    @admin.display(description="Situação da transação")
+    @admin.display(description=gettext_lazy("Situação da transação"))
     def transaction_status(self, attempt: UnitWalletPermissionAttempt) -> str:
         """Read lifecycle status from the linked blockchain transaction."""
 
         return attempt.transaction.get_status_display()
 
-    @admin.display(description="Hash da transação")
+    @admin.display(description=gettext_lazy("Hash da transação"))
     def transaction_hash(self, attempt: UnitWalletPermissionAttempt) -> str:
         """Display the submitted hash when the wallet has returned one."""
 
@@ -491,48 +492,48 @@ class DeploymentStepInline(admin.TabularInline):
     can_delete = False
     show_change_link = False
 
-    @admin.display(description="Contrato")
+    @admin.display(description=gettext_lazy("Contrato"))
     def contract_name(self, step: DeploymentStep) -> str:
         """Show a concise Portuguese name for the contract being deployed."""
 
-        return DEPLOYMENT_KIND_LABELS.get(step.kind, step.get_kind_display())
+        return _(DEPLOYMENT_KIND_LABELS.get(step.kind, step.get_kind_display()))
 
-    @admin.display(description="Situação")
+    @admin.display(description=gettext_lazy("Situação"))
     def step_status(self, step: DeploymentStep) -> str:
         """Show the latest known state without implying an unconfirmed success."""
 
         attempt = step.linked_deployment_attempt
         if step.contract_id and attempt is None:
-            return "Precisa de revisão"
+            return _("Precisa de revisão")
 
         if attempt is None:
             attempt = self._latest_attempt(step)
         if attempt is None:
             if step.process.status == DeploymentProcess.Status.CANCELED:
-                return "Processo cancelado"
-            return "Aguardando implantação"
+                return _("Processo cancelado")
+            return _("Aguardando implantação")
 
         if (
             attempt.transaction.status == BlockchainTransaction.Status.PREPARED
             and attempt.submission_started_at is not None
         ):
-            return "Envio iniciado; hash pendente de conferência"
+            return _("Envio iniciado; hash pendente de conferência")
 
         if attempt.transaction.status == BlockchainTransaction.Status.CONFIRMED:
             if step.contract_id is None:
-                return "Transação confirmada; endereço pendente"
-            return "Confirmada" if step.is_confirmed else "Precisa de revisão"
+                return _("Transação confirmada; endereço pendente")
+            return _("Confirmada") if step.is_confirmed else _("Precisa de revisão")
 
         status_labels = {
-            BlockchainTransaction.Status.PREPARED: "Preparada",
-            BlockchainTransaction.Status.SUBMITTED: "Aguardando confirmação",
-            BlockchainTransaction.Status.CONFIRMED: "Transação confirmada",
-            BlockchainTransaction.Status.FAILED: "Falhou",
-            BlockchainTransaction.Status.REORGED: "Confirmação revertida",
+            BlockchainTransaction.Status.PREPARED: _("Preparada"),
+            BlockchainTransaction.Status.SUBMITTED: _("Aguardando confirmação"),
+            BlockchainTransaction.Status.CONFIRMED: _("Transação confirmada"),
+            BlockchainTransaction.Status.FAILED: _("Falhou"),
+            BlockchainTransaction.Status.REORGED: _("Confirmação revertida"),
         }
-        return status_labels.get(attempt.transaction.status, "Situação desconhecida")
+        return status_labels.get(attempt.transaction.status, _("Situação desconhecida"))
 
-    @admin.display(description="Endereço do contrato")
+    @admin.display(description=gettext_lazy("Endereço do contrato"))
     def contract_address(self, step: DeploymentStep) -> str:
         """Show an address only after a contract instance has been recorded."""
 
@@ -540,20 +541,20 @@ class DeploymentStepInline(admin.TabularInline):
             return "—"
         return step.contract.address_normalized
 
-    @admin.display(description="Hash da transação")
+    @admin.display(description=gettext_lazy("Hash da transação"))
     def latest_transaction_hash(self, step: DeploymentStep) -> str:
         """Show the latest deployment transaction hash, if one was submitted."""
 
         attempt = self._latest_attempt(step)
         if attempt is None:
-            return "Ainda não enviada"
+            return _("Ainda não enviada")
         if not attempt.transaction.transaction_hash:
             if attempt.submission_started_at is not None:
-                return "Informe a hash retornada pela carteira"
-            return "Ainda não enviada"
+                return _("Informe a hash retornada pela carteira")
+            return _("Ainda não enviada")
         return attempt.transaction.transaction_hash
 
-    @admin.display(description="Ação")
+    @admin.display(description=gettext_lazy("Ação"))
     def deployment_action(self, step: DeploymentStep) -> str:
         """Render wallet actions only for an authorized operator on an open process."""
 
@@ -566,7 +567,7 @@ class DeploymentStepInline(admin.TabularInline):
         ):
             return "—"
         if not self._previous_steps_confirmed(step):
-            return "Aguardando etapa anterior"
+            return _("Aguardando etapa anterior")
 
         attempt = self._latest_attempt(step)
         if attempt is not None:
@@ -586,22 +587,25 @@ class DeploymentStepInline(admin.TabularInline):
                 )
                 return format_html(
                     '<div class="deployment-recovery">'
-                    '<input type="text" maxlength="66" placeholder="Hash da carteira" '
-                    'aria-label="Hash da transação" data-attempt-id="{}" '
+                    '<input type="text" maxlength="66" placeholder="{}" '
+                    'aria-label="{}" data-attempt-id="{}" '
                     'data-register-url="{}">'
                     '<button type="button" class="button" data-register-hash>'
-                    "Conferir hash"
+                    "{}"
                     "</button><span class=\"deployment-row-message\" role=\"status\"></span></div>",
+                    _("Hash da carteira"),
+                    _("Hash da transação"),
                     attempt.pk,
                     register_url,
+                    _("Conferir hash"),
                 )
             button_label = (
-                "Continuar tentativa"
+                _("Continuar tentativa")
                 if attempt.is_open and status == BlockchainTransaction.Status.PREPARED
-                else "Nova tentativa"
+                else _("Nova tentativa")
             )
         else:
-            button_label = "Conectar carteira e implantar"
+            button_label = _("Conectar carteira e implantar")
 
         prepare_url = reverse(
             "admin:blockchain_deploymentprocess_prepare_step",
@@ -627,9 +631,10 @@ class DeploymentStepInline(admin.TabularInline):
         )
         return format_html(
             '<button type="button" class="button" data-confirm-url="{}">'
-            "Consultar confirmação"
+            "{}"
             "</button><span class=\"deployment-row-message\" role=\"status\"></span>",
             confirmation_url,
+            _("Consultar confirmação"),
         )
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[DeploymentStep]:
@@ -757,49 +762,49 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
     )
     readonly_fields = fields
 
-    @admin.display(description="Contratos confirmados")
+    @admin.display(description=gettext_lazy("Contratos confirmados"))
     def confirmed_steps(self, process: DeploymentProcess) -> str:
         """Show confirmed contract count in the process list."""
 
         return f"{process.confirmed_step_count} de 9"
 
-    @admin.display(description="Carteira do dono")
+    @admin.display(description=gettext_lazy("Carteira do dono"))
     def owner_address_short(self, process: DeploymentProcess) -> str:
         """Keep the list readable while retaining the full value on detail."""
 
         return f"{process.owner_address[:8]}…{process.owner_address[-6:]}"
 
-    @admin.display(description="Empresa")
+    @admin.display(description=gettext_lazy("Empresa"))
     def company_display(self, process: DeploymentProcess) -> str:
         """Show the company whose contracts are being deployed."""
 
         return str(process.company)
 
-    @admin.display(description="Rede blockchain")
+    @admin.display(description=gettext_lazy("Rede blockchain"))
     def network_display(self, process: DeploymentProcess) -> str:
         """Show the selected network and its chain ID."""
 
         return f"{process.network.name} (ID {process.network.chain_id})"
 
-    @admin.display(description="Carteira pública do administrador")
+    @admin.display(description=gettext_lazy("Carteira pública do administrador"))
     def owner_address_display(self, process: DeploymentProcess) -> str:
         """Show the public wallet assigned as contract owner."""
 
         return process.owner_address
 
-    @admin.display(description="Situação")
+    @admin.display(description=gettext_lazy("Situação"))
     def status_display(self, process: DeploymentProcess) -> str:
         """Show the process status using the model's Portuguese label."""
 
         return process.get_status_display()
 
-    @admin.display(description="Progresso")
+    @admin.display(description=gettext_lazy("Progresso"))
     def progress_display(self, process: DeploymentProcess) -> str:
         """Show how many of the nine required contracts are confirmed."""
 
         return f"{process.confirmed_step_count} de 9 contratos confirmados"
 
-    @admin.display(description="Iniciado em")
+    @admin.display(description=gettext_lazy("Iniciado em"))
     def created_at_display(self, process: DeploymentProcess) -> str:
         """Show the timestamp when the local process was started."""
 
@@ -932,7 +937,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             else:
                 messages.success(
                     request,
-                    "Processo iniciado. Nenhuma transação foi enviada à blockchain.",
+                    _("Processo iniciado. Nenhuma transação foi enviada à blockchain."),
                 )
                 return redirect(
                     reverse(
@@ -943,7 +948,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
 
         context = {
             **self.admin_site.each_context(request),
-            "title": "Iniciar implantação de contratos",
+        "title": _("Iniciar implantação de contratos"),
             "opts": self.model._meta,
             "form": form,
         }
@@ -1003,7 +1008,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             )
             context["deployment_configuration_complete"] = (
                 process.status == DeploymentProcess.Status.DEPLOYED
-                and all(row["status"] == "Concluída" for row in rows)
+                and all(row["complete"] for row in rows)
             )
         return super().change_view(request, object_id, form_url, context)
 
@@ -1016,12 +1021,12 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
         specifications = (
             (
                 DeploymentConfigurationAttempt.Kind.UNIT_REGISTRY,
-                "Registro de unidades",
+                _("Registro de unidades"),
                 ContractInstance.Kind.UNIT_REGISTRY,
             ),
             (
                 DeploymentConfigurationAttempt.Kind.ISSUANCE_BATCHES,
-                "Lotes de emissão",
+                _("Lotes de emissão"),
                 ContractInstance.Kind.ISSUANCE_BATCHES,
             ),
         )
@@ -1041,7 +1046,8 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
                 .order_by("-created_at", "-pk")
                 .first()
             )
-            status = "Aguardando configuração"
+            status = _("Aguardando configuração")
+            is_complete = False
             action: str | None = None
             action_url = ""
             attempt_id: int | None = None
@@ -1061,34 +1067,35 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
                     attempt is not None
                     and attempt.transaction.status == BlockchainTransaction.Status.REORGED
                 ):
-                    status = "Confirmação revertida; processo precisa de revisão"
+                    status = _("Confirmação revertida; processo precisa de revisão")
                 else:
-                    status = "Processo precisa de revisão"
+                    status = _("Processo precisa de revisão")
             elif process.status != DeploymentProcess.Status.DEPLOYED:
-                status = "Disponível após a implantação dos nove contratos"
+                status = _("Disponível após a implantação dos nove contratos")
             elif attempt is None:
                 action = "prepare"
             else:
                 record = attempt.transaction
                 if record.status == BlockchainTransaction.Status.CONFIRMED:
-                    status = "Concluída"
+                    status = _("Concluída")
+                    is_complete = True
                 elif record.status == BlockchainTransaction.Status.REORGED:
-                    status = "Confirmação revertida; processo precisa de revisão"
+                    status = _("Confirmação revertida; processo precisa de revisão")
                 elif record.status == BlockchainTransaction.Status.SUBMITTED:
-                    status = "Aguardando confirmação"
+                    status = _("Aguardando confirmação")
                     action = "confirm"
                 elif record.status == BlockchainTransaction.Status.FAILED:
-                    status = "Falhou; pode tentar novamente"
+                    status = _("Falhou; pode tentar novamente")
                     action = "prepare"
                 elif attempt.submission_started_at is not None:
-                    status = "Envio iniciado; hash pendente de conferência"
+                    status = _("Envio iniciado; hash pendente de conferência")
                     action = "recover"
                     register_url = reverse(
                         "admin:blockchain_deploymentprocess_register_configuration_hash",
                         args=(process.pk, attempt.pk),
                     )
                 else:
-                    status = "Preparada"
+                    status = _("Preparada")
                     action = "prepare"
 
             if action == "prepare":
@@ -1108,6 +1115,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
                     "label": label,
                     "expected_address": target_address,
                     "status": status,
+                    "complete": is_complete,
                     "transaction_hash": transaction_hash,
                     "sender_address": sender_address,
                     "action": action,
@@ -1133,10 +1141,10 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
         try:
             canceled = cancel_deployment_process(process.pk)
         except ValidationError as error:
-            messages.error(request, "; ".join(error.messages))
+            messages.error(request, "; ".join(_(message) for message in error.messages))
             canceled = process
         else:
-            messages.success(request, "Processo cancelado. O histórico foi preservado.")
+            messages.success(request, _("Processo cancelado. O histórico foi preservado."))
 
         return redirect(
             reverse(
@@ -1198,7 +1206,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             )
         except ValueError:
             return JsonResponse(
-                {"error": "Não foi possível identificar a rede da carteira."},
+                {"error": _("Não foi possível identificar a rede da carteira.")},
                 status=400,
             )
         except ValidationError as error:
@@ -1282,7 +1290,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
         except (ConnectionError, OSError, ImproperlyConfigured, Web3Exception):
             return JsonResponse(
                 {
-                    "error": (
+                    "error": _(
                         "Não foi possível conferir a transação no RPC. A tentativa foi mantida; "
                         "envie novamente a mesma hash quando a rede estiver disponível."
                     ),
@@ -1293,14 +1301,14 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             return JsonResponse(
                 {
                     "status": "waiting_for_rpc",
-                    "message": "A hash ainda não apareceu na rede. Confira novamente esta mesma hash.",
+                    "message": _("A hash ainda não apareceu na rede. Confira novamente esta mesma hash."),
                 },
                 status=202,
             )
         return JsonResponse(
             {
                 "status": "submitted",
-                "message": "Transação enviada. Aguardando confirmação da rede.",
+                "message": _("Transação enviada. Aguardando confirmação da rede."),
                 "transaction_hash": record.transaction_hash,
             }
         )
@@ -1324,7 +1332,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
         except (ConnectionError, OSError, ImproperlyConfigured, Web3Exception):
             return JsonResponse(
                 {
-                    "error": (
+                    "error": _(
                         "Não foi possível consultar a confirmação no RPC. "
                         "A tentativa foi preservada para nova consulta."
                     ),
@@ -1336,7 +1344,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             return JsonResponse(
                 {
                     "status": "pending",
-                    "message": "A rede ainda não confirmou esta transação. Consulte novamente depois.",
+                    "message": _("A rede ainda não confirmou esta transação. Consulte novamente depois."),
                 },
                 status=202,
             )
@@ -1344,17 +1352,18 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             return JsonResponse(
                 {
                     "status": "failed",
-                    "message": "A rede rejeitou a criação. Você pode iniciar uma nova tentativa.",
+                    "message": _("A rede rejeitou a criação. Você pode iniciar uma nova tentativa."),
                 }
             )
         if result.contract is None:
             return self._validation_error_response(
-                ValidationError("A confirmação não retornou o endereço do contrato.")
+                ValidationError(_("A confirmação não retornou o endereço do contrato."))
             )
         return JsonResponse(
             {
                 "status": "confirmed",
-                "message": f"Contrato confirmado em {result.contract.address_normalized}.",
+                "message": _("Contrato confirmado em %(address)s.")
+                % {"address": result.contract.address_normalized},
                 "contract_address": result.contract.address_normalized,
             }
         )
@@ -1401,14 +1410,14 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             )
         except ValueError:
             return JsonResponse(
-                {"error": "Não foi possível identificar a rede da carteira."},
+                {"error": _("Não foi possível identificar a rede da carteira.")},
                 status=400,
             )
         except ValidationError as error:
             return self._validation_error_response(error)
         except (ConnectionError, OSError, ImproperlyConfigured, Web3Exception):
             return JsonResponse(
-                {"error": "Não foi possível consultar os contratos no RPC. Tente novamente."},
+                {"error": _("Não foi possível consultar os contratos no RPC. Tente novamente.")},
                 status=503,
             )
 
@@ -1417,7 +1426,8 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
                 {
                     "status": "already_configured",
                     "current_address": prepared.current_address,
-                    "message": f"Este vínculo já aponta para {prepared.current_address}.",
+                    "message": _("Este vínculo já aponta para %(address)s.")
+                    % {"address": prepared.current_address},
                 }
             )
         if prepared.status == "needs_review":
@@ -1426,12 +1436,12 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
                     "status": "needs_review",
                     "current_address": prepared.current_address,
                     "expected_address": prepared.expected_address,
-                    "message": "O endereço encontrado não corresponde ao processo. Revisão necessária.",
+                    "message": _("O endereço encontrado não corresponde ao processo. Revisão necessária."),
                 },
             )
         if prepared.attempt_id is None:
             return self._validation_error_response(
-                ValidationError("O servidor não salvou a tentativa de configuração.")
+                ValidationError(_("O servidor não salvou a tentativa de configuração."))
             )
 
         return JsonResponse(
@@ -1517,7 +1527,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
         except (ConnectionError, OSError, ImproperlyConfigured, Web3Exception):
             return JsonResponse(
                 {
-                    "error": (
+                    "error": _(
                         "Não foi possível conferir a transação no RPC. "
                         "A tentativa foi preservada para receber a mesma hash novamente."
                     ),
@@ -1528,7 +1538,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             return JsonResponse(
                 {
                     "status": "waiting_for_rpc",
-                    "message": "A hash ainda não apareceu na rede. Confira novamente esta mesma hash.",
+                    "message": _("A hash ainda não apareceu na rede. Confira novamente esta mesma hash."),
                 },
                 status=202,
             )
@@ -1536,7 +1546,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             {
                 "status": "submitted",
                 "transaction_hash": record.transaction_hash,
-                "message": "Chamada enviada. Aguardando confirmação da rede.",
+                "message": _("Chamada enviada. Aguardando confirmação da rede."),
             }
         )
 
@@ -1558,7 +1568,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
         except (ConnectionError, OSError, ImproperlyConfigured, Web3Exception):
             return JsonResponse(
                 {
-                    "error": (
+                    "error": _(
                         "Não foi possível consultar a confirmação no RPC. "
                         "A tentativa foi preservada para nova consulta."
                     ),
@@ -1570,7 +1580,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             return JsonResponse(
                 {
                     "status": "pending",
-                    "message": "A rede ainda não confirmou esta chamada. Consulte novamente depois.",
+                    "message": _("A rede ainda não confirmou esta chamada. Consulte novamente depois."),
                 },
                 status=202,
             )
@@ -1578,7 +1588,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
             return JsonResponse(
                 {
                     "status": "failed",
-                    "message": "A rede reverteu a chamada. Uma nova tentativa pode ser iniciada.",
+                    "message": _("A rede reverteu a chamada. Uma nova tentativa pode ser iniciada."),
                 }
             )
         if result.status == "needs_review":
@@ -1587,7 +1597,7 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
                     "status": "needs_review",
                     "expected_address": result.expected_address,
                     "current_address": result.current_address,
-                    "message": "A confirmação diverge do endereço esperado. O processo precisa de revisão.",
+                    "message": _("A confirmação diverge do endereço esperado. O processo precisa de revisão."),
                 },
             )
         return JsonResponse(
@@ -1595,7 +1605,8 @@ class DeploymentProcessAdmin(admin.ModelAdmin):
                 "status": "confirmed",
                 "expected_address": result.expected_address,
                 "current_address": result.current_address,
-                "message": f"Vínculo confirmado em {result.current_address}.",
+                "message": _("Vínculo confirmado em %(address)s.")
+                % {"address": result.current_address},
             }
         )
 

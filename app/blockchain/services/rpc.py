@@ -2,6 +2,7 @@
 
 from django.core.exceptions import ImproperlyConfigured
 from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from blockchain.models import Network
 
@@ -37,6 +38,11 @@ def connect_to_rpc(network: Network) -> Web3:
             request_kwargs={"timeout": 10},
         )
     )
+    # BNB Smart Chain uses PoA-style block extraData, which exceeds Web3.py's
+    # standard 32-byte limit. Keep this chain-specific so other RPCs retain
+    # their normal block response format.
+    if network.chain_id in {56, 97}:
+        web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
     if not web3.is_connected():
         raise ConnectionError("Não foi possível conectar ao RPC.")

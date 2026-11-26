@@ -116,6 +116,36 @@ contract SojaCoinCPRIntegrationTest {
         _eq(batches.depositIssued(depositId) ? 1 : 0, 1, "batch records issuance");
     }
 
+    function test_atomicParticipantApprovalKeepsCPRDistribution() public {
+        uint256 cprId = _registerCPR(creditorA, 7_000, 1, CROP_2026, 1, block.timestamp + 30 days);
+
+        vm.prank(receiver);
+        uint256 depositId = coin.openLoadReceipt(producer, 1, CROP_2026);
+        vm.prank(receiver);
+        coin.linkTaxInvoice(depositId, keccak256("automatic-cpr-invoice"));
+        vm.prank(receiver);
+        coin.confirmLoadReceipt(depositId, _ticket(8_000 * 60, keccak256("automatic-cpr-ticket")));
+
+        uint256[] memory depositIds = new uint256[](1);
+        depositIds[0] = depositId;
+        vm.prank(issuer);
+        uint256 batchId = batches.createIssuanceBatch(depositIds, block.timestamp + 1 days);
+
+        vm.prank(producer);
+        batches.approveAndIssueBatch(batchId);
+
+        _eq(coin.balanceOf(creditorA), 7_000 * UNITS_PER_SACK, "CPR creditor receives its repayment");
+        _eq(coin.balanceOf(producer), 1_000 * UNITS_PER_SACK, "producer receives only the remaining issuance");
+        _eq(
+            coin.repaymentCPRByDeposit(depositId, cprId),
+            7_000 * UNITS_PER_SACK,
+            "repayment stays linked to the receipt"
+        );
+        (,,,, uint256 amountIssued,,,) = batches.batches(batchId);
+        _eq(amountIssued, 1, "batch records the receipt issuance");
+        _eq(registry.pendingDepositsByUnit(1), 0, "unit closes the issued receipt");
+    }
+
     function test_realWorkflowUsesCompatibleQueueAndLeavesIncompatibleCPRUntouched() public {
         uint256 firstCPR = _registerCPR(creditorA, 7_000, 1, CROP_2026, 1, block.timestamp + 30 days);
         uint256 secondCPR = _registerCPR(creditorB, 5_000, 1, CROP_2026, 2, block.timestamp + 30 days);

@@ -73,6 +73,7 @@ from .services.transactions import (
     mark_transaction_reorged,
     submit_transaction,
 )
+from .services.transaction_confirmation import confirm_transaction_from_chain
 
 
 User = get_user_model()
@@ -308,6 +309,75 @@ class BlockchainHistoryTests(TestCase):
             )
 
         self.assertFalse(ProcessedEvent.objects.exists())
+
+    @patch("blockchain.services.transaction_confirmation.bind_contract_to_web3")
+    @patch("blockchain.services.transaction_confirmation.connect_to_rpc")
+    def test_confirmation_records_events_from_each_contract_address(
+        self, connect: Mock, bind_contract: Mock
+    ) -> None:
+        """Nested-call logs are decoded and attributed to their actual contract."""
+
+        batches_contract = ContractInstance.objects.create(
+            company=self.company,
+            network=self.network,
+            kind=ContractInstance.Kind.ISSUANCE_BATCHES,
+            address="0x4444444444444444444444444444444444444444",
+            version="test-1",
+        )
+        transaction_hash = "0x" + "a" * 64
+        record = submit_transaction(self.create_transaction(), transaction_hash)
+        receipt = {
+            "transactionHash": bytes.fromhex(transaction_hash[2:]),
+            "status": 1,
+            "blockNumber": 24,
+            "blockHash": bytes.fromhex("b" * 64),
+        }
+        connect.return_value.eth.get_transaction_receipt.return_value = receipt
+
+        def bound_contract(_web3: Mock, instance: ContractInstance) -> Mock:
+            event_name = "BatchApproved" if instance.pk == batches_contract.pk else "TokensIssued"
+            event_log = {
+                "address": instance.address_normalized,
+                "logIndex": 1 if event_name == "BatchApproved" else 2,
+                "blockNumber": 24,
+                "blockHash": receipt["blockHash"],
+                "args": {"contract": instance.address_normalized},
+            }
+            decoder = Mock()
+            decoder.process_receipt.return_value = [event_log]
+            contract = Mock()
+            contract.abi = [{"type": "event", "name": event_name}]
+            contract.address = instance.address_normalized
+            getattr(contract.events, event_name).return_value = decoder
+            return contract
+
+        bind_contract.side_effect = bound_contract
+        handled: list[tuple[str, int | None]] = []
+
+        def handle_event(_transaction: BlockchainTransaction, event: object) -> None:
+            handled.append((event.event_name, event.contract_instance.pk))
+
+        confirmed = confirm_transaction_from_chain(
+            record.pk,
+            event_handler=handle_event,
+            required_event_names=("BatchApproved", "TokensIssued"),
+            additional_event_contracts=(batches_contract,),
+        )
+
+        self.assertIsNotNone(confirmed)
+        self.assertEqual(confirmed.status, BlockchainTransaction.Status.CONFIRMED)
+        self.assertEqual(
+            handled,
+            [("BatchApproved", batches_contract.pk), ("TokensIssued", self.contract.pk)],
+        )
+        processed = {
+            event.event_name: event.contract_id
+            for event in ProcessedEvent.objects.filter(transaction_hash=transaction_hash)
+        }
+        self.assertEqual(
+            processed,
+            {"TokensIssued": self.contract.pk, "BatchApproved": batches_contract.pk},
+        )
 
     def test_processed_events_are_immutable(self) -> None:
         """An event marker cannot be edited or removed after processing."""

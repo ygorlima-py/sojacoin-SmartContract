@@ -225,6 +225,24 @@ abstract contract DepositsModule is TokenModule {
     /// A remainder smaller than one token unit is carried forward to the next deposit.
     /// @param depositId Identifier of the deposit whose receipt was confirmed.
     function issueTokens(uint256 depositId) external {
+        _issueTokens(depositId, msg.sender);
+    }
+
+    /// @notice Issues a receipt during the participant's atomic batch approval.
+    /// @dev SojaCoin gates this selector to the configured batch module. The responsible
+    /// operator comes from the on-chain batch record, never from user-supplied calldata.
+    /// @param depositId Identifier of the receipt in the batch.
+    function issueTokensFromBatch(uint256 depositId) external {
+        require(msg.sender == issuanceBatchModule && issuanceBatchModule != address(0), "Issuance batch module only");
+        address responsibleParty = ITokenIssuanceBatches(issuanceBatchModule).batchCreatorForDeposit(depositId);
+        _issueTokens(depositId, responsibleParty);
+    }
+
+    /// @notice Applies the shared backing, audit, CPR, unit, and minting rules.
+    /// @dev Both entry points use one implementation so their accounting cannot drift.
+    /// @param depositId Receipt whose backed SJC amount is being issued.
+    /// @param responsibleParty Wallet that must still hold issuance permission for its unit.
+    function _issueTokens(uint256 depositId, address responsibleParty) private {
         Deposit storage deposit = deposits[depositId];
 
         require(unitRegistry != address(0), "Unit registry is not configured");
@@ -236,7 +254,7 @@ abstract contract DepositsModule is TokenModule {
         require(ITokenIssuanceBatches(issuanceBatchModule).isDepositInApprovedBatch(depositId), "Deposit is not in an approved batch");
         _requireCurrentAudit();
 
-        IUnitRegistry(unitRegistry).validateDepositIssuance(depositId, msg.sender);
+        IUnitRegistry(unitRegistry).validateDepositIssuance(depositId, responsibleParty);
 
         uint256 issuableWeightKg = deposit.netWeightKg - deposit.returnedWeightKg;
         require(issuableWeightKg > 0, "Deposit has no soybeans to issue");
@@ -263,7 +281,7 @@ abstract contract DepositsModule is TokenModule {
         IUnitRegistry(unitRegistry).closeDeposit(depositId);
         ITokenIssuanceBatches(issuanceBatchModule).recordIssuance(depositId);
 
-        emit TokensIssued(depositId, deposit.depositor, msg.sender, amountSJC, newRemainderMg, block.timestamp);
+        emit TokensIssued(depositId, deposit.depositor, responsibleParty, amountSJC, newRemainderMg, block.timestamp);
     }
 
     /// @notice Records a partial soybean return accepted before SJC issuance.

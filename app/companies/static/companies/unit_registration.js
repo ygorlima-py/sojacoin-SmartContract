@@ -32,14 +32,14 @@ async function postForm(url, values = {}) {
     // Keep a useful message if an unexpected HTML response reaches this endpoint.
   }
   if (!response.ok && response.status !== 202) {
-    throw new Error(result.error || "O servidor não conseguiu concluir esta etapa.");
+    throw new Error(result.error || gettext("O servidor não conseguiu concluir esta etapa."));
   }
   return { ...result, httpStatus: response.status };
 }
 
 function showMessage(message) {
   const target = registrationPanel?.querySelector("[data-unit-message]");
-  if (target) target.textContent = message;
+  if (target) target.textContent = gettext(message);
 }
 
 function hashStorageKey(attemptId) {
@@ -101,8 +101,11 @@ async function recordWalletRejection(attemptId, rejectedUrl, button = null) {
   } catch (error) {
     rememberWalletRejection(attemptId, rejectedUrl);
     showMessage(
-      `A carteira recusou o pedido, mas o servidor ainda não registrou a resposta. ` +
-        `Use “Registrar recusa” para repetir essa atualização. ${error.message}`,
+      interpolate(
+        gettext("A carteira recusou o pedido, mas o servidor ainda não registrou a resposta. Use “Registrar recusa” para repetir essa atualização. %(error)s"),
+        { error: error.message },
+        true,
+      ),
     );
     setBusy(button, false);
   }
@@ -139,7 +142,7 @@ function restoreAttemptRecovery() {
   button.className =
     "inline-flex h-[36px] items-center justify-center rounded-[7px] border border-[#CCD3C9] bg-white px-3 text-[12px] font-semibold text-[#17211A] hover:bg-[#F9FAF7]";
   button.dataset.unitRetryRejection = "";
-  button.textContent = "Registrar recusa";
+  button.textContent = gettext("Registrar recusa");
   button.addEventListener("click", () =>
     recordWalletRejection(attemptId, rejection.rejectedUrl, button),
   );
@@ -150,13 +153,13 @@ async function registerHash(input, button) {
   const attemptId = input.dataset.unitHashInput;
   const transactionHash = input.value.trim();
   if (!transactionHash) {
-    showMessage("Informe a hash retornada pela carteira.");
+    showMessage(gettext("Informe a hash retornada pela carteira."));
     return;
   }
 
   rememberHash(attemptId, transactionHash);
   setBusy(button, true);
-  showMessage("Conferindo a hash na rede…");
+  showMessage(gettext("Conferindo a hash na rede…"));
   try {
     const result = await postForm(input.dataset.unitHashUrl, {
       transaction_hash: transactionHash,
@@ -178,7 +181,7 @@ async function registerHash(input, button) {
 
 async function confirmRegistration(button) {
   setBusy(button, true);
-  showMessage("Consultando a confirmação da rede…");
+  showMessage(gettext("Consultando a confirmação da rede…"));
   try {
     const result = await postForm(button.dataset.unitConfirmUrl);
     showMessage(result.message);
@@ -194,14 +197,14 @@ async function confirmRegistration(button) {
 
 async function prepareAndSend(button) {
   if (!window.ethereum) {
-    showMessage("Carteira compatível não encontrada neste navegador.");
+    showMessage(gettext("Carteira compatível não encontrada neste navegador."));
     return;
   }
 
   setBusy(button, true);
   try {
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    if (!accounts?.length) throw new Error("Conecte uma carteira para continuar.");
+    if (!accounts?.length) throw new Error(gettext("Conecte uma carteira para continuar."));
 
     const senderAddress = accounts[0];
     const chainHex = await window.ethereum.request({ method: "eth_chainId" });
@@ -213,12 +216,15 @@ async function prepareAndSend(button) {
     );
 
     if (!networkId || !Number.isSafeInteger(expectedChainId)) {
-      throw new Error("Selecione uma rede com UnitRegistry ativo.");
+      throw new Error(gettext("Selecione uma rede com UnitRegistry ativo."));
     }
     if (walletChainId !== expectedChainId) {
       showMessage(
-        `A carteira está na rede ${walletChainId || "desconhecida"}. ` +
-          `Troque para ${expectedChainId} e tente novamente.`,
+        interpolate(
+          gettext("A carteira está na rede %(network)s. Troque para %(chainId)s e tente novamente."),
+          { network: walletChainId || gettext("desconhecida"), chainId: expectedChainId },
+          true,
+        ),
       );
       return;
     }
@@ -237,12 +243,12 @@ async function prepareAndSend(button) {
     }
 
     if (prepared.owner_address.toLowerCase() !== senderAddress.toLowerCase()) {
-      throw new Error("Conecte a carteira dona do UnitRegistry.");
+      throw new Error(gettext("Conecte a carteira dona do UnitRegistry."));
     }
 
     // Store the uncertain-send marker before asking the wallet to sign.
     await postForm(prepared.started_url);
-    showMessage("Confirme o registro da unidade na carteira.");
+    showMessage(gettext("Confirme o registro da unidade na carteira."));
 
     let transactionHash;
     try {
@@ -270,15 +276,14 @@ async function prepareAndSend(button) {
 
       // Any other wallet error may leave the network result uncertain.
       showMessage(
-        "Não foi possível saber se a carteira enviou a transação. Não envie outra. " +
-          "Se ela mostrar uma hash, informe-a nesta tentativa após recarregar a página.",
+        gettext("Não foi possível saber se a carteira enviou a transação. Não envie outra. Se ela mostrar uma hash, informe-a nesta tentativa após recarregar a página."),
       );
       window.location.reload();
       return;
     }
 
     rememberHash(prepared.attempt_id, transactionHash);
-    showMessage("Hash recebida pela carteira. Conferindo a transação na rede…");
+    showMessage(gettext("Hash recebida pela carteira. Conferindo a transação na rede…"));
     let result;
     try {
       result = await postForm(prepared.register_url, {

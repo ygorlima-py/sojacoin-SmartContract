@@ -7,6 +7,7 @@ from django.db.models import Prefetch, QuerySet
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     CreateView,
     DetailView,
@@ -460,25 +461,25 @@ class AccessHistoryListView(CompanyAdministratorRequiredMixin, ListView):
     paginate_by = 50
 
     ACTION_LABELS = {
-        AccessChange.Action.MEMBERSHIP_GRANTED: "Membro adicionado",
-        AccessChange.Action.MEMBERSHIP_REVOKED: "Membro desativado",
-        AccessChange.Action.ROLE_GRANTED: "Função concedida",
-        AccessChange.Action.ROLE_REVOKED: "Função revogada",
-        AccessChange.Action.UNIT_ACCESS_UPDATED: "Acesso à unidade alterado",
-        AccessChange.Action.WALLET_PERMISSION_UPDATED: "Permissão de carteira alterada",
+        AccessChange.Action.MEMBERSHIP_GRANTED: _("Membro adicionado"),
+        AccessChange.Action.MEMBERSHIP_REVOKED: _("Membro desativado"),
+        AccessChange.Action.ROLE_GRANTED: _("Função concedida"),
+        AccessChange.Action.ROLE_REVOKED: _("Função revogada"),
+        AccessChange.Action.UNIT_ACCESS_UPDATED: _("Acesso à unidade alterado"),
+        AccessChange.Action.WALLET_PERMISSION_UPDATED: _("Permissão de carteira alterada"),
     }
     ROLE_LABELS = {
-        MembershipRole.Role.ADMINISTRATOR: "Administrador",
-        MembershipRole.Role.REGISTRATION: "Cadastro",
-        MembershipRole.Role.RECEIVING: "Recebimento",
-        MembershipRole.Role.ISSUANCE: "Emissão",
-        MembershipRole.Role.AUDITOR: "Auditoria",
+        MembershipRole.Role.ADMINISTRATOR: _("Administrator"),
+        MembershipRole.Role.REGISTRATION: _("Registration operator"),
+        MembershipRole.Role.RECEIVING: _("Receiving operator"),
+        MembershipRole.Role.ISSUANCE: _("Issuance operator"),
+        MembershipRole.Role.AUDITOR: _("Auditor"),
     }
     PERMISSION_LABELS = {
-        "can_view": "Visualização",
-        "can_receive": "Recebimento",
-        "can_issue": "Emissão",
-        "can_audit": "Auditoria",
+        "can_view": _("Viewing"),
+        "can_receive": _("Receiving"),
+        "can_issue": _("Issuance"),
+        "can_audit": _("Auditing"),
     }
 
     def get_queryset(self) -> QuerySet[AccessChange]:
@@ -498,12 +499,12 @@ class AccessHistoryListView(CompanyAdministratorRequiredMixin, ListView):
     def _permission_text(self, value: object) -> str:
         """Translate a stored permission flag for display."""
 
-        return "Concedida" if value else "Não concedida"
+        return _("Concedida") if value else _("Não concedida")
 
     def _role_text(self, value: object) -> str:
         """Translate a role code for display."""
 
-        return self.ROLE_LABELS.get(str(value), "Não informada")
+        return self.ROLE_LABELS.get(str(value), _("Not provided"))
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Prepare safe, readable summaries without exposing stored JSON."""
@@ -525,11 +526,11 @@ class AccessHistoryListView(CompanyAdministratorRequiredMixin, ListView):
 
         if change.action == AccessChange.Action.UNIT_ACCESS_UPDATED:
             if current.get("active") is False:
-                action_label = "Acesso à unidade revogado"
+                action_label = _("Acesso à unidade revogado")
             elif not previous:
-                action_label = "Acesso à unidade criado"
+                action_label = _("Acesso à unidade criado")
             elif previous.get("active") is False:
-                action_label = "Acesso à unidade reativado"
+                action_label = _("Acesso à unidade reativado")
             for field, label in self.PERMISSION_LABELS.items():
                 if current.get("active") is False:
                     if field in previous:
@@ -543,26 +544,33 @@ class AccessHistoryListView(CompanyAdministratorRequiredMixin, ListView):
                     details.append({"label": label, "before": before, "after": self._permission_text(new)})
         elif change.action in {AccessChange.Action.ROLE_GRANTED, AccessChange.Action.ROLE_REVOKED}:
             role = current.get("role", previous.get("role"))
-            details.append({"label": "Função", "before": "", "after": self._role_text(role)})
+            details.append({"label": _("Função"), "before": "", "after": self._role_text(role)})
         elif change.action == AccessChange.Action.WALLET_PERMISSION_UPDATED:
             permission = str(current.get("permission", previous.get("permission", "")))
+            permission_label = {
+                "Recebimento": _("Receiving"),
+                "Receiving": _("Receiving"),
+                "Receipt": _("Receiving"),
+                "Emissão": _("Issuance"),
+                "Issuance": _("Issuance"),
+            }.get(permission, permission.lower())
             action = str(current.get("action", ""))
             was_active = bool(previous.get("active", False))
             is_active = bool(current.get("active", False))
             action_label = (
-                f"Permissão de {permission.lower()} concedida"
+                _("Permissão de %(permission)s concedida") % {"permission": permission_label}
                 if action == "grant" and is_active
-                else f"Permissão de {permission.lower()} revogada"
+                else _("Permissão de %(permission)s revogada") % {"permission": permission_label}
             )
             wallet = str(current.get("wallet", previous.get("wallet", "—")))
             details.extend(
                 (
-                    {"label": "Carteira", "before": "", "after": wallet},
-                    {"label": "Permissão", "before": "", "after": permission or "—"},
+                    {"label": _("Carteira"), "before": "", "after": wallet},
+                    {"label": _("Permissão"), "before": "", "after": permission_label or "—"},
                     {
-                        "label": "Situação",
-                        "before": "Ativa" if was_active else "Sem permissão",
-                        "after": "Ativa" if is_active else "Revogada",
+                        "label": _("Situação"),
+                        "before": _("Ativa") if was_active else _("Sem permissão"),
+                        "after": _("Ativa") if is_active else _("Revogada"),
                     },
                 )
             )

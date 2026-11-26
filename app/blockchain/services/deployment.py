@@ -16,6 +16,7 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from web3 import Web3
 from web3.exceptions import TransactionNotFound, Web3Exception
 
@@ -59,15 +60,15 @@ DEPLOYMENT_ORDER = MODULES + (
 )
 # Use readable names in validation messages shown to platform operators.
 DEPLOYMENT_KIND_LABELS = {
-    ContractInstance.Kind.SOJA_COIN_ADMINISTRATION: "Módulo de administração",
-    ContractInstance.Kind.SOJA_COIN_DEPOSITS: "Módulo de recebimentos",
-    ContractInstance.Kind.SOJA_COIN_CPR: "Módulo de CPR",
-    ContractInstance.Kind.SOJA_COIN_SERVICES: "Módulo de serviços",
-    ContractInstance.Kind.SOJA_COIN_LOCKS: "Módulo de bloqueios",
-    ContractInstance.Kind.SOJA_COIN_REDEMPTIONS: "Módulo de resgates",
-    ContractInstance.Kind.SOJA_COIN: "SojaCoin",
-    ContractInstance.Kind.UNIT_REGISTRY: "Registro de unidades",
-    ContractInstance.Kind.ISSUANCE_BATCHES: "Lotes de emissão",
+    ContractInstance.Kind.SOJA_COIN_ADMINISTRATION: _("Módulo de administração"),
+    ContractInstance.Kind.SOJA_COIN_DEPOSITS: _("Módulo de recebimentos"),
+    ContractInstance.Kind.SOJA_COIN_CPR: _("Módulo de CPR"),
+    ContractInstance.Kind.SOJA_COIN_SERVICES: _("Módulo de serviços"),
+    ContractInstance.Kind.SOJA_COIN_LOCKS: _("Módulo de bloqueios"),
+    ContractInstance.Kind.SOJA_COIN_REDEMPTIONS: _("Módulo de resgates"),
+    ContractInstance.Kind.SOJA_COIN: _("SojaCoin"),
+    ContractInstance.Kind.UNIT_REGISTRY: _("Registro de unidades"),
+    ContractInstance.Kind.ISSUANCE_BATCHES: _("Lotes de emissão"),
 }
 
 

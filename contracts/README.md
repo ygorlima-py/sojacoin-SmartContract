@@ -198,7 +198,7 @@ linkTaxInvoice(1, 0x111111111111111111111111111111111111111111111111111111111111
 
 The invoice can be linked before or after the weighing ticket, but it must be linked before the batch is created.
 
-### 7. Create and approve the batch
+### 7. Create the batch and approve it with the participant
 
 In `TokenIssuanceBatches`, with Account5, group deposit 1. The deadline must be a future Unix timestamp relative to the current block; `2000000000` works for this simulation as long as it is still in the future:
 
@@ -206,28 +206,31 @@ In `TokenIssuanceBatches`, with Account5, group deposit 1. The deadline must be 
 createIssuanceBatch([1], 2000000000)
 ```
 
-The contract generates the batch ID. After the transaction, get the value from the `BatchCreated`
-event (or query `nextBatchId`) and use that ID in `issuanceBatchAuthorizationHash` and
-`approveIssuanceBatch`.
-With a new batch contract, the first ID in this walkthrough is also `1`.
+The contract generates the batch ID. Get it from the `BatchCreated` event or
+query `nextBatchId`. In this fresh test deployment, it is `1`.
 
-Query `issuanceBatchAuthorizationHash(1)` on TokenIssuanceBatches and copy the digest. The producer, Account4, signs it using the local test private key printed in the Anvil terminal:
-
-```bash
-~/.foundry/bin/cast wallet sign --no-hash "PASTE_THE_DIGEST_HERE" --private-key "PASTE_ACCOUNT4_LOCAL_TEST_PRIVATE_KEY_HERE"
-```
-
-Submit the returned signature with `approveIssuanceBatch(1, signature)` on TokenIssuanceBatches. The transaction can be submitted by Account0, Account1, or another wallet; the signature must come from the producer. In the SaaS, the producer signs once and the application can submit this blockchain transaction afterward.
-
-### 8. Issue and check the SJC
-
-After approval, in SojaCoin, with Account5 as the sender, call:
+The producer (Account4) approves and receives the issuance in one transaction.
+With Account4 as the sender, call this function on `TokenIssuanceBatches`:
 
 ```text
-issueTokens(1)
+approveAndIssueBatch(1)
 ```
 
-With 24,750 kg net weight and no CPR registered, the producer receives 412.5 SJC. Since `balanceOf` returns integer units and `decimals()` is 6, the result is `412500000`, equivalent to 412.5 SJC. Query:
+Account4 confirms and pays the transaction fee. The batch contract marks the
+batch approved, then calls SojaCoin to issue the receipt. SojaCoin gets the
+responsible operator from the batch record and checks that Account5 still has
+issuance permission for unit 1. Audit, inventory backing, receipt state and CPR
+repayment rules are evaluated in the same transaction. If a check fails, the
+whole transaction reverts: the batch stays pending and no SJC is issued.
+
+This automatic function currently accepts exactly one receipt per batch, which
+matches the SaaS flow. The separate `approveIssuanceBatch(batchId, signature)`
+contract entry point remains available for compatibility, but the SaaS uses
+`approveAndIssueBatch` and does not request a separate EIP-712 signature.
+
+With 24,750 kg net weight and no CPR registered, the producer receives 412.5
+SJC. Since `balanceOf` returns integer units and `decimals()` is 6, the result is
+`412500000`, equivalent to 412.5 SJC. Query:
 
 ```text
 balanceOf(0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65)
@@ -235,7 +238,9 @@ balanceOf(0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65)
 
 If the producer has open CPRs for the same producer, unit, and crop year, issuance repays those debts in the approved order. The SJC for each repayment goes directly to the CPR's current creditor. Only the amount remaining after the compatible queue is paid goes to the producer. Example: with a debt of 7,000 bags and an 8,000-bag delivery, 7,000 SJC goes to the creditor, 1,000 SJC goes to the producer, and the CPR is paid off.
 
-CPR amounts use the token's internal units. Since `decimals()` is 6, 7,000 SJC is entered as `7000000000` units. The contract reduces the outstanding balance with each issuance; it does not hold CPR SJC in escrow.
+CPR amounts use the token's internal units. Since `decimals()` is 6, 7,000
+SJC is entered as `7000000000` units. The contract reduces the outstanding
+balance with each issuance; it does not hold CPR SJC in escrow.
 
 ## Automated tests
 
@@ -251,7 +256,7 @@ The tests cover full and partial repayments, CPR queues, compatibility by unit a
 
 - All hashes filled with `1111`, `2222`, `3333`, `4444`, `5555`, `aaaa`, or `bbbb` in this walkthrough are test values. In a real operation, the application calculates the hash of the file stored off-chain.
 - Each active unit must have an assigned auditor and a current audit to enable issuance.
-- The batch must be created in the same `TokenIssuanceBatches` contract connected to the current SojaCoin. If `createIssuanceBatch` reverts, check the contract address getters from step 3.
-- Module addresses are fixed in SojaCoin, and auxiliary contracts point to a specific deployment. After changing the code, deploy a new version and repeat the registrations on that deployment.
+- The batch must be created in the same `TokenIssuanceBatches` contract connected to the current SojaCoin. If `createIssuanceBatch` or `approveAndIssueBatch` reverts, check the contract address getters from step 3, the current audit, inventory and Account5's unit permission.
+- Module addresses are fixed in SojaCoin, and auxiliary contracts point to a specific deployment. The automatic flow requires new deployments of SojaCoin, SojaCoinDeposits and TokenIssuanceBatches from matching artifacts. After changing the code, deploy a new version and repeat the registrations on that deployment. Existing SaaS history and PDFs remain stored; deployment does not migrate on-chain state.
 
 More details are available in [the architecture document](docs/arquitetura.md) and [the soybean delivery logic](LOGICA_ENTREGA_SOJA.md).

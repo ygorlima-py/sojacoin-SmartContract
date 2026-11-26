@@ -1,81 +1,82 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Membro da equipe | SojaCoin{% endblock %}
-{% block page_title %}Membro da equipe{% endblock %}
+{% block title %}{% translate "Membro da equipe | SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Membro da equipe" %}{% endblock %}
 {% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">{{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
 
 {% block content %}
 <section class="max-w-3xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
     <div class="flex items-center justify-between gap-4 border-b border-[#E2E5DE] px-4 py-3">
-        <h2 class="text-[13.5px] font-semibold">Dados do membro</h2>
+        <h2 class="text-[13.5px] font-semibold">{% translate "Dados do membro" %}</h2>
         {% if can_grant_roles %}
             <a href="{% url 'companies:member_role_new' company_id=company.pk membership_id=member.pk %}" class="inline-flex h-[32px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-3 text-[12px] font-semibold text-white transition hover:bg-[#185A32]">
                 <i class="fa-solid fa-shield-halved text-[11px]" aria-hidden="true"></i>
-                Conceder função
+                {% translate "Conceder função" %}
             </a>
         {% endif %}
     </div>
     <dl class="grid gap-4 p-4 text-[13px] sm:grid-cols-2">
-        <div><dt class="text-[11px] font-semibold text-[#8A948B]">Nome</dt><dd class="mt-1">{{ member.user.profile.full_name|default:member.user.username }}</dd></div>
-        <div><dt class="text-[11px] font-semibold text-[#8A948B]">Usuário</dt><dd class="mt-1">{{ member.user.username }}</dd></div>
-        <div><dt class="text-[11px] font-semibold text-[#8A948B]">Funções ativas</dt><dd class="mt-1">{% include "companies/_member_roles.html" %}</dd></div>
-        <div><dt class="text-[11px] font-semibold text-[#8A948B]">Situação do vínculo</dt><dd class="mt-1">{% if member.active %}Ativo{% else %}Inativo{% endif %}</dd></div>
+        <div><dt class="text-[11px] font-semibold text-[#8A948B]">{% translate "Nome" %}</dt><dd class="mt-1">{{ member.user.profile.full_name|default:member.user.username }}</dd></div>
+        <div><dt class="text-[11px] font-semibold text-[#8A948B]">{% translate "Usuário" %}</dt><dd class="mt-1">{{ member.user.username }}</dd></div>
+        <div><dt class="text-[11px] font-semibold text-[#8A948B]">{% translate "Funções ativas" %}</dt><dd class="mt-1">{% include "companies/_member_roles.html" %}</dd></div>
+        <div><dt class="text-[11px] font-semibold text-[#8A948B]">{% translate "Situação do vínculo" %}</dt><dd class="mt-1">{% if member.active %}{% translate "Ativo" %}{% else %}{% translate "Inativo" %}{% endif %}</dd></div>
     </dl>
 
     <div class="border-t border-[#E2E5DE] px-4 py-3">
-        <h3 class="text-[12.5px] font-semibold text-[#17211A]">Funções concedidas</h3>
+        <h3 class="text-[12.5px] font-semibold text-[#17211A]">{% translate "Funções concedidas" %}</h3>
         <div class="mt-2 divide-y divide-[#E2E5DE]">
             {% for role in member.active_roles %}
                 <div class="flex items-center justify-between gap-3 py-2">
                     <span class="text-[12.5px] text-[#5C685E]">
-                        {% if role.role == 'administrator' %}Administrador{% elif role.role == 'registration' %}Cadastro{% elif role.role == 'receiving' %}Recebimento{% elif role.role == 'issuance' %}Emissão{% elif role.role == 'auditor' %}Auditoria{% else %}{{ role.get_role_display }}{% endif %}
+                        {% if role.role == 'administrator' %}{% translate "Administrador" %}{% elif role.role == 'registration' %}{% translate "Cadastro" %}{% elif role.role == 'receiving' %}{% translate "Recebimento" %}{% elif role.role == 'issuance' %}{% translate "Emissão" %}{% elif role.role == 'auditor' %}{% translate "Auditoria" %}{% else %}{{ role.get_role_display }}{% endif %}
                     </span>
                     {% if can_manage_roles %}
                         <form method="post" action="{% url 'companies:member_role_revoke' company_id=company.pk membership_id=member.pk role_id=role.pk %}">
                             {% csrf_token %}
                             <button type="submit" class="text-[11px] font-semibold text-[#AE3026] transition hover:text-[#8F251E]">
-                                Revogar
+                                {% translate "Revogar" %}
                             </button>
                         </form>
                     {% endif %}
                 </div>
             {% empty %}
-                <p class="py-2 text-[12px] text-[#8A948B]">Nenhuma função ativa.</p>
+                <p class="py-2 text-[12px] text-[#8A948B]">{% translate "Nenhuma função ativa." %}</p>
             {% endfor %}
         </div>
     </div>
 
     <div class="border-t border-[#E2E5DE] px-4 py-3">
         <div class="flex items-center justify-between gap-3">
-            <h3 class="text-[12.5px] font-semibold text-[#17211A]">Acesso às unidades</h3>
-            <span class="text-[11px] text-[#8A948B]">Permissões do SaaS</span>
+            <h3 class="text-[12.5px] font-semibold text-[#17211A]">{% translate "Acesso às unidades" %}</h3>
+            <span class="text-[11px] text-[#8A948B]">{% translate "Permissões do SaaS" %}</span>
         </div>
         <div class="mt-2 divide-y divide-[#E2E5DE]">
             {% for row in unit_access_rows %}
                 <div class="flex items-center justify-between gap-3 py-3">
                     <div class="min-w-0">
                         <p class="truncate text-[12.5px] font-semibold text-[#17211A]">{{ row.unit.name }}</p>
-                        <p class="text-[11px] text-[#8A948B]">Código {{ row.unit.code }} · {% if row.access and row.access.active %}Acesso ativo{% else %}Sem acesso ativo{% endif %}</p>
+                        <p class="text-[11px] text-[#8A948B]">{% translate "Código" %} {{ row.unit.code }} · {% if row.access and row.access.active %}{% translate "Acesso ativo" %}{% else %}{% translate "Sem acesso ativo" %}{% endif %}</p>
                         {% if row.access and row.access.active %}
                             <p class="mt-1 text-[11px] text-[#5C685E]">
-                                {% if row.access.can_view %}Visualização{% endif %}{% if row.access.can_receive %}{% if row.access.can_view %}, {% endif %}Recebimento{% endif %}{% if row.access.can_issue %}{% if row.access.can_view or row.access.can_receive %}, {% endif %}Emissão{% endif %}{% if row.access.can_audit %}{% if row.access.can_view or row.access.can_receive or row.access.can_issue %}, {% endif %}Auditoria{% endif %}
+                                {% if row.access.can_view %}{% translate "Visualização" %}{% endif %}{% if row.access.can_receive %}{% if row.access.can_view %}, {% endif %}{% translate "Recebimento" %}{% endif %}{% if row.access.can_issue %}{% if row.access.can_view or row.access.can_receive %}, {% endif %}{% translate "Emissão" %}{% endif %}{% if row.access.can_audit %}{% if row.access.can_view or row.access.can_receive or row.access.can_issue %}, {% endif %}{% translate "Auditoria" %}{% endif %}
                             </p>
                         {% endif %}
                     </div>
                     {% if can_manage_unit_access %}
                         <a href="{% url 'companies:member_unit_access' company_id=company.pk membership_id=member.pk unit_id=row.unit.pk %}" class="inline-flex h-[30px] shrink-0 items-center gap-2 rounded-[8px] border border-[#CCD3C9] px-2.5 text-[11px] font-semibold text-[#17211A] transition hover:bg-[#F9FAF7]">
                             <i class="fa-solid fa-gear text-[10px]" aria-hidden="true"></i>
-                            Configurar
+                            {% translate "Configurar" %}
                         </a>
                     {% endif %}
                 </div>
             {% empty %}
-                <p class="py-2 text-[12px] text-[#8A948B]">Nenhuma unidade cadastrada.</p>
+                <p class="py-2 text-[12px] text-[#8A948B]">{% translate "Nenhuma unidade cadastrada." %}</p>
             {% endfor %}
         </div>
     </div>
 </section>
 <a href="{% url 'companies:member_list' company_id=company.pk %}" class="mt-4 inline-flex items-center gap-2 text-[12px] font-semibold text-[#1E6B3C]">
-    <i class="fa-solid fa-arrow-left text-[11px]" aria-hidden="true"></i> Voltar para a equipe
+    <i class="fa-solid fa-arrow-left text-[11px]" aria-hidden="true"></i> {% translate "Voltar para a equipe" %}
 </a>
 {% endblock %}

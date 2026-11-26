@@ -1,17 +1,18 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Equipe e permissões | SojaCoin{% endblock %}
-{% block page_title %}Equipe e permissões{% endblock %}
-{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Equipe de {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+{% block title %}{% translate "Equipe e permissões | SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Equipe e permissões" %}{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">{% translate "Equipe de" %} {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
 
 {% block content %}
 <section class="max-w-4xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
     <div class="flex items-center justify-between gap-4 border-b border-[#E2E5DE] px-4 py-3">
-        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Membros da equipe</h2>
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">{% translate "Membros da equipe" %}</h2>
         {% if can_manage_team %}
             <a href="{% url 'companies:member_new' company_id=company.pk %}" class="inline-flex h-[32px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-3 text-[12px] font-semibold text-white transition hover:bg-[#185A32]">
                 <i class="fa-solid fa-user-plus text-[11px]" aria-hidden="true"></i>
-                Adicionar membro
+                {% translate "Adicionar membro" %}
             </a>
         {% endif %}
     </div>
@@ -20,13 +21,13 @@
             <a href="{% url 'companies:member_detail' company_id=company.pk membership_id=member.pk %}" class="flex items-center justify-between gap-4 px-4 py-3 transition hover:bg-[#F9FAF7]">
                 <span class="min-w-0">
                     <span class="block text-[13px] font-semibold text-[#17211A]">{{ member.user.profile.full_name|default:member.user.username }}</span>
-                    <span class="block text-[11px] text-[#5C685E]">Usuário: {{ member.user.username }}</span>
+                    <span class="block text-[11px] text-[#5C685E]">{% translate "Usuário:" %} {{ member.user.username }}</span>
                     <span class="block text-[11px] text-[#8A948B]">{% include "companies/_member_roles.html" %}</span>
                 </span>
-                <span class="shrink-0 text-[11px] font-semibold {% if member.active %}text-[#1E6B3C]{% else %}text-[#8A948B]{% endif %}">{% if member.active %}Ativo{% else %}Inativo{% endif %}</span>
+                <span class="shrink-0 text-[11px] font-semibold {% if member.active %}text-[#1E6B3C]{% else %}text-[#8A948B]{% endif %}">{% if member.active %}{% translate "Ativo" %}{% else %}{% translate "Inativo" %}{% endif %}</span>
             </a>
         {% empty %}
-            <p class="px-4 py-5 text-[13px] text-[#5C685E]">Nenhum membro cadastrado.</p>
+            <p class="px-4 py-5 text-[13px] text-[#5C685E]">{% translate "Nenhum membro cadastrado." %}</p>
         {% endfor %}
     </div>
 </section>

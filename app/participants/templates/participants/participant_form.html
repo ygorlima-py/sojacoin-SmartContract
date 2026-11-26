@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Cadastrar participante | SojaCoin{% endblock %}
-{% block page_title %}Cadastrar participante{% endblock %}
+{% block title %}{% translate "Cadastrar participante | SojaCoin" %}{% endblock %}
+{% block page_title %}{% translate "Cadastrar participante" %}{% endblock %}
 {% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">{{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
 
 {% block content %}
@@ -9,40 +10,40 @@
     {% if current_terms_document %}
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[9px] border border-[#C9DFD0] bg-[#F1F7F2] px-4 py-3">
             <div>
-                <p class="text-[12px] font-semibold text-[#1E6B3C]">Será usada a versão {{ current_terms_document.version }} dos termos</p>
-                <p class="mt-1 break-all font-mono text-[10px] text-[#536057]">Hash: {{ current_terms_document.terms_hash }}</p>
+                <p class="text-[12px] font-semibold text-[#1E6B3C]">{% translate "Será usada a versão" %} {{ current_terms_document.version }} {% translate "dos termos" %}</p>
+                <p class="mt-1 break-all font-mono text-[10px] text-[#536057]">{% translate "Hash:" %} {{ current_terms_document.terms_hash }}</p>
             </div>
-            <a href="{% url 'participants:terms_pdf_company' company_id=company.pk document_id=current_terms_document.pk %}" target="_blank" rel="noopener" class="inline-flex min-h-[38px] items-center gap-2 rounded-[7px] border border-[#B8C8BB] bg-white px-3 text-[11px] font-semibold text-[#1E6B3C]"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i>Conferir PDF</a>
+            <a href="{% url 'participants:terms_pdf_company' company_id=company.pk document_id=current_terms_document.pk %}" target="_blank" rel="noopener" class="inline-flex min-h-[38px] items-center gap-2 rounded-[7px] border border-[#B8C8BB] bg-white px-3 text-[11px] font-semibold text-[#1E6B3C]"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i>{% translate "Conferir PDF" %}</a>
         </div>
     {% else %}
         <div class="mb-4 rounded-[9px] border border-[#F0D79A] bg-[#FFF9E9] px-4 py-3 text-[12px] leading-5 text-[#75520A]">
-            A empresa ainda não publicou o PDF dos termos. Peça ao administrador para publicá-lo antes de cadastrar participantes.
-            {% if can_manage_company %}<a href="{% url 'participants:terms_manage' company_id=company.pk %}" class="ml-1 font-semibold underline">Gerenciar termos</a>{% endif %}
+            {% translate "A empresa ainda não publicou o PDF dos termos. Peça ao administrador para publicá-lo antes de cadastrar participantes." %}
+            {% if can_manage_company %}<a href="{% url 'participants:terms_manage' company_id=company.pk %}" class="ml-1 font-semibold underline">{% translate "Gerenciar termos" %}</a>{% endif %}
         </div>
     {% endif %}
     <form method="post" class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
         {% csrf_token %}
         <div class="border-b border-[#E2E5DE] px-4 py-3">
-            <h2 class="text-[14px] font-semibold text-[#17211A]">Dados do participante</h2>
-            <p class="mt-1 text-[12px] text-[#78837A]">A pessoa não precisa ter conta nem função de equipe no SaaS.</p>
+            <h2 class="text-[14px] font-semibold text-[#17211A]">{% translate "Dados do participante" %}</h2>
+            <p class="mt-1 text-[12px] text-[#78837A]">{% translate "A pessoa não precisa ter conta nem função de equipe no SaaS." %}</p>
         </div>
         <div class="space-y-4 p-4">
             {% for field in form %}
                 {% if field.name != "terms_document_id" %}
                 <div>
-                    <label for="{{ field.id_for_label }}" class="mb-1.5 block text-[12px] font-semibold text-[#344238]">{{ field.label }}</label>
+                    <label for="{{ field.id_for_label }}" class="mb-1.5 block text-[12px] font-semibold text-[#344238]">{% translate field.label %}</label>
                     {{ field }}
-                    {% if field.help_text %}<p class="mt-1 text-[11px] text-[#78837A]">{{ field.help_text }}</p>{% endif %}
-                    {% for error in field.errors %}<p class="mt-1 text-[11px] text-[#B42318]">{{ error }}</p>{% endfor %}
+                    {% if field.help_text %}<p class="mt-1 text-[11px] text-[#78837A]">{% translate field.help_text %}</p>{% endif %}
+                    {% for error in field.errors %}<p class="mt-1 text-[11px] text-[#B42318]">{% translate error %}</p>{% endfor %}
                 </div>
                 {% endif %}
             {% endfor %}
             {{ form.terms_document_id }}
-            {% for error in form.non_field_errors %}<p class="rounded-[7px] bg-[#FFF0EE] px-3 py-2 text-[12px] text-[#A52B20]">{{ error }}</p>{% endfor %}
+            {% for error in form.non_field_errors %}<p class="rounded-[7px] bg-[#FFF0EE] px-3 py-2 text-[12px] text-[#A52B20]">{% translate error %}</p>{% endfor %}
         </div>
         <div class="flex flex-wrap justify-end gap-2 border-t border-[#E2E5DE] bg-[#FAFBF9] px-4 py-3">
-            <a href="{% url 'participants:list' company_id=company.pk %}" class="inline-flex min-h-[40px] items-center rounded-[7px] px-4 text-[12px] font-semibold text-[#536057] hover:bg-white">Cancelar</a>
-            {% if current_terms_document %}<button type="submit" class="inline-flex min-h-[46px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white hover:bg-[#185A32]"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Salvar participante</button>{% endif %}
+            <a href="{% url 'participants:list' company_id=company.pk %}" class="inline-flex min-h-[40px] items-center rounded-[7px] px-4 text-[12px] font-semibold text-[#536057] hover:bg-white">{% translate "Cancelar" %}</a>
+            {% if current_terms_document %}<button type="submit" class="inline-flex min-h-[46px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white hover:bg-[#185A32]"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>{% translate "Salvar participante" %}</button>{% endif %}
         </div>
     </form>
 </div>

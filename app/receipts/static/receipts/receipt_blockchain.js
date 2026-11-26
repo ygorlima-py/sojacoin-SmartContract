@@ -25,7 +25,7 @@
       error: "border-[#E8C5C0] bg-[#FFF6F4] text-[#A33C2E]",
     };
     message.className = `rounded-[7px] border px-3 py-2 text-[12px] ${tones[tone] || tones.info}`;
-    message.textContent = text;
+    message.textContent = gettext(text);
   }
 
   function attemptUrl(attemptId, action) {
@@ -51,37 +51,41 @@
     } catch (_error) {
       throw new Error(
         response.status === 403
-          ? "Seu usuário não tem autorização para operar este recebimento."
-          : "O servidor não retornou uma resposta válida. Atualize a página e tente novamente.",
+          ? gettext("Seu usuário não tem autorização para operar este recebimento.")
+          : gettext("O servidor não retornou uma resposta válida. Atualize a página e tente novamente."),
       );
     }
-    if (!response.ok) throw new Error(result.error || "Não foi possível concluir esta ação.");
+    if (!response.ok) throw new Error(result.error || gettext("Não foi possível concluir esta ação."));
     return result;
   }
 
   function selectedNetwork() {
     if (networkSelect) {
       const option = networkSelect.selectedOptions[0];
-      if (!option || !networkSelect.value) throw new Error("Selecione uma rede disponível.");
+      if (!option || !networkSelect.value) throw new Error(gettext("Selecione uma rede disponível."));
       return { id: networkSelect.value, chainId: Number(option.dataset.chainId) };
     }
     const id = root.dataset.pinnedNetworkId;
     const chainId = root.dataset.pinnedChainId;
-    if (!id || !chainId) throw new Error("A operação não tem uma rede selecionada.");
+    if (!id || !chainId) throw new Error(gettext("A operação não tem uma rede selecionada."));
     return { id, chainId: Number(chainId) };
   }
 
   async function connectReceivingWallet(expectedChainId) {
     if (!provider || typeof provider.request !== "function") {
-      throw new Error("Abra esta página em um navegador com uma carteira EVM, como a MetaMask.");
+      throw new Error(gettext("Abra esta página em um navegador com uma carteira EVM, como a MetaMask."));
     }
     const accounts = await provider.request({ method: "eth_requestAccounts" });
     const sender = Array.isArray(accounts) ? accounts[0] : "";
-    if (!sender) throw new Error("A carteira não retornou uma conta conectada.");
+    if (!sender) throw new Error(gettext("A carteira não retornou uma conta conectada."));
     const chainIdHex = await provider.request({ method: "eth_chainId" });
     const actualChainId = Number.parseInt(chainIdHex, 16);
     if (actualChainId !== expectedChainId) {
-      throw new Error(`A MetaMask está na rede ${actualChainId}. Troque para a rede do processo (ID ${expectedChainId}).`);
+      throw new Error(interpolate(
+        gettext("A MetaMask está na rede %(chainId)s. Troque para a rede do processo (ID %(expected)s)."),
+        { chainId: actualChainId, expected: expectedChainId },
+        true,
+      ));
     }
     return sender.toLowerCase();
   }
@@ -102,7 +106,7 @@
     const label = document.createElement("label");
     label.className = "text-[10px] font-medium text-[#657268]";
     label.htmlFor = `receipt-hash-${attemptId}`;
-    label.textContent = "Hash retornada pela carteira";
+    label.textContent = gettext("Hash retornada pela carteira");
     const input = document.createElement("input");
     input.id = label.htmlFor;
     input.name = "transaction_hash";
@@ -115,7 +119,7 @@
     const submit = document.createElement("button");
     submit.type = "submit";
     submit.className = "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[7px] border border-[#C7D9CB] bg-white px-4 text-[11px] font-semibold text-[#1E6B3C] hover:bg-[#F4F8F4]";
-    submit.textContent = "Conferir hash";
+    submit.textContent = gettext("Conferir hash");
     form.append(label, input, submit);
     wrapper.append(form);
     form.addEventListener("submit", (event) => {
@@ -144,18 +148,18 @@
       });
 
       if (prepared.status === "submitted") {
-        showMessage("Esta etapa já foi enviada. Consulte a confirmação da transação existente.", "warning");
+        showMessage(gettext("Esta etapa já foi enviada. Consulte a confirmação da transação existente."), "warning");
         window.location.reload();
         return;
       }
       if (prepared.status === "recover") {
         button.hidden = true;
         createRecoveryForm(prepared.attempt_id, cachedHash(prepared.attempt_id));
-        showMessage("O envio desta etapa ficou incerto. Informe a hash da carteira para recuperar a mesma tentativa; ela não será enviada novamente.", "warning");
+        showMessage(gettext("O envio desta etapa ficou incerto. Informe a hash da carteira para recuperar a mesma tentativa; ela não será enviada novamente."), "warning");
         return;
       }
       if (Number(prepared.chain_id) !== network.chainId) {
-        throw new Error("A rede mudou entre a preparação e a abertura da carteira. Atualize a página.");
+        throw new Error(gettext("A rede mudou entre a preparação e a abertura da carteira. Atualize a página."));
       }
 
       const attemptId = prepared.attempt_id;
@@ -176,13 +180,13 @@
       } catch (error) {
         if (error && Number(error.code) === 4001) {
           await post(attemptUrl(attemptId, "rejected"));
-          showMessage("A carteira recusou a solicitação. Você pode iniciar uma nova tentativa.", "warning");
+          showMessage(gettext("A carteira recusou a solicitação. Você pode iniciar uma nova tentativa."), "warning");
           window.location.reload();
           return;
         }
         button.hidden = true;
         createRecoveryForm(attemptId, cachedHash(attemptId));
-        showMessage("A carteira não informou se transmitiu a chamada. Não envie de novo: recupere esta tentativa usando a hash, se ela aparecer na carteira.", "warning");
+        showMessage(gettext("A carteira não informou se transmitiu a chamada. Não envie de novo: recupere esta tentativa usando a hash, se ela aparecer na carteira."), "warning");
         return;
       }
 
@@ -198,7 +202,7 @@
         button.hidden = true;
         const form = createRecoveryForm(attemptId, transactionHash);
         form?.scrollIntoView({ behavior: "smooth", block: "center" });
-        showMessage(registered.message || "O RPC ainda não encontrou a hash. A tentativa foi preservada para nova conferência.", "warning");
+        showMessage(registered.message || gettext("O RPC ainda não encontrou a hash. A tentativa foi preservada para nova conferência."), "warning");
         return;
       }
       try {
@@ -206,10 +210,10 @@
       } catch (_error) {
         // Session storage is optional; the database record is authoritative.
       }
-      showMessage("Hash conferida. A rede ainda precisa confirmar a transação.", "success");
+      showMessage(gettext("Hash conferida. A rede ainda precisa confirmar a transação."), "success");
       window.location.reload();
     } catch (error) {
-      showMessage(error.message || "Não foi possível preparar esta chamada.", "error");
+      showMessage(error.message || gettext("Não foi possível preparar esta chamada."), "error");
     } finally {
       button.disabled = false;
     }
@@ -226,7 +230,7 @@
         transaction_hash: input.value.trim(),
       });
       if (result.status === "pending") {
-        showMessage(result.message || "O RPC ainda não encontrou esta hash. Tente novamente com a mesma hash.", "warning");
+        showMessage(result.message || gettext("O RPC ainda não encontrou esta hash. Tente novamente com a mesma hash."), "warning");
         return;
       }
       try {
@@ -234,7 +238,7 @@
       } catch (_error) {
         // Session storage is optional; the database record is authoritative.
       }
-      showMessage("Hash conferida. A rede ainda precisa confirmar a transação.", "success");
+      showMessage(gettext("Hash conferida. A rede ainda precisa confirmar a transação."), "success");
       window.location.reload();
     } catch (error) {
       showMessage(error.message || "Não foi possível conferir esta hash.", "error");
@@ -249,17 +253,17 @@
     try {
       const result = await post(attemptUrl(attemptId, "confirm"));
       if (result.status === "pending") {
-        showMessage("A rede ainda não confirmou esta transação. Consulte novamente depois.", "warning");
+        showMessage(gettext("A rede ainda não confirmou esta transação. Consulte novamente depois."), "warning");
         return;
       }
       if (result.status === "failed") {
-        showMessage("A transação foi revertida. A etapa pode ser preparada novamente.", "error");
+        showMessage(gettext("A transação foi revertida. A etapa pode ser preparada novamente."), "error");
         window.location.reload();
         return;
       }
       if (result.status === "needs_review") {
         showMessage(
-          "A transação exige conferência: os dados confirmados diferem do esperado. Nenhuma etapa posterior será liberada.",
+          gettext("A transação exige conferência: os dados confirmados diferem do esperado. Nenhuma etapa posterior será liberada."),
           "error",
         );
         window.location.reload();
@@ -267,13 +271,17 @@
       }
       showMessage(
         result.deposit_id
-          ? `Etapa confirmada. ID do recebimento na rede: ${result.deposit_id}.`
-          : "Etapa confirmada na blockchain.",
+          ? interpolate(
+              gettext("Etapa confirmada. ID do recebimento na rede: %(depositId)s."),
+              { depositId: result.deposit_id },
+              true,
+            )
+          : gettext("Etapa confirmada na blockchain."),
         "success",
       );
       window.location.reload();
     } catch (error) {
-      showMessage(error.message || "Não foi possível consultar a confirmação.", "error");
+      showMessage(error.message || gettext("Não foi possível consultar a confirmação."), "error");
     } finally {
       button.disabled = false;
     }

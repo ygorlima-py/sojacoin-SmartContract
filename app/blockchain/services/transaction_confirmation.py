@@ -31,6 +31,7 @@ class DecodedContractEvent:
     block_number: int
     block_hash: str
     args: dict[str, Any]
+    contract_instance: ContractInstance | None = None
 
 
 TransactionEventHandler = Callable[
@@ -42,6 +43,7 @@ def _decode_receipt_events(
     contract: Contract,
     receipt: TxReceipt,
     transaction_hash: str,
+    contract_instance: ContractInstance | None = None,
 ) -> list[DecodedContractEvent]:
     """Decode events emitted by this contract from one transaction receipt."""
 
@@ -72,6 +74,7 @@ def _decode_receipt_events(
                     block_number=int(event_log["blockNumber"]),
                     block_hash=Web3.to_hex(event_log["blockHash"]),
                     args=dict(event_log["args"]),
+                    contract_instance=contract_instance,
                 )
             )
 
@@ -92,7 +95,7 @@ def _record_event(
 
     processed_event, _ = process_event_once(
         network=transaction.network,
-        contract=contract,
+        contract=event.contract_instance or contract,
         transaction_hash=event.transaction_hash,
         log_index=event.log_index,
         block_number=event.block_number,
@@ -108,6 +111,7 @@ def confirm_transaction_from_chain(
     *,
     event_handler: TransactionEventHandler | None = None,
     required_event_names: tuple[str, ...] = (),
+    additional_event_contracts: tuple[ContractInstance, ...] = (),
 ) -> BlockchainTransaction | None:
     """Check one submitted transaction against its network receipt.
 
@@ -190,12 +194,29 @@ def confirm_transaction_from_chain(
             )
         # Bind with the existing RPC connection; inactive historical deployments
         # still need to be readable while their submitted transaction is checked.
-        contract = bind_contract_to_web3(web3, event_contract)
-        events = _decode_receipt_events(
-            contract,
-            receipt,
-            transaction.transaction_hash,
-        )
+        event_contracts = (event_contract, *additional_event_contracts)
+        unique_contracts: dict[str, ContractInstance] = {}
+        for contract_instance in event_contracts:
+            if (
+                contract_instance.company_id != transaction.company_id
+                or contract_instance.network_id != transaction.network_id
+            ):
+                raise ValidationError(
+                    "Every event contract must belong to the transaction company and network."
+                )
+            unique_contracts.setdefault(contract_instance.address_normalized, contract_instance)
+
+        for contract_instance in unique_contracts.values():
+            contract = bind_contract_to_web3(web3, contract_instance)
+            events.extend(
+                _decode_receipt_events(
+                    contract,
+                    receipt,
+                    transaction.transaction_hash,
+                    contract_instance,
+                )
+            )
+        events.sort(key=lambda event: event.log_index)
 
         # A successful receipt alone does not prove the requested operation
         # happened; require its event before marking the local operation done.
@@ -214,7 +235,7 @@ def confirm_transaction_from_chain(
             if event_contract is None:
                 raise ValidationError("Event processing requires a saved contract instance.")
             for event in events:
-                _record_event(transaction, event_contract, event, event_handler)
+                _record_event(transaction, event.contract_instance or event_contract, event, event_handler)
 
         if transaction.status == BlockchainTransaction.Status.SUBMITTED:
             return confirm_transaction(

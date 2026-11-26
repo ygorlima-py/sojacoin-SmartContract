@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n %}
 
-{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+{% block title %}{% translate title %} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block extrastyle %}
   {{ block.super }}
@@ -158,43 +158,43 @@
 
 {% block breadcrumbs %}
   <div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}">Início</a>
-    › <a href="{% url 'admin:blockchain_deploymentprocess_changelist' %}">Implantações</a>
-    › {{ title }}
+    <a href="{% url 'admin:index' %}">{% translate "Início" %}</a>
+    › <a href="{% url 'admin:blockchain_deploymentprocess_changelist' %}">{% translate "Implantações" %}</a>
+    › {% translate title %}
   </div>
 {% endblock %}
 
 {% block content %}
   <div id="content-main" class="deployment-start-page">
     <header class="page-heading">
-      <h1>{{ title }}</h1>
-      <p>Escolha a empresa e a rede. Informe a carteira pública que será dona da SojaCoin e do registro de unidades.</p>
+      <h1>{% translate title %}</h1>
+      <p>{% translate "Escolha a empresa e a rede. Informe a carteira pública que será dona da SojaCoin e do registro de unidades." %}</p>
     </header>
 
-    <section class="deployment-card" aria-label="Dados da implantação">
+    <section class="deployment-card" aria-label="{% translate 'Dados da implantação' %}">
       <form method="post" novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
           <div class="form-error" role="alert">
-            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+            {% for error in form.non_field_errors %}<div>{% translate error %}</div>{% endfor %}
           </div>
         {% endif %}
 
         <div class="deployment-fields">
           {% for field in form %}
             <div class="deployment-field{% if field.errors %} has-error{% endif %}">
-              {{ field.label_tag }}
+              <label for="{{ field.id_for_label }}"{% if field.field.required %} class="required"{% endif %}>{% translate field.label %}:</label>
               {{ field }}
-              {% for error in field.errors %}<div class="field-error" role="alert">{{ error }}</div>{% endfor %}
-              {% if field.help_text %}<div class="field-help">{{ field.help_text }}</div>{% endif %}
+              {% for error in field.errors %}<div class="field-error" role="alert">{% translate error %}</div>{% endfor %}
+              {% if field.help_text %}<div class="field-help">{% translate field.help_text %}</div>{% endif %}
             </div>
           {% endfor %}
         </div>
 
         <footer class="deployment-actions">
-          <a href="{% url 'admin:blockchain_deploymentprocess_changelist' %}">Cancelar</a>
-          <button type="submit" class="button">Iniciar processo</button>
+          <a href="{% url 'admin:blockchain_deploymentprocess_changelist' %}">{% translate "Cancelar" %}</a>
+          <button type="submit" class="button">{% translate "Iniciar processo" %}</button>
         </footer>
       </form>
     </section>

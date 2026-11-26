@@ -1,0 +1,11 @@
+{% load i18n %}
+{% get_current_language as current_language %}
+<form action="{% url 'set_language' %}" method="post" class="sojacoin-language-switcher flex items-center" aria-label="{% translate 'Language selection' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <label for="site-language" class="sr-only">{% translate "Language" %}</label>
+    <select id="site-language" name="language" class="h-8 rounded-[6px] border border-[#D7DDD4] bg-white px-2 text-[11px] text-[#344238]" autocomplete="off" onchange="this.form.requestSubmit()">
+        <option value="pt-br"{% if current_language == "pt-br" %} selected{% endif %}>Português</option>
+        <option value="en"{% if current_language == "en" %} selected{% endif %}>English</option>
+    </select>
+</form>

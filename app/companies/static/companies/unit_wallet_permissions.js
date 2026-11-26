@@ -32,14 +32,14 @@ async function postPermissionForm(url, values = {}) {
     // The message area still reports a readable fallback for unexpected responses.
   }
   if (!response.ok && response.status !== 202) {
-    throw new Error(result.error || "O servidor não conseguiu preparar esta alteração.");
+    throw new Error(result.error || gettext("O servidor não conseguiu preparar esta alteração."));
   }
   return result;
 }
 
 function showPermissionMessage(message) {
   const target = permissionSection?.querySelector("[data-wallet-permission-message]");
-  if (target) target.textContent = message;
+  if (target) target.textContent = gettext(message);
 }
 
 function setPermissionButtonBusy(button, busy) {
@@ -79,13 +79,13 @@ async function registerPermissionHash(input, button) {
   const attemptId = input.dataset.walletPermissionHashInput;
   const transactionHash = input.value.trim();
   if (!transactionHash) {
-    showPermissionMessage("Informe a hash retornada pela carteira dona.");
+    showPermissionMessage(gettext("Informe a hash retornada pela carteira dona."));
     return;
   }
 
   rememberPermissionHash(attemptId, transactionHash);
   setPermissionButtonBusy(button, true);
-  showPermissionMessage("Conferindo a transação no RPC…");
+  showPermissionMessage(gettext("Conferindo a transação no RPC…"));
   try {
     const result = await postPermissionForm(input.dataset.walletPermissionHashUrl, {
       transaction_hash: transactionHash,
@@ -104,7 +104,7 @@ async function registerPermissionHash(input, button) {
 
 async function confirmWalletPermission(button) {
   setPermissionButtonBusy(button, true);
-  showPermissionMessage("Consultando a confirmação da rede…");
+  showPermissionMessage(gettext("Consultando a confirmação da rede…"));
   try {
     const result = await postPermissionForm(
       button.dataset.walletPermissionConfirmUrl,
@@ -122,7 +122,7 @@ async function confirmWalletPermission(button) {
 
 async function sendPermissionChange(button) {
   if (!window.ethereum) {
-    showPermissionMessage("Carteira compatível não encontrada neste navegador.");
+    showPermissionMessage(gettext("Carteira compatível não encontrada neste navegador."));
     return;
   }
 
@@ -131,14 +131,14 @@ async function sendPermissionChange(button) {
     : null;
   const target = button.dataset.walletTarget || select?.value;
   if (!target) {
-    showPermissionMessage("Selecione a pessoa e a carteira que receberão a permissão.");
+    showPermissionMessage(gettext("Selecione a pessoa e a carteira que receberão a permissão."));
     return;
   }
 
   setPermissionButtonBusy(button, true);
   try {
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    if (!accounts?.length) throw new Error("Conecte a carteira dona do UnitRegistry.");
+    if (!accounts?.length) throw new Error(gettext("Conecte a carteira dona do UnitRegistry."));
 
     const ownerAddress = accounts[0];
     const chainHex = await window.ethereum.request({ method: "eth_chainId" });
@@ -146,11 +146,15 @@ async function sendPermissionChange(button) {
     const expectedChainId = Number(button.dataset.chainId);
     if (chainId !== expectedChainId) {
       throw new Error(
-        `A carteira está na rede ${chainId || "desconhecida"}. Troque para ${expectedChainId}.`,
+        interpolate(
+          gettext("A carteira está na rede %(network)s. Troque para %(chainId)s."),
+          { network: chainId || gettext("desconhecida"), chainId: expectedChainId },
+          true,
+        ),
       );
     }
 
-    showPermissionMessage("Conferindo a unidade e preparando a solicitação…");
+    showPermissionMessage(gettext("Conferindo a unidade e preparando a solicitação…"));
     const prepared = await postPermissionForm(button.dataset.walletPrepareUrl, {
       target,
       owner_address: ownerAddress,
@@ -160,17 +164,17 @@ async function sendPermissionChange(button) {
     // An open or submitted attempt is recovered from its saved payload and never resent here.
     if (prepared.status === "submitted" || prepared.status === "recover") {
       showPermissionMessage(
-        "Já existe uma solicitação aberta para esta carteira. Confira a hash ou a confirmação na página.",
+        gettext("Já existe uma solicitação aberta para esta carteira. Confira a hash ou a confirmação na página."),
       );
       window.location.reload();
       return;
     }
     if (prepared.owner_address.toLowerCase() !== ownerAddress.toLowerCase()) {
-      throw new Error("Conecte a carteira dona do UnitRegistry.");
+      throw new Error(gettext("Conecte a carteira dona do UnitRegistry."));
     }
 
     await postPermissionForm(prepared.started_url);
-    showPermissionMessage("Confirme a alteração de permissão na carteira dona.");
+    showPermissionMessage(gettext("Confirme a alteração de permissão na carteira dona."));
 
     let transactionHash;
     try {
@@ -188,20 +192,20 @@ async function sendPermissionChange(button) {
     } catch (error) {
       if (error?.code === 4001) {
         await postPermissionForm(prepared.rejected_url);
-        showPermissionMessage("A solicitação foi recusada. Você pode tentar novamente.");
+        showPermissionMessage(gettext("A solicitação foi recusada. Você pode tentar novamente."));
         window.location.reload();
         return;
       }
 
       showPermissionMessage(
-        "Não foi possível saber se a carteira enviou a transação. Recarregue e informe a hash nesta tentativa; não inicie outro envio.",
+        gettext("Não foi possível saber se a carteira enviou a transação. Recarregue e informe a hash nesta tentativa; não inicie outro envio."),
       );
       window.location.reload();
       return;
     }
 
     rememberPermissionHash(prepared.attempt_id, transactionHash);
-    showPermissionMessage("Hash recebida. Conferindo a transação na rede…");
+    showPermissionMessage(gettext("Hash recebida. Conferindo a transação na rede…"));
     try {
       const result = await postPermissionForm(prepared.register_url, {
         transaction_hash: transactionHash,

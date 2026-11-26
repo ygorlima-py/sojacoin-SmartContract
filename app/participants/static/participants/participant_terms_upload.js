@@ -8,14 +8,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileDescription = document.getElementById("terms-file-description");
     const maxSizeMb = dropZone.dataset.maxSizeMb;
     if (fileDescription && maxSizeMb) {
-        fileDescription.textContent = `Somente PDF, até ${maxSizeMb} MB.`;
+        fileDescription.textContent = interpolate(
+            gettext("Somente PDF, até %(size)s MB."),
+            { size: maxSizeMb },
+            true,
+        );
     }
 
     const showSelectedFile = () => {
         const selectedFile = fileInput.files?.[0];
         fileName.textContent = selectedFile
             ? `${selectedFile.name} (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)`
-            : "Nenhum arquivo selecionado";
+            : gettext("Nenhum arquivo selecionado");
     };
 
     fileInput.addEventListener("change", showSelectedFile);
