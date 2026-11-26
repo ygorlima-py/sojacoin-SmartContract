@@ -17,7 +17,8 @@ This app manages companies, their units, staff memberships and access within the
   The assisted forms, company update flow and unit views are implemented.
   Adding an existing Django user to a company team and managing membership
   roles, SaaS unit-permission management and access-history consultation are
-  implemented. Blockchain operation views remain planned.
+  implemented. The UnitRegistry registration flow is implemented on the unit
+  detail page; receiving and issuance operations remain separate work.
 
 ## Assisted company form — implemented
 
@@ -103,6 +104,46 @@ with a `UnitRegistry`, and requires the `UnitRegistered` event in each successfu
 receipt. It reads receipts from the configured RPC; it does not submit or sign
 transactions. A transaction without a receipt remains pending. This command
 can be replaced later by a Celery task that calls the same confirmation service.
+
+## Register a local unit on-chain — implemented
+
+The unit detail page can start a blockchain registration after the unit has been
+saved locally. The registration action is shown to an active company
+administrator when the company and unit are active, `chain_unit_id` is empty,
+the local registration hash is valid, and the company has an active UnitRegistry
+and SojaCoin on an active network. When more than one network is available, the
+administrator chooses which deployment to use.
+
+The browser connects to the wallet provider and sends only the public account
+address and selected chain ID to Django. The server checks that the address is
+the current owner of the selected UnitRegistry, that the RPC reports the saved
+chain ID, that both contracts are linked to one another, and that the unit code
+fits in Solidity's 32-byte field. It then prepares
+`registerUnit(bytes32 code, bytes32 registrationHash)` and stores a
+`BlockchainTransaction` plus a `UnitRegistrationAttempt` before opening the
+wallet prompt. The unit's name, address, CNPJ and other local details remain in
+the SaaS; the contract call contains only the normalized code and registration
+hash.
+
+The wallet owner confirms one transaction for each unit. Django never receives
+the private key. Before accepting the returned transaction hash, the server
+reads the transaction from the selected RPC and checks its chain, sender,
+destination, zero native value and exact call data. If the RPC has not seen the
+hash yet, the browser keeps it for retry and the same attempt remains open.
+
+After submission, the unit page offers **Consultar confirmação**. Receipt
+processing uses `confirm_transaction_from_chain` and requires a `UnitRegistered`
+event. The event handler checks the event code, registration hash and registered
+wallet against the saved attempt and transaction. Only then does it save the
+contract's returned `unitId` as `Unit.chain_unit_id`. A reverted transaction or
+an explicit wallet rejection closes the attempt but preserves its records, so a
+new attempt can be made without deleting history. If the wallet response is
+uncertain, the page asks for the hash from that same attempt instead of sending
+another transaction.
+
+`UnitRegistrationAttempt` is available in Django Admin as a read-only audit
+record. The existing `reconcile_unit_registrations` management command remains
+available to check submitted registration transactions manually.
 
 ## Company update view — implemented
 
@@ -308,7 +349,7 @@ All models must include `created_at` and `updated_at` timestamps. Store timestam
 | `MembershipRole` | Assigns one or more functions to a membership, such as administrator, registration operator, receiver, issuance operator or auditor. Records who granted the role and when it was revoked. | Implemented. |
 | `Unit` | Stores a company's warehouse name, code, address, CNPJ, state registration, canonical registration hash, active status and on-chain unit ID when confirmed. | Implemented. |
 | `UnitAccess` | Grants a membership access to specific units and actions: viewing, receiving, issuing and auditing. | Implemented. |
-| `UnitWalletPermission` | Tracks a wallet's unit permissions and the status of the related blockchain configuration. The current field stores the public address and transaction hash as normalized references; private keys are never stored. `is_effective` is true only for a confirmed permission with a transaction hash. | Implemented; ready to connect to the planned wallet and blockchain models. |
+| `UnitWalletPermission` | Stores the latest confirmed permission mask for a member's public wallet in a unit. Pending and failed attempts are kept separately in `UnitWalletPermissionAttempt`; private keys are never stored. | Implemented. |
 | `AccessChange` | Records who granted, changed or revoked access, the scope, previous and new values, and any associated transaction. The record cannot be edited or deleted. | Implemented. |
 
 Producer and creditor access is associated with participant records in the planned `participants` app. These participants do not automatically become company staff.
@@ -330,12 +371,16 @@ the server. Routes marked as implemented are available in the current app.
 | `/companies/<company_id>/members/<membership_id>/roles/<role_id>/revoke/` | Revoke an active function with `POST`. Implemented for active company administrators. |
 | `/companies/<company_id>/members/<membership_id>/` | View a membership, its roles and its unit access. Role and unit-access management are implemented. |
 | `/companies/<company_id>/members/<membership_id>/units/<unit_id>/access/` | Configure SaaS access flags for one company unit. Implemented for active company administrators. |
-| `/companies/<company_id>/history/` | Consult immutable membership, role and unit-access changes for the selected company. Implemented for active company administrators. |
+| `/companies/<company_id>/history/` | Consult immutable membership, role, SaaS unit-access and confirmed wallet-permission changes for the selected company. Implemented for active company administrators. |
 | `/companies/<company_id>/units/` | List the company's units. Implemented. |
 | `/companies/<company_id>/units/new/` | Prepare a new unit registration. Implemented for administrators. |
 | `/companies/<company_id>/units/<unit_id>/` | Show a unit and its registration status. Implemented. |
 | `/companies/<company_id>/units/<unit_id>/edit/` | Edit a unit locally. Implemented for administrators. |
-| `/companies/<company_id>/units/<unit_id>/access/` | Manage authorized staff and wallet permissions for the unit. |
+| `/companies/<company_id>/units/<unit_id>/wallet-permissions/<permission_kind>/<action>/prepare/` | Prepare one receiving or issuance permission grant or revocation. POST endpoint used by the unit detail page. Implemented for active company administrators. |
+| `/companies/<company_id>/units/<unit_id>/wallet-permissions/<attempt_id>/started/` | Record that the owner's wallet prompt is about to open. Implemented POST endpoint. |
+| `/companies/<company_id>/units/<unit_id>/wallet-permissions/<attempt_id>/rejected/` | Record an explicit wallet rejection while preserving the attempt. Implemented POST endpoint. |
+| `/companies/<company_id>/units/<unit_id>/wallet-permissions/<attempt_id>/hash/` | Validate and save the transaction hash returned by the owner's wallet. Implemented POST endpoint. |
+| `/companies/<company_id>/units/<unit_id>/wallet-permissions/<attempt_id>/confirm/` | Check the existing receipt and apply the permission only after its expected event is confirmed. Implemented POST endpoint. |
 
 Company onboarding and contract configuration are assisted during the MVP. Decide the authorized onboarding flow before exposing a company-creation route. Route names and forms may be refined during implementation.
 
@@ -361,6 +406,67 @@ Company onboarding and contract configuration are assisted during the MVP. Decid
 - Follow the contract's separation rules: one wallet cannot both receive and issue in the same unit; a wallet auditing a unit cannot hold conflicting inventory permissions there. Company-wide conflicting permissions are blocked while the wallet audits any unit, including an inactive one. Apply the contract's withdrawal separation rule when withdrawal is added.
 - `setPermissions` replaces the permission mask for its scope. Read the current mask and submit the complete intended mask when changing it. Track pending, confirmed and failed changes without displaying pending permissions as active.
 - Keep an access history and preserve operational records. Revoking SaaS access takes effect in the application through `companies.services.access_history`; the service records the change instead of deleting the record. Revoking wallet permission requires its own confirmed blockchain transaction.
+
+## Manage unit wallet permissions on-chain — implemented
+
+The unit detail page manages multiple public wallets independently in two
+categories: receiving and issuance. Each row is tied to a company membership
+and one `accounts.UserWallet` record. The grant selector includes only active
+members who have the matching company role, matching `UnitAccess` flag, and an
+active, verified wallet. Revocation remains available for an existing grant
+even if that member's SaaS access or wallet verification was later deactivated.
+
+Before preparing a call, the server checks that the administrator is active,
+the unit belongs to the company in the URL, and the unit and company are active.
+It finds the confirmed `UnitRegistrationAttempt` that assigned the unit's
+on-chain ID, and uses the same active `UnitRegistry` and network. The RPC must
+still report the saved unit code, registration hash and active state; the
+connected wallet must be the registry's current owner.
+
+The service reads `permissionsGeneral`, `permissionsByUnit` and
+`auditorByUnit` before creating the call. It combines the currently effective
+permissions with the requested change, preserving unrelated bits in the
+unit-specific mask. It rejects duplicate grants, company-wide permissions
+that cannot be revoked for only one unit, a wallet that has the opposite
+receiving/issuance permission in that unit, and a wallet designated as that
+unit's auditor. The contract remains the final authority and can still reject a
+call if its state changes after preparation.
+
+Each grant or revocation is a separate `setPermissions(unitId, wallet,
+permissions)` transaction. The server saves a `BlockchainTransaction` and an
+immutable `UnitWalletPermissionAttempt` before opening the browser wallet. The
+operator must connect the current `UnitRegistry` owner in MetaMask and approve
+one request per wallet change. Django receives only public addresses and the
+transaction hash; it never receives or stores a private key.
+
+The browser sends the returned hash to a company-scoped POST endpoint. The
+server checks the saved network, sender, contract address, zero native value
+and exact prepared call data before marking the transaction as submitted. If
+the RPC has not seen the hash yet, the same attempt and hash can be checked
+again. A definite wallet rejection or a reverted transaction closes that
+attempt without deleting it. An uncertain wallet response keeps the attempt
+open and requires recovery through that same attempt; the page does not create
+a second send automatically.
+
+The **Consultar confirmação** action reads the existing transaction. Only a
+successful receipt containing a matching `PermissionsSet` event updates
+`UnitWalletPermission`, appends a human-readable `AccessChange` entry and
+closes the attempt, in one database transaction. The unit page displays
+pending, active, revoked and failed states separately for each wallet. The
+history page translates the category, wallet and before/after state rather than
+showing the stored JSON payload.
+
+`UnitWalletPermission` and `UnitWalletPermissionAttempt` are read-only in
+Django Admin. Application services own their lifecycle so an administrator
+cannot manually mark an unconfirmed blockchain change as active or erase an
+attempt. Apply the migrations from `app/` with:
+
+```bash
+uv run python manage.py migrate
+```
+
+See [the detailed wallet-permission flow](UNIT_WALLET_PERMISSIONS.md) for the
+state transitions, endpoint responsibilities and operational recovery steps.
 
 ## Onboarding test coverage — implemented
 
@@ -402,8 +508,11 @@ The `companies` test suite covers the local company and unit onboarding flow:
 4. **Staff and SaaS-permission workflows — complete for the planned MVP scope.**
    Adding users, role grant/revocation and unit-access management are
    implemented with immutable history and company isolation.
-5. **Verified wallets and blockchain — pending.** Integrate verified wallets
-   and blockchain transactions, then update `UnitWalletPermission` only after
-   confirmation.
+5. **Verified wallets and unit permissions — implemented.** The unit detail
+   page can grant and revoke receiving or issuance permissions for multiple
+   verified member wallets. It verifies the owner-wallet transaction through
+   the saved network, updates the local snapshot only after `PermissionsSet`
+   is confirmed, and preserves attempt and access-history records. Automated
+   tests for this new flow remain to be added.
 
 See [the MVP plan](../planejamento.md) for the complete workflow and the responsibilities of the other apps.

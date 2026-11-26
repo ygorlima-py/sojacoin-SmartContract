@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Acesso não autorizado — Recebimentos — SojaCoin{% endblock %}
+{% block page_title %}Acesso não autorizado{% endblock %}
+{% block page_subtitle %}
+    <p class="mt-0.5 text-[11.5px] text-[#7A867D]">
+        {% if company %}Recebimentos de {{ company.trade_name|default:company.legal_name }}{% else %}Área de recebimentos{% endif %}
+    </p>
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto flex min-h-[560px] w-full max-w-4xl items-center justify-center px-4 py-8">
+    <section class="flex w-full flex-col items-center gap-4 rounded-[10px] border border-[#E2E5DE] bg-white p-6 text-center sm:p-8">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FFF4F2] text-[#A52B20]" aria-hidden="true">
+            <i class="fa-solid fa-lock text-[18px]"></i>
+        </div>
+        <h2 class="max-w-2xl text-[20px] font-semibold tracking-[-0.2px] text-[#17211A]">
+            Você não tem autorização para acessar Recebimentos
+        </h2>
+        <p class="max-w-2xl text-[13px] leading-6 text-[#5C685E]">
+            Para entrar nesta área, sua conta precisa ter a função <strong>Recebimento</strong> ativa na empresa e acesso de recebimento a uma unidade.
+        </p>
+        <p class="max-w-2xl text-[12px] leading-5 text-[#7A867D]">
+            Peça ao administrador da empresa para conferir sua função e liberar o acesso à unidade. Se esse acesso já foi concedido, saia da conta e entre novamente.
+        </p>
+        <div class="mt-2 flex w-full flex-col justify-center gap-3 sm:flex-row">
+            <a href="{% url 'companies:list' %}" class="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#185832] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30 sm:w-auto sm:min-w-[230px]">
+                <i class="fa-solid fa-building" aria-hidden="true"></i>
+                <span>Voltar às empresas</span>
+            </a>
+            <a href="{% url 'accounts:profile' %}" class="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[8px] border border-[#CBD6CC] bg-white px-5 text-[13px] font-semibold text-[#465349] transition hover:bg-[#F8F9F6] focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/20 sm:w-auto sm:min-w-[230px]">
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+                <span>Meu perfil</span>
+            </a>
+        </div>
+    </section>
+</div>
+{% endblock %}

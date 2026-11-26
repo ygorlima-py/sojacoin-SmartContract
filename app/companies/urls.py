@@ -62,6 +62,56 @@ urlpatterns = [
         name="unit_edit",
     ),
     path(
+        "<int:company_id>/units/<int:unit_id>/blockchain/prepare/",
+        views.UnitRegistrationPrepareView.as_view(),
+        name="unit_registration_prepare",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/blockchain/<int:attempt_id>/started/",
+        views.UnitRegistrationStartedView.as_view(),
+        name="unit_registration_started",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/blockchain/<int:attempt_id>/rejected/",
+        views.UnitRegistrationRejectedView.as_view(),
+        name="unit_registration_rejected",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/blockchain/<int:attempt_id>/hash/",
+        views.UnitRegistrationHashView.as_view(),
+        name="unit_registration_hash",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/blockchain/<int:attempt_id>/confirm/",
+        views.UnitRegistrationConfirmView.as_view(),
+        name="unit_registration_confirm",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/wallet-permissions/<str:permission_kind>/<str:action>/prepare/",
+        views.UnitWalletPermissionPrepareView.as_view(),
+        name="unit_wallet_permission_prepare",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/wallet-permissions/<int:attempt_id>/started/",
+        views.UnitWalletPermissionStartedView.as_view(),
+        name="unit_wallet_permission_started",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/wallet-permissions/<int:attempt_id>/rejected/",
+        views.UnitWalletPermissionRejectedView.as_view(),
+        name="unit_wallet_permission_rejected",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/wallet-permissions/<int:attempt_id>/hash/",
+        views.UnitWalletPermissionHashView.as_view(),
+        name="unit_wallet_permission_hash",
+    ),
+    path(
+        "<int:company_id>/units/<int:unit_id>/wallet-permissions/<int:attempt_id>/confirm/",
+        views.UnitWalletPermissionConfirmView.as_view(),
+        name="unit_wallet_permission_confirm",
+    ),
+    path(
         "<int:company_id>/units/<int:unit_id>/",
         views.UnitDetailView.as_view(),
         name="unit_detail",

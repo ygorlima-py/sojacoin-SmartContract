@@ -28,13 +28,13 @@ Current implementation status:
   model tests. It does not prove control of the address by itself.
 - `WalletVerificationChallenge` is implemented with a unique nonce, mandatory
   network binding, payload history, lifecycle timestamps, admin registration
-  and model tests. The account-side wallet rules now enforce ownership,
-  verification, expiry and one-time consumption; cryptographic signature
-  validation remains an injected blockchain service step.
+  and model tests. The profile now creates these challenges and verifies
+  MetaMask EOA `personal_sign` signatures before the account-side rules mark a
+  user-wallet link as verified.
 - Login, POST logout and the authenticated profile are implemented using Django
   templates. Company authorization rules are implemented in `companies`, while
   account-side company selection and post-login context integration remain
-  pending. Wallet verification remains pending.
+  pending. The profile includes the MetaMask wallet-linking flow.
 - `companies.CompanyMembership`, `MembershipRole` and `UnitAccess` exist, but
   the complete application authorization and onboarding flows do not.
 - The shared `templates/base.html` and Tailwind build exist. The internal layout
@@ -42,8 +42,8 @@ Current implementation status:
   navigation. Create a suitable authentication layout when implementing them.
 - The email backend currently prints mail to the console. This is for local
   development; it does not deliver invitations or reset messages to users.
-- Wallet integration, ownership verification, MetaMask and Safe workflows are
-  not implemented in this app.
+- MetaMask EOA ownership verification is implemented. Safe/ERC-1271 ownership
+  verification and its signing flow are not supported by this screen.
 
 ## Account rules — implemented
 
@@ -89,11 +89,19 @@ same checks:
    challenge, records the signature, consumes the challenge and marks the
    user-wallet link verified. A second request cannot consume the same
    challenge.
-6. The signature validator is intentionally injected. The account rule does
-   not accept a string as proof of ownership; the future blockchain service
-   must validate the EOA signature or the contract wallet's ERC-1271 response
-   for the configured network.
-7. A verified SaaS link is not an on-chain permission. Before an operational
+6. `accounts/services/wallet_verification.py` creates the exact message shown
+   by MetaMask, hashes it for audit, and recovers the signer from the EIP-191
+   `personal_sign` signature. The recovered address must match the linked EOA.
+   Challenges use an active network's chain ID, expire after five minutes, and
+   are canceled when a replacement challenge is requested.
+7. The profile JavaScript checks the connected MetaMask chain, requests the
+   signature, and posts it to authenticated, CSRF-protected endpoints. The
+   browser receives only the public address, challenge, and signature; the
+   server never requests or stores a private key.
+8. The challenge endpoints belong to the signed-in account. A challenge or
+   wallet belonging to another user is not exposed. A wallet must be verified
+   before it can appear in `Carteiras da unidade`.
+9. A verified SaaS link is not an on-chain permission. Before an operational
    transaction, the future blockchain integration must separately confirm the
    wallet's permission in the target contract and unit. These account rules do
    not mark a pending SaaS permission as effective.
@@ -101,6 +109,28 @@ same checks:
 The tests in `accounts/tests.py` cover user isolation, inactive accounts and
 wallets, pending and verified links, expired challenges, invalid signatures,
 successful consumption and replay rejection.
+
+### Profile wallet-linking flow
+
+1. An authenticated employee opens **Meu perfil → Minha carteira**, selects an
+   active network, and clicks **Conectar carteira**.
+2. MetaMask returns the public account address. The browser must already be
+   connected to the selected chain; the profile does not send a transaction or
+   switch networks automatically.
+3. Django creates a pending `UserWallet` link when needed and returns a
+   five-minute challenge containing the address, chain ID, random nonce and
+   expiry. A newer request cancels older pending challenges for that same link.
+4. MetaMask signs the readable challenge with `personal_sign`. Django recovers
+   the EOA from the signature and compares it with the wallet address.
+5. The existing atomic wallet rule consumes the challenge and changes the link
+   to **Verificada**. The existing unit permission candidate query then shows
+   that person only when the company role and unit access also allow the same
+   operation.
+
+This proves control of an individual EOA for the signed challenge. The flow
+does not support Safe/ERC-1271 signatures. It does not grant an on-chain
+permission: the UnitRegistry owner must still confirm that separate contract
+transaction.
 
 ## Shared operation rules — implemented
 
@@ -322,13 +352,12 @@ checks belong to the company flow and must not trust a submitted company ID.
    `WalletVerificationChallenge` are complete with normalization, uniqueness,
    migrations, controlled admin access and tests. Signature verification and
    wallet screens remain separate steps.
-7. **Verify individual wallets — account rules implemented.** The account
-   rules now scope wallet links to the user, require an active verified link,
-   and consume a challenge atomically once it has been validated by an
-   injected signature checker. The remaining work is the real EOA signature
-   validator, MetaMask screen, challenge creation flow and blockchain-side
-   permission check. Add chain-aware ERC-1271/Safe support only when its
-   complete signing flow can be tested; show unsupported status until then.
+7. **Verify individual wallets — MetaMask EOA flow implemented.** The profile
+   creates short-lived challenges, checks MetaMask's network, verifies the
+   recovered signer, and consumes the challenge atomically. The existing unit
+   permission screen can select a verified wallet when its SaaS role and unit
+   access are active. Safe/ERC-1271 verification and the separate on-chain
+   permission remain outside this profile flow.
 8. **Integrate participant and transaction flows.** The shared operation rules
    are implemented. With `participants` and
    `blockchain`, bind the correct user, wallet, company, network and contract

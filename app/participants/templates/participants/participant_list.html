@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Participantes | SojaCoin{% endblock %}
+{% block page_title %}Participantes{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Participantes cadastrados em {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+{% block content %}
+<section class="max-w-5xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#E2E5DE] px-4 py-3">
+        <div>
+            <h2 class="text-[14px] font-semibold text-[#17211A]">Participantes</h2>
+            <p class="mt-1 text-[12px] text-[#78837A]">Cada cadastro pertence somente a esta empresa.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <span class="text-[12px] text-[#78837A]">{{ page_obj.paginator.count }} cadastro(s)</span>
+            {% if participants and can_prepare_participant and current_terms_document %}
+                <a href="{% url 'participants:create' company_id=company.pk %}" class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-6 text-[14px] font-semibold text-white shadow-sm transition hover:bg-[#185A32] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6B3C]"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Cadastrar participante</a>
+            {% endif %}
+        </div>
+    </div>
+    {% if not current_terms_document %}
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#E2E5DE] bg-[#FFF9E9] px-4 py-3">
+            <p class="text-[12px] leading-5 text-[#75520A]">A empresa precisa publicar o PDF dos termos antes de cadastrar novos participantes.</p>
+            {% if can_manage_company %}<a href="{% url 'participants:terms_manage' company_id=company.pk %}" class="inline-flex min-h-[38px] items-center gap-2 rounded-[7px] border border-[#D8C27B] bg-white px-3 text-[11px] font-semibold text-[#75520A] hover:bg-[#FFFDF5]"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i>Gerenciar termos</a>{% endif %}
+        </div>
+    {% endif %}
+    {% if participants %}
+        <div class="divide-y divide-[#E2E5DE]">
+            {% for participant in participants %}
+                {% with terms=participant.latest_terms %}
+                <a href="{% url 'participants:detail' company_id=company.pk participant_id=participant.pk %}" class="block px-4 py-4 transition hover:bg-[#F9FAF7]">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-[13px] font-semibold text-[#17211A]">{{ participant.name }}</h3>
+                            <p class="mt-1 font-mono text-[11px] text-[#647166]">{{ participant.wallet_address_normalized }}</p>
+                        </div>
+                        {% if terms %}
+                            <span class="rounded-full bg-[#F1F3EF] px-3 py-1 text-[11px] font-semibold text-[#455148]">{{ terms.get_status_display }}</span>
+                        {% else %}
+                            <span class="rounded-full bg-[#F1F3EF] px-3 py-1 text-[11px] font-semibold text-[#455148]">Cadastro criado</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endwith %}
+            {% endfor %}
+        </div>
+        {% if is_paginated %}
+            <div class="flex justify-between border-t border-[#E2E5DE] px-4 py-3 text-[12px]">
+                {% if page_obj.has_previous %}<a class="font-semibold text-[#1E6B3C]" href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% else %}<span class="text-[#9AA39B]">Anterior</span>{% endif %}
+                <span class="text-[#78837A]">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}<a class="font-semibold text-[#1E6B3C]" href="?page={{ page_obj.next_page_number }}">Próxima</a>{% else %}<span class="text-[#9AA39B]">Próxima</span>{% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="px-5 py-12 text-center">
+            <div class="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E9F2EC] text-[#1E6B3C]"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+            <h3 class="mt-3 text-[14px] font-semibold text-[#17211A]">Nenhum participante cadastrado</h3>
+            <p class="mt-1 text-[12px] text-[#78837A]">Cadastre o nome e o endereço público para começar.</p>
+            {% if can_prepare_participant and current_terms_document %}<a href="{% url 'participants:create' company_id=company.pk %}" class="mt-5 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-6 text-[14px] font-semibold text-white shadow-sm transition hover:bg-[#185A32] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6B3C]"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Cadastrar participante</a>{% endif %}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

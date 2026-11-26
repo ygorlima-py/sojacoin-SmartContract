@@ -39,6 +39,9 @@ _load_env_file(BASE_DIR / ".env")
 # This old global URL is only used once by migration 0009 to backfill existing
 # Network rows. Runtime RPC connections read the URL and chain ID from the database.
 LEGACY_BLOCKCHAIN_RPC_URL = os.environ.get("BLOCKCHAIN_RPC_URL", "")
+PARTICIPANT_PUBLIC_BASE_URL = os.environ.get(
+    "PARTICIPANT_PUBLIC_BASE_URL", ""
+).rstrip("/")
 
 
 # Quick-start development settings - unsuitable for production
@@ -65,6 +68,8 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'companies.apps.CompaniesConfig',
     'blockchain.apps.BlockchainConfig',
+    'participants.apps.ParticipantsConfig',
+    'receipts.apps.ReceiptsConfig',
 ]
 
 MIDDLEWARE = [
@@ -149,6 +154,18 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Uploaded participant term PDFs are served only by company/token-authorized views.
+# Do not expose this directory as a public static or media URL.
+MEDIA_ROOT = Path(
+    os.environ.get("DJANGO_PRIVATE_MEDIA_ROOT", str(BASE_DIR / "private_media"))
+)
+PARTICIPANT_TERMS_MAX_PDF_SIZE = int(
+    os.environ.get("PARTICIPANT_TERMS_MAX_PDF_SIZE", str(10 * 1024 * 1024))
+)
+RECEIPT_DOCUMENT_MAX_PDF_SIZE = int(
+    os.environ.get("RECEIPT_DOCUMENT_MAX_PDF_SIZE", str(10 * 1024 * 1024))
+)
 
 
 # Email

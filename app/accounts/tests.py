@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
@@ -10,6 +11,12 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils import timezone
 from datetime import timedelta
+
+from eth_account import Account
+from eth_account.messages import encode_defunct
+
+from blockchain.models import Network
+from companies.models import Company, CompanyMembership, MembershipRole, Unit, UnitAccess
 
 from .models import (
     UserProfile,
@@ -40,6 +47,10 @@ from .rules.wallet_access import (
     require_consumable_challenge,
     require_verified_wallet,
     require_verified_wallet_for_operation,
+)
+from .services.wallet_verification import (
+    consume_wallet_verification_challenge,
+    create_wallet_verification_challenge,
 )
 
 
@@ -744,3 +755,291 @@ class OperationRuleTests(TestCase):
 
         with self.assertRaises(ValidationError):
             require_confirmed_issuance("failed")
+
+
+class WalletLinkingFlowTests(TestCase):
+    """Exercise the profile-to-MetaMask wallet ownership flow."""
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="wallet-owner",
+            password="secure-test-password",
+        )
+        self.client.force_login(self.user)
+        self.network = Network.objects.create(
+            name="Anvil Local",
+            chain_id=31337,
+            rpc_url="http://127.0.0.1:8545",
+            active=True,
+        )
+        self.account = Account.create()
+
+    def _create_challenge(self, address: str | None = None) -> WalletVerificationChallenge:
+        """Create a challenge for a generated EOA test account."""
+
+        return create_wallet_verification_challenge(
+            self.user,
+            address or self.account.address,
+            self.network.chain_id,
+        )
+
+    @staticmethod
+    def _sign(challenge: WalletVerificationChallenge, account=None) -> str:
+        """Return a MetaMask-compatible personal-signature for a challenge."""
+
+        signer = account or Account.create()
+        return Account.sign_message(
+            encode_defunct(text=challenge.message),
+            private_key=signer.key,
+        ).signature.hex()
+
+    def test_profile_shows_wallet_section_and_active_network(self) -> None:
+        response = self.client.get(reverse("accounts:profile"))
+
+        self.assertContains(response, "Minha carteira")
+        self.assertContains(response, "Conectar carteira")
+        self.assertContains(response, "Anvil Local (ID 31337)")
+        self.assertContains(response, "Nenhuma carteira vinculada.")
+
+    def test_authenticated_user_can_create_and_consume_valid_signature(self) -> None:
+        challenge_response = self.client.post(
+            reverse("accounts:wallet_challenge_create"),
+            data=json.dumps(
+                {"address": self.account.address, "chain_id": self.network.chain_id}
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(challenge_response.status_code, 201)
+        response_data = challenge_response.json()
+        challenge = WalletVerificationChallenge.objects.get(
+            pk=response_data["challenge_id"]
+        )
+        self.assertEqual(challenge.chain_id, self.network.chain_id)
+        self.assertEqual(len(challenge.nonce.hex), 32)
+        self.assertEqual(challenge.user_wallet.verification_status, UserWallet.VerificationStatus.PENDING)
+
+        verify_response = self.client.post(
+            reverse("accounts:wallet_challenge_verify"),
+            data=json.dumps(
+                {
+                    "challenge_id": challenge.pk,
+                    "signature": self._sign(challenge, self.account),
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(verify_response.status_code, 200)
+        challenge.refresh_from_db()
+        challenge.user_wallet.refresh_from_db()
+        self.assertEqual(challenge.status, WalletVerificationChallenge.Status.CONSUMED)
+        self.assertEqual(
+            challenge.user_wallet.verification_status,
+            UserWallet.VerificationStatus.VERIFIED,
+        )
+        self.assertEqual(challenge.user_wallet.wallet.address_normalized, self.account.address.lower())
+        self.assertTrue(challenge.signature)
+
+    def test_invalid_signature_does_not_verify_or_consume_wallet_link(self) -> None:
+        challenge = self._create_challenge()
+        response = self.client.post(
+            reverse("accounts:wallet_challenge_verify"),
+            data=json.dumps(
+                {"challenge_id": challenge.pk, "signature": self._sign(challenge)}
+            ),
+            content_type="application/json",
+        )
+
+        challenge.refresh_from_db()
+        challenge.user_wallet.refresh_from_db()
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(challenge.status, WalletVerificationChallenge.Status.PENDING)
+        self.assertEqual(
+            challenge.user_wallet.verification_status,
+            UserWallet.VerificationStatus.PENDING,
+        )
+
+    def test_expired_signature_challenge_is_rejected(self) -> None:
+        now = timezone.now()
+        challenge = create_wallet_verification_challenge(
+            self.user,
+            self.account.address,
+            self.network.chain_id,
+            at=now - timedelta(minutes=6),
+        )
+
+        with self.assertRaises(PermissionDenied):
+            consume_wallet_verification_challenge(
+                self.user,
+                challenge.pk,
+                self._sign(challenge, self.account),
+                at=now,
+            )
+
+        challenge.refresh_from_db()
+        challenge.user_wallet.refresh_from_db()
+        self.assertEqual(challenge.status, WalletVerificationChallenge.Status.PENDING)
+        self.assertEqual(
+            challenge.user_wallet.verification_status,
+            UserWallet.VerificationStatus.PENDING,
+        )
+
+    def test_another_user_cannot_consume_challenge(self) -> None:
+        challenge = self._create_challenge()
+        another_user = User.objects.create_user(
+            username="different-wallet-owner",
+            password="secure-test-password",
+        )
+        self.client.force_login(another_user)
+
+        response = self.client.post(
+            reverse("accounts:wallet_challenge_verify"),
+            data=json.dumps(
+                {
+                    "challenge_id": challenge.pk,
+                    "signature": self._sign(challenge, self.account),
+                }
+            ),
+            content_type="application/json",
+        )
+
+        challenge.refresh_from_db()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(challenge.status, WalletVerificationChallenge.Status.PENDING)
+
+    def test_verified_wallet_cannot_be_added_twice_to_same_account(self) -> None:
+        challenge = self._create_challenge()
+        consume_wallet_verification_challenge(
+            self.user,
+            challenge.pk,
+            self._sign(challenge, self.account),
+        )
+
+        with self.assertRaisesMessage(ValidationError, "já está verificada"):
+            self._create_challenge()
+
+        self.assertEqual(Wallet.objects.filter(address_normalized=self.account.address.lower()).count(), 1)
+        self.assertEqual(UserWallet.objects.filter(user=self.user).count(), 1)
+
+    def test_new_challenge_cancels_the_previous_pending_challenge(self) -> None:
+        first = self._create_challenge()
+        second = self._create_challenge()
+
+        first.refresh_from_db()
+        self.assertEqual(first.status, WalletVerificationChallenge.Status.CANCELLED)
+        self.assertEqual(second.status, WalletVerificationChallenge.Status.PENDING)
+        self.assertEqual(
+            WalletVerificationChallenge.objects.filter(
+                user_wallet=second.user_wallet,
+                status=WalletVerificationChallenge.Status.PENDING,
+            ).count(),
+            1,
+        )
+
+    def test_consumed_challenge_cannot_be_replayed(self) -> None:
+        challenge = self._create_challenge()
+        signature = self._sign(challenge, self.account)
+        self.assertEqual(
+            self.client.post(
+                reverse("accounts:wallet_challenge_verify"),
+                data=json.dumps({"challenge_id": challenge.pk, "signature": signature}),
+                content_type="application/json",
+            ).status_code,
+            200,
+        )
+
+        replay_response = self.client.post(
+            reverse("accounts:wallet_challenge_verify"),
+            data=json.dumps({"challenge_id": challenge.pk, "signature": signature}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(replay_response.status_code, 400)
+        self.assertIn("não está aguardando verificação", replay_response.json()["error"])
+
+    def test_challenge_rejects_inactive_or_unknown_network(self) -> None:
+        with self.assertRaisesMessage(ValidationError, "não está ativa"):
+            create_wallet_verification_challenge(
+                self.user,
+                self.account.address,
+                1,
+            )
+
+        self.network.active = False
+        self.network.save()
+        with self.assertRaisesMessage(ValidationError, "não está ativa"):
+            self._create_challenge()
+
+    def test_wallet_endpoints_require_post_and_csrf(self) -> None:
+        challenge_url = reverse("accounts:wallet_challenge_create")
+        self.assertEqual(self.client.get(challenge_url).status_code, 405)
+
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.user)
+        csrf_client.get(reverse("accounts:profile"))
+        response = csrf_client.post(
+            challenge_url,
+            data=json.dumps(
+                {"address": self.account.address, "chain_id": self.network.chain_id}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_wallet_challenge_endpoint_requires_authentication(self) -> None:
+        anonymous_client = Client()
+        response = anonymous_client.post(
+            reverse("accounts:wallet_challenge_create"),
+            data=json.dumps(
+                {"address": self.account.address, "chain_id": self.network.chain_id}
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("accounts:login"), response.url)
+
+    def test_verified_wallet_becomes_unit_permission_candidate(self) -> None:
+        company = Company.objects.create(
+            legal_name="Empresa de teste",
+            cnpj="11222333000181",
+        )
+        unit = Unit.objects.create(
+            company=company,
+            name="Unidade de teste",
+            code="TESTE",
+            cnpj="11444777000161",
+        )
+        administrator = User.objects.create_user(
+            username="company-admin",
+            password="secure-test-password",
+        )
+        membership = CompanyMembership.objects.create(company=company, user=self.user)
+        MembershipRole.objects.create(
+            membership=membership,
+            role=MembershipRole.Role.RECEIVING,
+            granted_by=administrator,
+        )
+        UnitAccess.objects.create(
+            membership=membership,
+            unit=unit,
+            can_view=True,
+            can_receive=True,
+        )
+
+        from companies.services.unit_wallet_permissions import (
+            get_unit_wallet_permission_candidates,
+        )
+
+        self.assertEqual(get_unit_wallet_permission_candidates(unit, "receive"), [])
+        challenge = self._create_challenge()
+        consume_wallet_verification_challenge(
+            self.user,
+            challenge.pk,
+            self._sign(challenge, self.account),
+        )
+
+        candidates = get_unit_wallet_permission_candidates(unit, "receive")
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["wallet_address"], self.account.address.lower())

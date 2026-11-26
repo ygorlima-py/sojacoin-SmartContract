@@ -6,6 +6,7 @@ import re
 from typing import Any, NoReturn
 from urllib.parse import urlsplit
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -13,10 +14,13 @@ from django.utils import timezone
 
 from companies.models import (
     Company,
+    CompanyMembership,
     ImmutableHistoryModel,
     TimestampedModel,
+    Unit,
 )
 from utils.identifiers import (
+    is_valid_bytes32_hash,
     is_valid_transaction_hash,
     is_valid_wallet_address,
     normalize_transaction_hash,
@@ -26,6 +30,12 @@ from utils.identifiers import (
 
 DEPLOYMENT_OPERATION_TYPE = "contract_deployment"
 CONTRACT_CONFIGURATION_OPERATION_TYPE = "contract_configuration"
+UNIT_REGISTRATION_OPERATION_TYPE = "unit_registration"
+UNIT_WALLET_PERMISSION_OPERATION_TYPE = "unit_wallet_permission"
+PARTICIPANT_REGISTRATION_OPERATION_TYPE = "participant_registration"
+RECEIPT_OPEN_OPERATION_TYPE = "receipt_open"
+RECEIPT_INVOICE_LINK_OPERATION_TYPE = "receipt_invoice_link"
+RECEIPT_WEIGHING_CONFIRMATION_OPERATION_TYPE = "receipt_weighing_confirmation"
 
 
 class NonDeletableQuerySet(models.QuerySet):
@@ -445,6 +455,320 @@ class BlockchainTransaction(NonDeletableModel):
         """Return the operation type and current status."""
 
         return f"{self.operation_type} — {self.get_status_display()}"
+
+
+class UnitRegistrationAttempt(NonDeletableModel):
+    """Preserve the exact wallet call used to register one local unit.
+
+    The linked transaction owns the changing network state. This record keeps
+    the local unit and exact call arguments together so a retry can continue
+    the same operation and a confirmed event can be matched safely.
+    """
+
+    unit = models.ForeignKey(
+        Unit,
+        on_delete=models.PROTECT,
+        related_name="blockchain_registration_attempts",
+        verbose_name="Unit",
+    )
+    transaction = models.OneToOneField(
+        BlockchainTransaction,
+        on_delete=models.PROTECT,
+        related_name="unit_registration_attempt",
+        verbose_name="Blockchain transaction",
+    )
+    # Keep the exact values sent to the contract, even if local details change later.
+    unit_code = models.CharField("Unit code", max_length=64)
+    registration_hash = models.CharField("Registration hash", max_length=66)
+    prepared_data = models.TextField("Prepared contract call data")
+    # One open attempt per unit prevents duplicate sends while a wallet result
+    # or network confirmation is still uncertain.
+    is_open = models.BooleanField("Attempt is open", default=True)
+    submission_started_at = models.DateTimeField(
+        "Wallet submission started at",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ("created_at", "pk")
+        verbose_name = "unit registration attempt"
+        verbose_name_plural = "unit registration attempts"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("unit",),
+                condition=Q(is_open=True),
+                name="uniq_open_unit_registration_attempt",
+            ),
+        ]
+
+    def clean(self) -> None:
+        """Validate the unit, transaction scope and immutable wallet payload."""
+
+        super().clean()
+        self.unit_code = (self.unit_code or "").strip().upper()
+        self.registration_hash = (self.registration_hash or "").strip().lower()
+        self.prepared_data = (self.prepared_data or "").strip().lower()
+
+        if (
+            not self.unit_code
+            or "\x00" in self.unit_code
+            or len(self.unit_code.encode("utf-8")) > 32
+        ):
+            raise ValidationError(
+                {"unit_code": "O código deve ocupar de 1 a 32 bytes UTF-8 e não conter byte nulo."}
+            )
+        if not is_valid_bytes32_hash(self.registration_hash):
+            raise ValidationError(
+                {"registration_hash": "Informe uma hash bytes32 válida."}
+            )
+        if not re.fullmatch(r"0x(?:[0-9a-f]{2})+", self.prepared_data):
+            raise ValidationError(
+                {"prepared_data": "Os dados preparados da chamada são inválidos."}
+            )
+
+        if self.pk:
+            previous = type(self).objects.get(pk=self.pk)
+            immutable_fields = (
+                previous.unit_id == self.unit_id,
+                previous.transaction_id == self.transaction_id,
+                previous.unit_code == self.unit_code,
+                previous.registration_hash == self.registration_hash,
+                previous.prepared_data == self.prepared_data,
+            )
+            if not all(immutable_fields):
+                raise ValidationError(
+                    "A unidade e os dados preparados de uma tentativa não podem ser alterados."
+                )
+            if previous.submission_started_at and (
+                previous.submission_started_at != self.submission_started_at
+            ):
+                raise ValidationError("O início do envio não pode ser alterado.")
+            if not previous.is_open and self.is_open:
+                raise ValidationError("Uma tentativa encerrada não pode ser reaberta.")
+
+        if self.unit_id and self.transaction_id:
+            record = self.transaction
+            if record.operation_type != UNIT_REGISTRATION_OPERATION_TYPE:
+                raise ValidationError(
+                    {"transaction": "A transação precisa ser de registro de unidade."}
+                )
+            contract = record.contract if record.contract_id else None
+            if (
+                record.company_id != self.unit.company_id
+                or contract is None
+                or contract.company_id != self.unit.company_id
+                or contract.network_id != record.network_id
+                or contract.kind != ContractInstance.Kind.UNIT_REGISTRY
+            ):
+                raise ValidationError(
+                    {
+                        "transaction": (
+                            "A transação precisa usar o UnitRegistry da empresa e rede corretas."
+                        )
+                    }
+                )
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Validate before storing the attempt as an immutable audit record."""
+
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    @property
+    def status(self) -> str:
+        """Expose the transaction lifecycle state on the unit attempt."""
+
+        return self.transaction.status
+
+    def __str__(self) -> str:
+        """Identify the unit and transaction represented by this attempt."""
+
+        return f"{self.unit} — {self.transaction}"
+
+
+class UnitWalletPermissionAttempt(NonDeletableModel):
+    """Preserve one prepared grant or revocation for a member's unit wallet.
+
+    The immutable payload lets the server verify the exact call returned by the
+    owner's wallet. ``is_open`` prevents a second call while the first wallet
+    response or network confirmation is still uncertain.
+    """
+
+    class PermissionKind(models.TextChoices):
+        RECEIVE = "receive", "Recebimento"
+        ISSUE = "issue", "Emissão"
+
+    class Action(models.TextChoices):
+        GRANT = "grant", "Conceder"
+        REVOKE = "revoke", "Revogar"
+
+    unit = models.ForeignKey(
+        Unit,
+        on_delete=models.PROTECT,
+        related_name="wallet_permission_attempts",
+        verbose_name="Unidade",
+    )
+    membership = models.ForeignKey(
+        CompanyMembership,
+        on_delete=models.PROTECT,
+        related_name="wallet_permission_attempts",
+        verbose_name="Pessoa autorizada",
+    )
+    # Keep the verified account-to-wallet link used when this call was prepared.
+    user_wallet = models.ForeignKey(
+        "accounts.UserWallet",
+        on_delete=models.PROTECT,
+        related_name="unit_permission_attempts",
+        verbose_name="Carteira verificada",
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="requested_unit_wallet_permissions",
+        verbose_name="Administrador responsável",
+    )
+    transaction = models.OneToOneField(
+        BlockchainTransaction,
+        on_delete=models.PROTECT,
+        related_name="unit_wallet_permission_attempt",
+        verbose_name="Transação blockchain",
+    )
+    wallet_address = models.CharField("Carteira autorizada", max_length=42)
+    permission_kind = models.CharField(
+        "Permissão",
+        max_length=16,
+        choices=PermissionKind.choices,
+    )
+    action = models.CharField("Ação", max_length=8, choices=Action.choices)
+    # Solidity bit read from the saved UnitRegistry ABI at preparation time.
+    permission_bit = models.DecimalField(
+        "Bit da permissão",
+        max_digits=78,
+        decimal_places=0,
+    )
+    previous_permission_mask = models.DecimalField(
+        "Permissões anteriores na unidade",
+        max_digits=78,
+        decimal_places=0,
+    )
+    permission_mask = models.DecimalField(
+        "Permissões enviadas ao contrato",
+        max_digits=78,
+        decimal_places=0,
+    )
+    prepared_data = models.TextField("Dados preparados da chamada")
+    is_open = models.BooleanField("Tentativa aberta", default=True)
+    submission_started_at = models.DateTimeField(
+        "Solicitação aberta na carteira em",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ("-created_at", "-pk")
+        verbose_name = "tentativa de permissão de carteira"
+        verbose_name_plural = "tentativas de permissões de carteira"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("unit", "wallet_address"),
+                condition=Q(is_open=True),
+                name="uniq_open_unit_wallet_permission_attempt",
+            ),
+        ]
+
+    def clean(self) -> None:
+        """Check the member, verified wallet, transaction and saved call scope."""
+
+        super().clean()
+        self.wallet_address = normalize_wallet_address(self.wallet_address)
+        self.prepared_data = (self.prepared_data or "").strip().lower()
+
+        if not is_valid_wallet_address(self.wallet_address):
+            raise ValidationError({"wallet_address": "Informe uma carteira EVM válida."})
+        if not re.fullmatch(r"0x(?:[0-9a-f]{2})+", self.prepared_data):
+            raise ValidationError({"prepared_data": "Os dados preparados são inválidos."})
+        if self.permission_kind not in self.PermissionKind.values:
+            raise ValidationError({"permission_kind": "Escolha uma permissão válida."})
+        if self.action not in self.Action.values:
+            raise ValidationError({"action": "Escolha uma ação válida."})
+
+        for field_name in (
+            "permission_bit",
+            "previous_permission_mask",
+            "permission_mask",
+        ):
+            value = getattr(self, field_name)
+            if value < 0 or value >= 2**256:
+                raise ValidationError({field_name: "A máscara deve caber em uint256."})
+
+        if self.unit_id and self.membership_id:
+            if self.unit.company_id != self.membership.company_id:
+                raise ValidationError("A pessoa e a unidade devem pertencer à mesma empresa.")
+        if self.membership_id and self.user_wallet_id:
+            if self.membership.user_id != self.user_wallet.user_id:
+                raise ValidationError("A carteira verificada não pertence à pessoa selecionada.")
+            if self.wallet_address != self.user_wallet.wallet.address_normalized:
+                raise ValidationError("O endereço da tentativa difere da carteira verificada.")
+
+        if self.transaction_id and self.unit_id:
+            record = self.transaction
+            contract = record.contract if record.contract_id else None
+            if (
+                record.operation_type != UNIT_WALLET_PERMISSION_OPERATION_TYPE
+                or record.company_id != self.unit.company_id
+                or contract is None
+                or contract.company_id != self.unit.company_id
+                or contract.network_id != record.network_id
+                or contract.kind != ContractInstance.Kind.UNIT_REGISTRY
+            ):
+                raise ValidationError(
+                    "A transação deve usar o UnitRegistry da empresa e da rede corretas."
+                )
+
+        if self.pk:
+            previous = type(self).objects.get(pk=self.pk)
+            immutable_fields = (
+                previous.unit_id == self.unit_id,
+                previous.membership_id == self.membership_id,
+                previous.user_wallet_id == self.user_wallet_id,
+                previous.requested_by_id == self.requested_by_id,
+                previous.transaction_id == self.transaction_id,
+                previous.wallet_address == self.wallet_address,
+                previous.permission_kind == self.permission_kind,
+                previous.action == self.action,
+                previous.permission_bit == self.permission_bit,
+                previous.previous_permission_mask == self.previous_permission_mask,
+                previous.permission_mask == self.permission_mask,
+                previous.prepared_data == self.prepared_data,
+            )
+            if not all(immutable_fields):
+                raise ValidationError("Os dados preparados de uma tentativa não podem mudar.")
+            if previous.submission_started_at and (
+                previous.submission_started_at != self.submission_started_at
+            ):
+                raise ValidationError("O início do envio não pode ser alterado.")
+            if not previous.is_open and self.is_open:
+                raise ValidationError("Uma tentativa encerrada não pode ser reaberta.")
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Normalize references and validate before preserving the attempt."""
+
+        self.wallet_address = normalize_wallet_address(self.wallet_address)
+        self.prepared_data = (self.prepared_data or "").strip().lower()
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    @property
+    def status(self) -> str:
+        """Expose the linked blockchain transaction lifecycle state."""
+
+        return self.transaction.status
+
+    def __str__(self) -> str:
+        """Identify the member, wallet permission and transaction."""
+
+        return f"{self.unit} — {self.wallet_address} — {self.transaction}"
 
 
 class DeploymentProcess(NonDeletableModel):

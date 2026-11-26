@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ unit.name }} | SojaCoin{% endblock %}
 {% block page_title %}{{ unit.name }}{% endblock %}
@@ -94,10 +95,251 @@
                 {% endif %}
             </div>
         {% endif %}
+
+        {% if can_manage_units and not unit.chain_unit_id %}
+            <div id="unit-blockchain-registration" class="border-t border-[#E2E5DE] pt-4"
+                 data-prepare-url="{% url 'companies:unit_registration_prepare' company_id=company.pk unit_id=unit.pk %}">
+                <form class="hidden" aria-hidden="true">{% csrf_token %}</form>
+
+                {% if unit_registration_attempt and unit_registration_attempt.is_open %}
+                    <div class="rounded-[8px] border border-[#E2E5DE] bg-[#F9FAF7] p-3">
+                        <div class="text-[12px] font-semibold text-[#17211A]">
+                            Tentativa em andamento
+                        </div>
+                        <div class="mt-1 text-[11px] text-[#5C685E]">
+                            {{ unit_registration_attempt.transaction.network.name }}
+                            (ID {{ unit_registration_attempt.transaction.network.chain_id }})
+                            · {{ unit_registration_attempt.transaction.get_status_display }}
+                        </div>
+
+                        {% if unit_registration_attempt.transaction.status == "submitted" %}
+                            <button type="button"
+                                    class="mt-3 inline-flex h-[34px] items-center gap-2 rounded-[7px] bg-[#1E6B3C] px-3 text-[12px] font-semibold text-white hover:bg-[#185832]"
+                                    data-unit-confirm-url="{% url 'companies:unit_registration_confirm' company_id=company.pk unit_id=unit.pk attempt_id=unit_registration_attempt.pk %}">
+                                <i class="fa-solid fa-rotate text-[11px]" aria-hidden="true"></i>
+                                Consultar confirmação
+                            </button>
+                        {% elif unit_registration_attempt.submission_started_at %}
+                            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                                <input type="text" maxlength="66" autocomplete="off"
+                                       placeholder="Hash retornada pela carteira"
+                                       aria-label="Hash retornada pela carteira"
+                                       class="min-w-0 flex-1 rounded-[7px] border border-[#CCD3C9] px-3 py-2 font-mono text-[11px] text-[#17211A] focus:border-[#1E6B3C] focus:outline-none"
+                                       data-unit-hash-input="{{ unit_registration_attempt.pk }}"
+                                       data-unit-hash-url="{% url 'companies:unit_registration_hash' company_id=company.pk unit_id=unit.pk attempt_id=unit_registration_attempt.pk %}">
+                                <button type="button"
+                                        class="inline-flex h-[36px] items-center justify-center gap-2 rounded-[7px] border border-[#CCD3C9] bg-white px-3 text-[12px] font-semibold text-[#17211A] hover:bg-[#F9FAF7]"
+                                        data-unit-register-hash>
+                                    Conferir hash
+                                </button>
+                            </div>
+                            <p class="mt-2 text-[11px] text-[#8A5200]">
+                                A carteira já foi aberta para esta tentativa. Informe a hash recebida; não envie outra transação.
+                            </p>
+                        {% else %}
+                            <button type="button"
+                                    class="mt-3 inline-flex h-[34px] items-center gap-2 rounded-[7px] bg-[#1E6B3C] px-3 text-[12px] font-semibold text-white hover:bg-[#185832]"
+                                    data-unit-prepare
+                                    data-network-id="{{ unit_registration_attempt.transaction.network_id }}"
+                                    data-chain-id="{{ unit_registration_attempt.transaction.network.chain_id }}">
+                                Continuar na carteira
+                            </button>
+                        {% endif %}
+                    </div>
+                    <p class="mt-2 text-[11px] text-[#5C685E]" data-unit-message role="status" aria-live="polite"></p>
+                {% elif can_register_unit_on_chain %}
+                    {% if unit_registry_options|length > 1 %}
+                        <label for="unit-registration-network" class="block text-[11px] font-semibold text-[#5C685E]">
+                            Rede blockchain
+                        </label>
+                        <select id="unit-registration-network" class="mt-1 w-full rounded-[7px] border border-[#CCD3C9] bg-white px-3 py-2 text-[12px] text-[#17211A] focus:border-[#1E6B3C] focus:outline-none">
+                            {% for option in unit_registry_options %}
+                                <option value="{{ option.network.pk }}" data-chain-id="{{ option.network.chain_id }}">
+                                    {{ option.network.name }} (ID {{ option.network.chain_id }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        <p class="text-[11px] text-[#5C685E]">
+                            Rede: {{ unit_registry_options.0.network.name }}
+                            (ID {{ unit_registry_options.0.network.chain_id }})
+                        </p>
+                        <input type="hidden" id="unit-registration-network" value="{{ unit_registry_options.0.network.pk }}"
+                               data-chain-id="{{ unit_registry_options.0.network.chain_id }}">
+                    {% endif %}
+                    <button type="button"
+                            class="mt-3 inline-flex h-[44px] items-center gap-2.5 rounded-[8px] bg-[#1E6B3C] px-4 text-[13px] font-semibold text-white transition hover:bg-[#185832]"
+                            data-unit-prepare>
+                        <i class="fa-solid fa-link text-[14px]" aria-hidden="true"></i>
+                        Registrar unidade na blockchain
+                    </button>
+                    <p class="mt-2 text-[11px] text-[#5C685E]">
+                        A carteira dona do UnitRegistry precisa confirmar esta operação.
+                    </p>
+                    <p class="mt-2 text-[11px] text-[#5C685E]" data-unit-message role="status" aria-live="polite"></p>
+                {% elif not company.active %}
+                    <p class="text-[11px] text-[#8A5200]">A empresa está inativa. Novos registros estão bloqueados.</p>
+                {% elif not unit.active %}
+                    <p class="text-[11px] text-[#8A5200]">Ative a unidade antes de registrá-la na blockchain.</p>
+                {% elif not unit_registration_hash_valid %}
+                    <p class="text-[11px] text-[#8A5200]">A hash do cadastro está ausente ou inválida.</p>
+                {% elif not unit_registry_options %}
+                    <p class="text-[11px] text-[#8A5200]">Não há UnitRegistry e SojaCoin ativos para esta empresa.</p>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
 </section>
+
+{% if can_manage_units %}
+<section class="mt-[18px] max-w-3xl overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white" data-unit-wallet-permissions>
+    <div class="border-b border-[#E2E5DE] px-4 py-3">
+        <h2 class="text-[13.5px] font-semibold text-[#17211A]">Carteiras da unidade</h2>
+    </div>
+    <div class="space-y-5 p-4 text-[13px]">
+        <form class="hidden" aria-hidden="true">{% csrf_token %}</form>
+        {% if not unit.chain_unit_id %}
+            <p class="rounded-[8px] border border-[#E9D9AE] bg-[#FFF9E9] px-3 py-3 text-[12px] text-[#856404]">
+                Registre a unidade na blockchain antes de configurar as carteiras.
+            </p>
+        {% elif not wallet_permission_registration %}
+            <p class="rounded-[8px] border border-[#E9D9AE] bg-[#FFF9E9] px-3 py-3 text-[12px] text-[#856404]">
+                Não foi encontrada uma transação confirmada de registro para esta unidade.
+            </p>
+        {% else %}
+            <p class="text-[12px] text-[#5C685E]">
+                Rede: {{ wallet_permission_registration.transaction.network.name }}
+                (ID {{ wallet_permission_registration.transaction.network.chain_id }})
+            </p>
+
+            {% for permission_kind, title, candidates, rows in wallet_permission_sections %}
+                <div class="rounded-[9px] border border-[#E2E5DE] p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-[13px] font-semibold text-[#17211A]">{{ title }}</h3>
+                        <span class="text-[11px] text-[#8A948B]">{{ rows|length }} carteira(s)</span>
+                    </div>
+
+                    {% if rows %}
+                        <div class="mt-3 space-y-3">
+                            {% for row in rows %}
+                                <div class="rounded-[8px] bg-[#F9FAF7] p-3">
+                                    <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                                        <div class="min-w-0">
+                                            <div class="text-[12px] font-semibold text-[#17211A]">{{ row.member }}</div>
+                                            <code class="mt-1 block break-all font-mono text-[11px] text-[#5C685E]">{{ row.wallet }}</code>
+                                            <div class="mt-2 text-[11px] font-semibold text-[#5C685E]">{{ row.status }}</div>
+                                            {% if row.latest_attempt and row.latest_attempt.transaction.status == "failed" %}
+                                                <p class="mt-1 text-[11px] text-[#8A5200]">{{ row.latest_attempt.transaction.error_message }}</p>
+                                            {% endif %}
+                                        </div>
+                                        {% if row.can_revoke %}
+                                            <button type="button"
+                                                    class="inline-flex h-[40px] shrink-0 items-center justify-center gap-2 rounded-[8px] border border-[#D8B7B2] bg-white px-4 text-[12px] font-semibold text-[#9B2C22] hover:bg-[#FFF7F5]"
+                                                    data-wallet-permission-action="revoke"
+                                                    data-wallet-permission-kind="{{ permission_kind }}"
+                                                    data-wallet-target="{{ row.target }}"
+                                                    data-chain-id="{{ wallet_permission_registration.transaction.network.chain_id }}"
+                                                    data-wallet-prepare-url="{% url 'companies:unit_wallet_permission_prepare' company_id=company.pk unit_id=unit.pk permission_kind=permission_kind action='revoke' %}">
+                                                <i class="fa-solid fa-user-minus" aria-hidden="true"></i>
+                                                Revogar
+                                            </button>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if row.attempt %}
+                                        {% if row.attempt.transaction.status == "submitted" %}
+                                            <button type="button"
+                                                    class="mt-3 inline-flex h-[40px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-4 text-[12px] font-semibold text-white hover:bg-[#185832]"
+                                                    data-wallet-permission-confirm-url="{% url 'companies:unit_wallet_permission_confirm' company_id=company.pk unit_id=unit.pk attempt_id=row.attempt.pk %}">
+                                                <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                                                Consultar confirmação
+                                            </button>
+                                        {% elif row.attempt.submission_started_at %}
+                                            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                                                <input type="text" maxlength="66" autocomplete="off"
+                                                       placeholder="Hash retornada pela carteira"
+                                                       aria-label="Hash retornada pela carteira"
+                                                       class="min-w-0 flex-1 rounded-[7px] border border-[#CCD3C9] px-3 py-2 font-mono text-[11px] text-[#17211A] focus:border-[#1E6B3C] focus:outline-none"
+                                                       data-wallet-permission-hash-input="{{ row.attempt.pk }}"
+                                                       data-wallet-permission-hash-url="{% url 'companies:unit_wallet_permission_hash' company_id=company.pk unit_id=unit.pk attempt_id=row.attempt.pk %}">
+                                                <button type="button"
+                                                        class="inline-flex h-[40px] items-center justify-center gap-2 rounded-[8px] border border-[#CCD3C9] bg-white px-4 text-[12px] font-semibold text-[#17211A] hover:bg-[#F9FAF7]"
+                                                        data-wallet-permission-register-hash>
+                                                    Conferir hash
+                                                </button>
+                                            </div>
+                                            <p class="mt-2 text-[11px] text-[#8A5200]">
+                                                Informe a hash desta solicitação. Não inicie outro envio enquanto ela estiver em conferência.
+                                            </p>
+                                        {% else %}
+                                            <button type="button"
+                                                    class="mt-3 inline-flex h-[40px] items-center gap-2 rounded-[8px] bg-[#1E6B3C] px-4 text-[12px] font-semibold text-white hover:bg-[#185832]"
+                                                    data-wallet-permission-action="{{ row.attempt.action }}"
+                                                    data-wallet-permission-kind="{{ permission_kind }}"
+                                                    data-wallet-target="{{ row.attempt.membership_id }}:{{ row.attempt.user_wallet_id }}"
+                                                    data-chain-id="{{ row.attempt.transaction.network.chain_id }}"
+                                                    data-wallet-prepare-url="{% url 'companies:unit_wallet_permission_prepare' company_id=company.pk unit_id=unit.pk permission_kind=permission_kind action=row.attempt.action %}">
+                                                Continuar com a carteira dona
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="mt-3 text-[12px] text-[#8A948B]">Nenhuma carteira configurada.</p>
+                    {% endif %}
+
+                    {% if can_manage_wallet_permissions %}
+                        <div class="mt-4 border-t border-[#E2E5DE] pt-4">
+                            <label for="wallet-target-{{ permission_kind }}" class="block text-[11px] font-semibold text-[#5C685E]">
+                                Pessoa e carteira verificadas
+                            </label>
+                            {% if candidates %}
+                                <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+                                    <select id="wallet-target-{{ permission_kind }}"
+                                            class="min-w-0 flex-1 rounded-[7px] border border-[#CCD3C9] bg-white px-3 py-2 text-[12px] text-[#17211A] focus:border-[#1E6B3C] focus:outline-none"
+                                            data-wallet-permission-select="{{ permission_kind }}">
+                                        <option value="">Selecione uma pessoa e uma carteira</option>
+                                        {% for candidate in candidates %}
+                                            <option value="{{ candidate.membership_id }}:{{ candidate.user_wallet_id }}">
+                                                {{ candidate.membership_label }} — {% if candidate.wallet_label %}{{ candidate.wallet_label }} · {% endif %}{{ candidate.wallet_address }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button"
+                                            class="inline-flex h-[44px] shrink-0 items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-4 text-[12px] font-semibold text-white hover:bg-[#185832]"
+                                            data-wallet-permission-action="grant"
+                                            data-wallet-permission-kind="{{ permission_kind }}"
+                                            data-wallet-permission-select-id="wallet-target-{{ permission_kind }}"
+                                            data-chain-id="{{ wallet_permission_registration.transaction.network.chain_id }}"
+                                            data-wallet-prepare-url="{% url 'companies:unit_wallet_permission_prepare' company_id=company.pk unit_id=unit.pk permission_kind=permission_kind action='grant' %}">
+                                        <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                                        Adicionar carteira
+                                    </button>
+                                </div>
+                            {% else %}
+                                <p class="mt-2 text-[12px] text-[#8A948B]">
+                                    Nenhuma pessoa com função, acesso à unidade e carteira verificada está disponível para esta categoria.
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <p class="text-[11px] text-[#5C685E]" data-wallet-permission-message role="status" aria-live="polite"></p>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
 <a href="{% url 'companies:unit_list' company_id=company.pk %}" class="mt-4 inline-flex items-center gap-2 text-[12px] font-semibold text-[#1E6B3C]">
     <i class="fa-solid fa-arrow-left text-[11px]" aria-hidden="true"></i>
     Voltar para unidades
 </a>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'companies/unit_registration.js' %}" defer></script>
+    <script src="{% static 'companies/unit_wallet_permissions.js' %}" defer></script>
 {% endblock %}

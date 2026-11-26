@@ -46,3 +46,4 @@ LOGICA_ENTREGA_SOJA.md
 
 # Database
 app/db.sqlite3
+app/private_media/

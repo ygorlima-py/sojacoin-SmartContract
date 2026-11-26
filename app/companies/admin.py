@@ -324,10 +324,59 @@ class UnitAccessAdmin(admin.ModelAdmin):
 
 @admin.register(UnitWalletPermission)
 class UnitWalletPermissionAdmin(admin.ModelAdmin):
-    list_display = ("unit", "wallet", "permission_mask", "sync_status", "transaction")
+    """Expose the latest on-chain snapshot without allowing manual edits."""
+
+    list_display = (
+        "unit",
+        "membership",
+        "wallet",
+        "permission_mask",
+        "sync_status",
+        "transaction",
+    )
     list_filter = ("sync_status", "unit__company")
-    search_fields = ("wallet", "transaction", "unit__name", "unit__code")
-    readonly_fields = ("created_at", "updated_at")
+    search_fields = (
+        "wallet",
+        "transaction",
+        "unit__name",
+        "unit__code",
+        "membership__user__username",
+        "membership__user__email",
+    )
+    fields = (
+        "unit",
+        "membership",
+        "wallet",
+        "permission_mask",
+        "sync_status",
+        "transaction",
+        "created_at",
+        "updated_at",
+    )
+    readonly_fields = fields
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        """Create permission snapshots only after a confirmed blockchain event."""
+
+        return False
+
+    def has_change_permission(
+        self,
+        request: HttpRequest,
+        obj: UnitWalletPermission | None = None,
+    ) -> bool:
+        """Keep the confirmed permission snapshot controlled by its service."""
+
+        return False
+
+    def has_delete_permission(
+        self,
+        request: HttpRequest,
+        obj: UnitWalletPermission | None = None,
+    ) -> bool:
+        """Preserve the latest permission state and its linked history."""
+
+        return False
 
 
 @admin.register(AccessChange)

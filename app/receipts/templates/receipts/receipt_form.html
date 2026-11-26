@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Novo recebimento — SojaCoin{% endblock %}
+{% block page_title %}Novo recebimento{% endblock %}
+{% block page_subtitle %}<p class="mt-0.5 text-[11.5px] text-[#7A867D]">Registro local de uma carga recebida por {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+
+{% block content %}
+<div class="mx-auto w-full max-w-[1120px] space-y-5">
+    <div class="rounded-[8px] border border-[#CFE2D3] bg-[#E9F2EC] px-4 py-3 text-[12px] leading-5 text-[#28563A]">
+        Este formulário salva os dados e PDFs no SaaS. Ele ainda não envia nem confirma transações na blockchain.
+    </div>
+    {% if not has_eligible_units %}
+        <div class="rounded-[8px] border border-[#F0D6A4] bg-[#FFF9EA] px-4 py-3 text-[12px] leading-5 text-[#76530E]" role="status">
+            Não há uma unidade ativa, registrada na blockchain e liberada para recebimento por sua conta. Peça ao administrador da empresa para conferir o cadastro e seus acessos.
+        </div>
+    {% elif not has_confirmed_participants %}
+        <div class="rounded-[8px] border border-[#F0D6A4] bg-[#FFF9EA] px-4 py-3 text-[12px] leading-5 text-[#76530E]" role="status">
+            Esta empresa ainda não tem um participante com cadastro confirmado na blockchain. Conclua o cadastro do participante antes de criar a carga.
+        </div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div class="rounded-[8px] border border-[#E7B8B3] bg-[#FFF4F2] px-4 py-3 text-[12px] text-[#9B332A]" role="alert">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+        <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
+            <div class="border-b border-[#E2E5DE] px-5 py-4">
+                <h2 class="text-[14px] font-semibold text-[#17211A]">Identificação da carga</h2>
+                <p class="mt-1 text-[11.5px] text-[#7A867D]">As opções são limitadas à empresa da página e às unidades liberadas para seu usuário.</p>
+            </div>
+            <div class="grid gap-5 p-5 md:grid-cols-2">
+                {% include "receipts/_field.html" with field=form.participant %}
+                {% include "receipts/_field.html" with field=form.unit %}
+                {% include "receipts/_field.html" with field=form.crop_year %}
+            </div>
+        </section>
+
+        <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
+            <div class="border-b border-[#E2E5DE] px-5 py-4">
+                <h2 class="text-[14px] font-semibold text-[#17211A]">Pesagem e classificação</h2>
+                <p class="mt-1 text-[11.5px] text-[#7A867D]">Pesos e descontos são informados em quilogramas inteiros, como no contrato.</p>
+            </div>
+            <div class="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                {% include "receipts/_field.html" with field=form.gross_weight_kg %}
+                {% include "receipts/_field.html" with field=form.tare_weight_kg %}
+                {% include "receipts/_field.html" with field=form.weighed_at %}
+                {% include "receipts/_field.html" with field=form.moisture_percent %}
+                {% include "receipts/_field.html" with field=form.moisture_deduction_kg %}
+                {% include "receipts/_field.html" with field=form.impurities_percent %}
+                {% include "receipts/_field.html" with field=form.impurities_deduction_kg %}
+                {% include "receipts/_field.html" with field=form.damaged_grain_percent %}
+                {% include "receipts/_field.html" with field=form.damaged_grain_deduction_kg %}
+                {% include "receipts/_field.html" with field=form.other_deductions_kg %}
+                <div class="rounded-[8px] border border-[#CFE2D3] bg-[#F4F8F4] px-4 py-3 sm:col-span-2 lg:col-span-2">
+                    <div class="text-[11px] font-semibold text-[#657268]">Peso líquido calculado</div>
+                    <div id="net-weight-preview" class="mt-1 text-[19px] font-semibold tabular-nums text-[#1E6B3C]">Preencha os pesos para calcular</div>
+                    <p class="mt-1 text-[10.5px] leading-4 text-[#7A867D]">Prévia para conferência. O servidor recalcula o valor antes de salvar.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="overflow-hidden rounded-[10px] border border-[#E0E4DC] bg-white">
+            <div class="border-b border-[#E2E5DE] px-5 py-4">
+                <h2 class="text-[14px] font-semibold text-[#17211A]">Documentos da carga</h2>
+                <p class="mt-1 text-[11.5px] text-[#7A867D]">Arquivos PDF privados, até {{ pdf_limit_megabytes|floatformat:0 }} MB cada. As hashes identificam os bytes exatos armazenados.</p>
+            </div>
+            <div class="grid gap-5 p-5 md:grid-cols-2">
+                {% include "receipts/_field.html" with field=form.weighing_ticket_pdf %}
+                {% include "receipts/_field.html" with field=form.classification_report_pdf %}
+                {% include "receipts/_field.html" with field=form.invoice_access_key %}
+                {% include "receipts/_field.html" with field=form.invoice_pdf %}
+            </div>
+        </section>
+
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <a href="{% url 'receipts:list' company_id=company.pk %}" class="inline-flex min-h-[46px] items-center justify-center rounded-[8px] border border-[#CBD6CC] px-5 text-[13px] font-semibold text-[#465349] hover:bg-[#F8F9F6]">Cancelar</a>
+            <button type="submit" {% if not has_eligible_units or not has_confirmed_participants %}disabled{% endif %} class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[8px] px-6 text-[13px] font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[#1E6B3C]/30 {% if not has_eligible_units or not has_confirmed_participants %}cursor-not-allowed bg-[#A9B3AA] text-white{% else %}bg-[#1E6B3C] text-white hover:bg-[#185832]{% endif %}">
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Salvar recebimento
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    (() => {
+        const selectors = [
+            "#id_gross_weight_kg",
+            "#id_tare_weight_kg",
+            "#id_moisture_deduction_kg",
+            "#id_impurities_deduction_kg",
+            "#id_damaged_grain_deduction_kg",
+            "#id_other_deductions_kg",
+        ];
+        const fields = selectors.map((selector) => document.querySelector(selector));
+        const output = document.querySelector("#net-weight-preview");
+        if (!output || fields.some((field) => !field)) return;
+
+        const update = () => {
+            const values = fields.map((field) => Number.parseInt(field.value || "0", 10));
+            if (values.slice(0, 2).some(Number.isNaN)) {
+                output.textContent = "Preencha os pesos para calcular";
+                return;
+            }
+            const net = values[0] - values.slice(1).reduce((sum, value) => sum + (Number.isNaN(value) ? 0 : value), 0);
+            output.textContent = net > 0 ? `${new Intl.NumberFormat("pt-BR").format(net)} kg` : "Confira os pesos e descontos";
+        };
+        fields.forEach((field) => field.addEventListener("input", update));
+        update();
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ participant.name }} | Participantes{% endblock %}
+{% block page_title %}{{ participant.name }}{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">Cadastro do participante em {{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+{% block header_actions %}<a href="{% url 'participants:list' company_id=company.pk %}" class="inline-flex min-h-[38px] items-center gap-2 rounded-[7px] border border-[#D7DDD4] bg-white px-3 text-[12px] font-semibold text-[#344238] hover:bg-[#F9FAF7]"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Voltar aos participantes</a>{% endblock %}
+
+{% block content %}
+<form id="participant-csrf-source" class="hidden">{% csrf_token %}</form>
+<div class="grid max-w-6xl gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,.9fr)]">
+    <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+        <div class="border-b border-[#E2E5DE] px-4 py-3"><h2 class="text-[14px] font-semibold">Dados do participante</h2></div>
+        <dl class="grid gap-4 p-4 sm:grid-cols-2">
+            <div><dt class="text-[11px] font-semibold text-[#78837A]">Nome</dt><dd class="mt-1 text-[13px]">{{ participant.name }}</dd></div>
+            <div><dt class="text-[11px] font-semibold text-[#78837A]">Empresa</dt><dd class="mt-1 text-[13px]">{{ company.trade_name|default:company.legal_name }}</dd></div>
+            <div class="sm:col-span-2"><dt class="text-[11px] font-semibold text-[#78837A]">Carteira pública</dt><dd class="mt-1 break-all font-mono text-[12px]">{{ participant.wallet_address_normalized }}</dd></div>
+            <div><dt class="text-[11px] font-semibold text-[#78837A]">Criado por</dt><dd class="mt-1 text-[12px]">{{ participant.created_by }}</dd></div>
+            <div><dt class="text-[11px] font-semibold text-[#78837A]">Criado em</dt><dd class="mt-1 text-[12px]">{{ participant.created_at|date:"d/m/Y H:i" }}</dd></div>
+        </dl>
+    </section>
+
+    <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+        <div class="border-b border-[#E2E5DE] px-4 py-3"><h2 class="text-[14px] font-semibold">Situação do cadastro</h2></div>
+        <div class="space-y-3 p-4">
+            {% if terms %}
+                <div class="rounded-[8px] border border-[#DDE3DA] bg-[#F9FAF7] p-3">
+                    <p class="text-[13px] font-semibold">{{ terms.get_status_display }}</p>
+                    <p class="mt-1 text-[11px] text-[#78837A]">Termo versão {{ terms.version }} · hash Keccak-256</p>
+                    <p class="mt-1 break-all font-mono text-[10px] text-[#536057]">{{ terms.terms_hash }}</p>
+                    {% if terms.network %}<p class="mt-2 text-[11px] text-[#536057]">Rede: {{ terms.network.name }} (ID {{ terms.network.chain_id }})</p>{% endif %}
+                </div>
+            {% endif %}
+
+            {% if can_prepare_participant and terms and terms.status != "confirmed" %}
+                {% if terms.status == "draft" or terms.status == "failed" %}
+                    <form id="participant-proposal-form" method="post" data-prepare-url="{% url 'participants:proposal_prepare' company_id=company.pk participant_id=participant.pk %}" data-start-template="{% url 'participants:attempt_started' company_id=company.pk participant_id=participant.pk attempt_id=0 %}" data-hash-template="{% url 'participants:attempt_hash' company_id=company.pk participant_id=participant.pk attempt_id=0 %}" data-rejected-template="{% url 'participants:attempt_rejected' company_id=company.pk participant_id=participant.pk attempt_id=0 %}" class="space-y-3">
+                        {% csrf_token %}
+                        <label for="proposal-network" class="block text-[11px] font-semibold text-[#344238]">Rede da SojaCoin</label>
+                        <select id="proposal-network" name="network_id" class="h-[42px] w-full rounded-[7px] border border-[#D7DDD4] bg-white px-3 text-[12px]">
+                            {% for network in networks %}<option value="{{ network.pk }}" data-chain-id="{{ network.chain_id }}">{{ network.name }} (ID {{ network.chain_id }})</option>{% endfor %}
+                        </select>
+                        {% if networks %}
+                            <button type="submit" class="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-4 text-[13px] font-semibold text-white transition hover:bg-[#185A32]"><i class="fa-solid fa-link" aria-hidden="true"></i>Conectar carteira dona e propor cadastro</button>
+                        {% else %}
+                            <p class="rounded-[7px] bg-[#FFF9E9] px-3 py-2 text-[12px] text-[#75520A]">Não há uma SojaCoin ativa da empresa em uma rede ativa.</p>
+                        {% endif %}
+                    </form>
+                {% endif %}
+                {% if terms.status == "awaiting_acceptance" %}
+                    {% if active_link %}
+                        <div class="rounded-[8px] border border-[#DDE3DA] bg-[#F9FAF7] p-3 text-[12px]">
+                            <p class="font-semibold">Link ativo até {{ active_link.expires_at|date:"d/m/Y H:i" }}</p>
+                            <p class="mt-1 text-[11px] text-[#78837A]">O link completo é exibido somente quando é criado. Se não foi copiado, gere outro; isso cancela o anterior.</p>
+                            <form method="post" action="{% url 'participants:acceptance_link_cancel' company_id=company.pk participant_id=participant.pk link_id=active_link.pk %}" class="mt-2">{% csrf_token %}<button class="min-h-[34px] rounded-[7px] border border-[#D9B6B2] px-3 text-[11px] font-semibold text-[#A52B20]">Cancelar link</button></form>
+                        </div>
+                    {% endif %}
+                    <form id="participant-link-form" method="post" data-create-url="{% url 'participants:acceptance_link_create' company_id=company.pk participant_id=participant.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-[#1E6B3C] bg-white px-4 text-[12px] font-semibold text-[#1E6B3C] hover:bg-[#F2F8F3]"><i class="fa-solid fa-link" aria-hidden="true"></i>{% if active_link %}Criar novo link de aceite{% else %}Criar link para o participante{% endif %}</button>
+                    </form>
+                    <div id="participant-link-result" class="hidden rounded-[8px] border border-[#C9DFD0] bg-[#EEF7F0] p-3 text-[12px]" aria-live="polite"></div>
+                {% endif %}
+            {% endif %}
+            <div id="participant-action-message" class="hidden rounded-[8px] border px-3 py-2 text-[12px]" aria-live="polite"></div>
+        </div>
+    </section>
+
+    <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white xl:col-span-2">
+        <div class="border-b border-[#E2E5DE] px-4 py-3"><h2 class="text-[14px] font-semibold">Histórico das transações</h2></div>
+        {% if attempts %}
+            <div class="divide-y divide-[#E2E5DE]">
+                {% for attempt in attempts %}
+                    <article class="grid gap-3 p-4 lg:grid-cols-[minmax(170px,.7fr)_minmax(220px,1fr)_minmax(280px,1.2fr)] lg:items-start" data-attempt-row>
+                        <div>
+                            <p class="text-[12px] font-semibold">{{ attempt.get_kind_display }}</p>
+                            <p class="mt-1 text-[11px] text-[#78837A]">{{ attempt.transaction.get_status_display }}</p>
+                            <p class="mt-1 text-[10px] text-[#78837A]">{{ attempt.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="min-w-0">
+                            {% if attempt.transaction.transaction_hash %}<p class="break-all font-mono text-[10px] text-[#536057]">{{ attempt.transaction.transaction_hash }}</p>{% else %}<p class="text-[11px] text-[#78837A]">A hash ainda não foi registrada.</p>{% endif %}
+                            {% if attempt.transaction.error_message %}<p class="mt-1 text-[11px] text-[#A52B20]">{{ attempt.transaction.error_message }}</p>{% endif %}
+                        </div>
+                        <div class="space-y-2">
+                            {% if can_prepare_participant and attempt.kind == "proposal" and attempt.transaction.status == "prepared" and attempt.is_open %}
+                                {% if attempt.submission_started_at %}
+                                    <form class="participant-hash-form flex flex-wrap gap-2" method="post" data-url="{% url 'participants:attempt_hash' company_id=company.pk participant_id=participant.pk attempt_id=attempt.pk %}">
+                                        {% csrf_token %}<input name="transaction_hash" placeholder="Hash devolvida pela MetaMask" class="min-w-[220px] flex-1 rounded-[7px] border border-[#D7DDD4] px-3 py-2 font-mono text-[10px]" required>
+                                        <button class="min-h-[36px] rounded-[7px] bg-[#1E6B3C] px-3 text-[11px] font-semibold text-white">Conferir hash</button>
+                                    </form>
+                                    <p class="text-[10px] text-[#78837A]">Envio sem resposta definitiva: informe a hash desta mesma tentativa.</p>
+                                {% else %}
+                        <button type="button" class="participant-resume-proposal inline-flex min-h-[38px] items-center gap-2 rounded-[7px] border border-[#1E6B3C] px-3 text-[11px] font-semibold text-[#1E6B3C]" data-start-url="{% url 'participants:attempt_started' company_id=company.pk participant_id=participant.pk attempt_id=attempt.pk %}" data-hash-url="{% url 'participants:attempt_hash' company_id=company.pk participant_id=participant.pk attempt_id=attempt.pk %}" data-rejected-url="{% url 'participants:attempt_rejected' company_id=company.pk participant_id=participant.pk attempt_id=attempt.pk %}" data-attempt-id="{{ attempt.pk }}" data-sender="{{ attempt.sender_address }}" data-chain-id="{{ attempt.transaction.network.chain_id }}" data-to="{{ attempt.transaction.contract.address_normalized }}" data-data="{{ attempt.prepared_data }}">Continuar com a carteira</button>
+                                {% endif %}
+                            {% elif can_prepare_participant and attempt.kind == "proposal" and attempt.transaction.status == "submitted" and attempt.is_open %}
+                                <form method="post" class="participant-confirm-form" data-url="{% url 'participants:attempt_confirm' company_id=company.pk participant_id=participant.pk attempt_id=attempt.pk %}">{% csrf_token %}<button class="inline-flex min-h-[38px] items-center gap-2 rounded-[7px] bg-[#1E6B3C] px-3 text-[11px] font-semibold text-white"><i class="fa-solid fa-rotate" aria-hidden="true"></i>Consultar confirmação</button></form>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="p-4 text-[12px] text-[#78837A]">Ainda não há transações para este participante.</p>
+        {% endif %}
+    </section>
+
+    {% if terms %}
+        <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white xl:col-span-2">
+            <div class="border-b border-[#E2E5DE] px-4 py-3"><h2 class="text-[14px] font-semibold">Termo apresentado ao participante</h2><p class="mt-1 text-[11px] text-[#78837A]">Versão {{ terms.version }}. Este texto exato é o que corresponde à hash registrada.</p></div>
+            {% if terms.document %}
+                <div class="p-4">
+                    <p class="mb-3 break-all font-mono text-[10px] text-[#78837A]">PDF {{ terms.document.original_filename }} · hash Keccak-256: {{ terms.terms_hash }}</p>
+                    <a href="{% url 'participants:terms_pdf_company' company_id=company.pk document_id=terms.document.pk %}" target="_blank" rel="noopener" class="mb-3 inline-flex min-h-[38px] items-center gap-2 rounded-[7px] border border-[#D7DDD4] px-3 text-[11px] font-semibold text-[#344238]"><i class="fa-solid fa-file-pdf text-[#1E6B3C]" aria-hidden="true"></i>Abrir PDF</a>
+                    <iframe src="{% url 'participants:terms_pdf_company' company_id=company.pk document_id=terms.document.pk %}" title="Termo do participante versão {{ terms.version }}" class="h-[620px] w-full rounded-[8px] border border-[#E2E5DE] bg-[#FAFBF9]"></iframe>
+                </div>
+            {% else %}
+                <pre class="whitespace-pre-wrap p-4 font-sans text-[12px] leading-6 text-[#344238]">{{ terms.content }}</pre>
+            {% endif %}
+        </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}<script src="{% static 'participants/participant_detail.js' %}" defer></script>{% endblock %}

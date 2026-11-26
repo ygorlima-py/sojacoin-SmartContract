@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Permitir que uma empresa registre uma CPR, receba soja e emita SJC. O produtor assina o termo de adesão, a CPR e a aprovação do lote pela carteira. Na emissão, o contrato abate as CPRs compatíveis e destina os tokens aos respectivos credores; o excedente vai para o produtor.
+Permitir que uma empresa registre participantes, registre CPRs, receba soja e emita SJC. Cada participante aceita os termos da empresa; o produtor assina a CPR e a aprovação do lote com sua carteira. Na emissão, o contrato abate as CPRs compatíveis e destina os tokens aos respectivos credores; o excedente vai para o produtor.
 
 O MVP será uma aplicação Django com templates HTML e Tailwind, com JavaScript para conectar a MetaMask. Em interações que alteram apenas uma parte da tela, usar HTMX para atualizar um fragmento HTML sem recarregar a página inteira. As operações serão reais em rede de teste. Uma empresa terá sua própria instância dos contratos; várias unidades da mesma empresa poderão usá-la. A equipe da plataforma criará a empresa e as primeiras contas de forma assistida e ajudará na implantação, conexão dos contratos e configuração e aprovações da Safe. Não haverá cadastro público de contas nesta versão.
 
@@ -11,7 +11,7 @@ O MVP será uma aplicação Django com templates HTML e Tailwind, com JavaScript
 1. A empresa é cadastrada no SaaS e os endereços dos contratos implantados são informados.
 2. O administrador cadastra a unidade, o auditor e os funcionários, e configura as permissões exigidas no contrato.
 3. O auditor registra a auditoria e o estoque inicial da unidade.
-4. Produtor e credor são cadastrados e aceitam o termo de adesão com suas carteiras.
+4. Participantes são cadastrados, recebem uma proposta e aceitam o termo com suas carteiras. Um participante pode representar um produtor ou outro papel; CPRs e operações específicas do produtor continuam em etapas posteriores.
 5. A CPR é preenchida e assinada pelo produtor; sua transação é enviada à rede.
 6. O funcionário abre o recebimento, informa pesagem, classificação e documentos e confirma a carga. A nota fiscal é vinculada à carga.
 7. Um funcionário autorizado cria o lote; o produtor confere e assina a aprovação.
@@ -26,13 +26,13 @@ A aprovação do lote e a emissão são chamadas separadas nos contratos atuais.
 | --- | --- | --- |
 | `accounts` | Autenticação, perfil e carteiras dos usuários. O vínculo com a empresa fica em `companies`. | `UserProfile`, `Wallet`, `UserWallet` e `WalletVerificationChallenge` implementados com migrações, Admin e testes; login, logout, verificação criptográfica, carteiras na tela e Safe ainda pendentes. O usuário padrão do Django continua sendo usado. |
 | `companies` | Empresas, unidades, equipe e permissões no SaaS. | Modelos implementados e migrados; telas e rotas de empresas, unidades, vínculos de equipe, funções e acessos por unidade implementadas. Operações blockchain ainda pendentes. |
-| `participants` | Produtores, credores e aceites dos termos. | Planejado. |
+| `participants` | Participantes da empresa, versões do termo, convite remoto e aceite na blockchain. | Cadastro e aceite de participantes implementados com isolamento por empresa, PDF de termos publicado por administrador da empresa, versões imutáveis, link temporário, assinatura EIP-712, transações e confirmação de eventos. O cadastro pode representar um produtor ou outro participante; a empresa é responsável por revisar e aprovar o conteúdo. |
 | `documents` | Arquivos, hashes e vínculos com operações. | Planejado. |
 | `audits` | Auditorias e estoque informado pelo auditor. | Planejado. |
 | `cprs` | CPRs, assinaturas e abatimentos. | Planejado. |
-| `receipts` | Recebimentos, pesagem, classificação e nota fiscal. | Planejado. |
+| `receipts` | Recebimentos, pesagem, classificação, documentos e transações de entrada da carga. | Cadastro SaaS, PDFs privados, cálculo de peso líquido e fluxo on-chain `openLoadReceipt` → `confirmLoadReceipt` → `linkTaxInvoice` implementados. Cada tentativa é persistida; o servidor verifica carteira, rede, contratos, eventos e estado do depósito. Lotes e emissão continuam pendentes. |
 | `issuance` | Lotes, aprovação do produtor e emissão. | Planejado. |
-| `blockchain` | Redes, contratos, transações e sincronização dos eventos. | Persistência, estados de transação e idempotência de eventos implementados; integração RPC e leitura real da rede pendentes. |
+| `blockchain` | Redes, contratos, transações e sincronização dos eventos. | Persistência, RPC por rede, confirmação de recibos e processamento idempotente de eventos implementados; participantes usam esses serviços. |
 | `dashboard` | Página inicial e consultas por perfil. | Planejado; inicialmente pode usar consultas dos demais apps sem modelos próprios. |
 
 Um app Django agrupa uma parte do código; ele não é uma aplicação separada para instalar no celular.
@@ -86,7 +86,7 @@ São nove áreas principais. Listagem, detalhe e formulário podem compartilhar 
 | Página inicial | Ver pendências, últimas operações e atalhos conforme o perfil. | Todos. |
 | Empresa, unidades e auditorias | Consultar empresa e contratos; cadastrar unidade, indicar auditor e registrar ou consultar auditoria. Configuração inicial assistida. | Administrador e auditor. |
 | Equipe e permissões | Consultar usuários e indicar o que podem fazer e em quais unidades. A equipe da plataforma cria as contas iniciais de forma assistida. | Administrador. |
-| Participantes | Cadastrar produtores e credores, associar carteira e acompanhar aceite do termo. | Administrador ou funcionário autorizado; participante para aceitar. |
+| Participantes | Cadastrar participantes, associar carteira e acompanhar aceite do termo. A categoria específica (como produtor ou credor) será definida nos fluxos operacionais correspondentes. | Administrador ou funcionário autorizado; participante para aceitar. |
 | CPRs | Cadastrar, revisar, assinar e consultar saldo e abatimentos. | Revenda, produtor e credor conforme acesso. |
 | Recebimentos | Abrir carga, registrar pesagem e classificação, anexar documentos e vincular nota fiscal. | Funcionário autorizado; produtor consulta suas cargas. |
 | Lotes e aprovações | Criar lote, mostrar dados ao produtor, solicitar assinatura e acompanhar emissão. | Funcionário autorizado e produtor. |
@@ -98,7 +98,7 @@ O painel administrativo padrão do Django pode auxiliar na configuração inicia
 
 - Login sem vínculo ativo não concede acesso aos dados de uma empresa. Usuários participantes só acessam os registros aos quais foram vinculados.
 - O cadastro de unidade no SaaS informa se ainda aguarda registro na rede; o auditor e as permissões só aparecem como configurados após confirmação da operação correspondente.
-- Participantes exibem termo pendente ou aceito. CPRs exibem assinatura e registro pendentes, confirmados ou com falha, além do saldo confirmado.
+- Participantes exibem proposta, aceite pendente, confirmação, falha ou necessidade de conferência. CPRs exibem assinatura e registro pendentes, confirmados ou com falha, além do saldo confirmado.
 - Recebimentos apresentam os dados da carga, a situação da nota e as transações pendentes, confirmadas ou com falha.
 - Na emissão, distinguir assinatura recebida, aprovação pendente ou confirmada e emissão pendente, confirmada ou com erro. Não mostrar tokens como emitidos antes da confirmação.
 - Em saldos e histórico, identificar a CPR, a carga, o credor que recebeu, o valor destinado ao produtor e a transação confirmada.
@@ -207,8 +207,11 @@ O campo `crop_year_bytes32` deve seguir uma convenção única e reproduzível n
 
 ### `receipts`
 
-- **Receipt**: `company`, `producer`, `unit`, `crop_year`, `crop_year_bytes32`, `chain_deposit_id`, `status`, `opened_by`, `opened_at`, `confirmed_at`, `tax_invoice_key_hash`, `opening_transaction`, `confirmation_transaction`, `invoice_transaction`. Os IDs e horários da rede ficam vazios até confirmação.
-- **WeighingTicket**: `receipt` (um para um), `gross_weight_kg`, `tare_weight_kg`, `net_weight_kg`, `moisture_bps`, `impurities_bps`, `damaged_grain_bps`, `moisture_deduction_kg`, `impurities_deduction_kg`, `damaged_grain_deduction_kg`, `other_deductions_kg`, `ticket_document`, `ticket_hash`, `report_document`, `report_hash`, `weighed_at`. Os índices são centésimos de percentual; por exemplo, 1.550 representa 15,50%. Validar pesos, descontos e data antes de enviar; respeitar a regra de uso único do romaneio do contrato.
+- **Receipt — cadastro local implementado**: `company`, `participant`, `unit`, `crop_year`, `crop_year_bytes32`, `status`, `created_by`, timestamps. A safra em bytes32 é UTF-8 preenchido à direita com zeros. O status local é `ready_for_blockchain`; ele não significa que uma transação tenha sido enviada.
+- **WeighingTicket — cadastro local implementado**: `receipt` (um para um), `gross_weight_kg`, `tare_weight_kg`, `net_weight_kg`, `moisture_bps`, `impurities_bps`, `damaged_grain_bps`, `moisture_deduction_kg`, `impurities_deduction_kg`, `damaged_grain_deduction_kg`, `other_deductions_kg`, `weighing_ticket_hash`, `report_hash`, `weighed_at`. O servidor calcula peso líquido; os índices são centésimos de percentual, por exemplo 1.550 representa 15,50%.
+- **ReceiptDocument — cadastro local implementado**: `receipt`, `kind`, nome original, arquivo PDF privado, hash Keccak-256 dos bytes exatos, tamanho, responsável pelo envio e timestamps. Há no máximo um documento de cada tipo por recebimento: romaneio, laudo de classificação e nota fiscal. O romaneio e a NF-e são obrigatórios no formulário; o laudo é opcional.
+- **TaxInvoice — cadastro local implementado**: `receipt`, chave de acesso de 44 dígitos, `access_key_hash` e documento. A hash destinada ao contrato é calculada sobre a chave de acesso; ela é diferente da hash do PDF da nota.
+- **Envio e confirmação na blockchain — pendentes**: ainda precisam ser implementados `chain_deposit_id`, preparação e confirmação de `openLoadReceipt`, link da nota fiscal, `confirmLoadReceipt`, transações associadas e sincronização de eventos. A próxima etapa deve validar rede, contrato, carteira e permissão antes de solicitar assinatura.
 
 ### `issuance`
 
@@ -233,10 +236,10 @@ Esta é a sequência de implementação. Concluir e verificar cada etapa antes d
 4. **Empresa e unidade no SaaS — parcial.** Os modelos e o serviço de hash da unidade já existem. A equipe da plataforma cadastra a empresa e o vínculo inicial do administrador de forma assistida. Criar formulários, rotas e telas para os dados que o administrador poderá gerir. O cadastro e a edição da unidade devem usar o serviço de hash, inclusive se forem disponibilizados pelo Admin. Verificar CNPJ único, hash e isolamento entre empresas. Nesta etapa o cadastro é local; ele não confirma registro na blockchain.
 5. **Equipe e permissões do SaaS — concluída para o escopo atual.** Os fluxos de vínculo, concessão e revogação de funções, acessos por unidade e consulta do histórico imutável estão implementados e testados. Cada alteração registra responsável, empresa, membro, unidade quando aplicável, valores anterior e novo, horário e transação quando existir. Permissões do SaaS não alteram a carteira na rede.
 6. **Rede e contratos — parcial.** `blockchain` já possui os modelos de rede, contratos, transações e eventos, além das transições de confirmação, falha, reorganização e processamento idempotente. Ainda falta conectar o RPC, acompanhar recibos e decodificar os eventos dos contratos. A implantação, conexão e aprovações da Safe são assistidas pela equipe. Verificar os vínculos entre contratos, status de confirmação e falhas.
-7. **Carteiras, participantes e documentos — parcial.** Em `accounts`, os models de perfil, carteira, vínculo usuário–carteira e desafio de assinatura estão implementados. Ainda falta criar o serviço de verificação, as telas e o fluxo de vínculo comprovado; implementar `documents` e `participants`, cadastro e aceite de termos. Não guardar chaves privadas.
+7. **Carteiras, participantes e documentos — parcial.** Em `accounts`, perfil, carteira, vínculo usuário–carteira e verificação por assinatura estão implementados. `participants` cobre publicação pela empresa de PDF versionado e imutável, cadastro genérico de participante, proposta do dono da SojaCoin, link individual, aceite EIP-712 e confirmação do contrato. Produtores e credores podem ser representados como participantes; os fluxos específicos de CPR e crédito continuam pendentes. O SaaS registra a declaração de aprovação feita pelo administrador, mas não revisa nem certifica juridicamente o conteúdo. `receipts` armazena em área privada os PDFs do romaneio, laudo opcional e nota fiscal ligados ao recebimento local. Os documentos específicos de CPR e outras operações ainda estão pendentes. Não guardar chaves privadas.
 8. **Unidades na rede e auditorias — pendente.** Conectar o cadastro da unidade, designação de auditor e permissões à carteira proprietária apropriada; registrar auditorias e confirmar os resultados da rede antes de exibi-los como efetivos.
 9. **CPR — pendente.** Criar cadastro, documento, assinatura do produtor e acompanhamento da transação e do saldo da CPR.
-10. **Recebimento — pendente.** Abrir carga, registrar pesagem e classificação, anexar documentos, confirmar o recebimento e vincular a nota fiscal.
+10. **Recebimento — cadastro local concluído; integração blockchain pendente.** O usuário com função de recebimento e acesso ativo à unidade registra participante confirmado, unidade já registrada, safra, pesagem/classificação, chave da NF-e e PDFs privados. O servidor calcula o peso líquido e as hashes. O envio de `openLoadReceipt`, vínculo da nota, confirmação da carga e confirmação de recibos ainda não estão ligados à interface.
 11. **Lote e emissão — pendente.** Criar lote, solicitar assinatura do produtor, enviar aprovação e encaminhar emissão com carteira autorizada. Acompanhar as duas transações separadamente.
 12. **Consultas e verificação completa — pendente.** Criar consultas de saldos, abatimentos e histórico por perfil; exibir transações e eventos sem duplicidade; testar o fluxo completo em rede de teste e os casos de recusa, erro, reorganização e isolamento. A rede local pode ser usada durante o desenvolvimento.
 

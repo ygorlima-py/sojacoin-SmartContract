@@ -1,10 +1,10 @@
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, TypedDict
 
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied, ValidationError
 from django.db.models import Prefetch, QuerySet
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from django.views.generic import (
@@ -16,8 +16,15 @@ from django.views.generic import (
     UpdateView,
     View,
 )
-
+from accounts.models import UserWallet
 from accounts.rules.account_access import ActiveAccountRequiredMixin
+from blockchain.models import (
+    BlockchainTransaction,
+    ContractInstance,
+    UnitRegistrationAttempt,
+    UnitWalletPermissionAttempt,
+    UNIT_REGISTRATION_OPERATION_TYPE,
+)
 
 from .forms import (
     CompanyForm,
@@ -33,6 +40,7 @@ from .models import (
     MembershipRole,
     Unit,
     UnitAccess,
+    UnitWalletPermission,
 )
 from .rules.company_access import (
     CompanyAccessMixin,
@@ -46,7 +54,39 @@ from .services.access_history import (
     set_unit_access,
 )
 from .services.membership import add_company_membership
+from .services.unit_blockchain_registration import (
+    confirm_unit_registration_attempt,
+    mark_unit_registration_submission_started,
+    prepare_unit_registration,
+    register_unit_registration_transaction_hash,
+    reject_unit_registration_attempt,
+)
 from .services.unit_registration import save_unit_registration
+from .services.unit_wallet_permissions import (
+    WalletPermissionCandidate,
+    confirm_wallet_permission_attempt,
+    get_unit_wallet_permission_candidates,
+    mark_wallet_permission_submission_started,
+    prepare_unit_wallet_permission,
+    register_wallet_permission_transaction_hash,
+    reject_wallet_permission_attempt,
+)
+from utils.identifiers import is_valid_bytes32_hash
+
+
+class UnitWalletPermissionRow(TypedDict):
+    """Describe one wallet permission row presented on the unit detail page."""
+
+    wallet: str
+    member: str
+    status: str
+    permission_active: bool
+    attempt: UnitWalletPermissionAttempt | None
+    latest_attempt: UnitWalletPermissionAttempt | None
+    can_revoke: bool
+    membership_id: int | None
+    user_wallet_id: int | None
+    target: str
 
 
 class CompanyListView(ActiveAccountRequiredMixin, TemplateView):
@@ -504,6 +544,28 @@ class AccessHistoryListView(CompanyAdministratorRequiredMixin, ListView):
         elif change.action in {AccessChange.Action.ROLE_GRANTED, AccessChange.Action.ROLE_REVOKED}:
             role = current.get("role", previous.get("role"))
             details.append({"label": "Função", "before": "", "after": self._role_text(role)})
+        elif change.action == AccessChange.Action.WALLET_PERMISSION_UPDATED:
+            permission = str(current.get("permission", previous.get("permission", "")))
+            action = str(current.get("action", ""))
+            was_active = bool(previous.get("active", False))
+            is_active = bool(current.get("active", False))
+            action_label = (
+                f"Permissão de {permission.lower()} concedida"
+                if action == "grant" and is_active
+                else f"Permissão de {permission.lower()} revogada"
+            )
+            wallet = str(current.get("wallet", previous.get("wallet", "—")))
+            details.extend(
+                (
+                    {"label": "Carteira", "before": "", "after": wallet},
+                    {"label": "Permissão", "before": "", "after": permission or "—"},
+                    {
+                        "label": "Situação",
+                        "before": "Ativa" if was_active else "Sem permissão",
+                        "after": "Ativa" if is_active else "Revogada",
+                    },
+                )
+            )
 
         return {
             "change": change,
@@ -545,12 +607,585 @@ class UnitDetailView(CompanyAccessMixin, DetailView):
 
         return self.company.units.all()
 
+    def _wallet_permission_rows(self) -> dict[str, list[UnitWalletPermissionRow]]:
+        """Combine the latest confirmed snapshot with each wallet's latest attempt."""
+
+        snapshots = {
+            row.wallet: row
+            for row in UnitWalletPermission.objects.filter(unit=self.object).select_related(
+                "membership__user"
+            )
+        }
+        attempts = list(
+            UnitWalletPermissionAttempt.objects.filter(unit=self.object)
+            .select_related(
+                "membership__user",
+                "user_wallet__wallet",
+                "transaction__network",
+                "transaction__contract",
+            )
+            .order_by("-created_at", "-pk")
+        )
+        latest_attempts: dict[tuple[str, str], UnitWalletPermissionAttempt] = {}
+        for attempt in attempts:
+            key = (attempt.permission_kind, attempt.wallet_address)
+            latest_attempts.setdefault(key, attempt)
+
+        result: dict[str, list[UnitWalletPermissionRow]] = {"receive": [], "issue": []}
+        # These are the UnitRegistry constants PERMISSION_RECEIVE_SOYBEANS (1) and
+        # PERMISSION_ISSUE_SJC (2), used only to read the confirmed mask snapshot.
+        permission_bits = {"receive": 1, "issue": 2}
+        for permission_kind, bit in permission_bits.items():
+            addresses = {
+                wallet for wallet, snapshot in snapshots.items()
+                if int(snapshot.permission_mask) & bit
+            }
+            addresses.update(
+                wallet for kind, wallet in latest_attempts if kind == permission_kind
+            )
+
+            for wallet in sorted(addresses):
+                snapshot = snapshots.get(wallet)
+                attempt = latest_attempts.get((permission_kind, wallet))
+                permission_active = bool(
+                    snapshot
+                    and snapshot.sync_status == UnitWalletPermission.SyncStatus.CONFIRMED
+                    and int(snapshot.permission_mask) & bit
+                )
+                pending = bool(attempt and attempt.is_open)
+                failed = bool(
+                    attempt
+                    and attempt.transaction.status == BlockchainTransaction.Status.FAILED
+                )
+
+                if pending:
+                    status = (
+                        "Aguardando confirmação"
+                        if attempt.action == UnitWalletPermissionAttempt.Action.GRANT
+                        else "Aguardando revogação"
+                    )
+                elif failed and permission_active:
+                    status = "Ativa; revogação não concluída"
+                elif failed:
+                    status = "Falhou"
+                elif permission_active:
+                    status = "Ativa"
+                elif attempt and attempt.action == UnitWalletPermissionAttempt.Action.REVOKE:
+                    status = "Revogada"
+                else:
+                    status = "Sem permissão ativa"
+
+                membership = (
+                    snapshot.membership if snapshot and snapshot.membership_id else None
+                ) or (attempt.membership if attempt else None)
+                user_wallet = attempt.user_wallet if attempt else None
+                if user_wallet is None and membership is not None:
+                    user_wallet = (
+                        UserWallet.objects.filter(
+                            user_id=membership.user_id,
+                            wallet__address_normalized=wallet,
+                        )
+                        .select_related("wallet")
+                        .first()
+                    )
+
+                result[permission_kind].append(
+                    {
+                        "wallet": wallet,
+                        "member": str(membership) if membership else "Pessoa não vinculada",
+                        "status": status,
+                        "permission_active": permission_active,
+                        "attempt": attempt if pending else None,
+                        "latest_attempt": attempt,
+                        "can_revoke": bool(
+                            permission_active and not pending and membership and user_wallet
+                        ),
+                        "membership_id": membership.pk if membership else None,
+                        "user_wallet_id": user_wallet.pk if user_wallet else None,
+                        "target": (
+                            f"{membership.pk}:{user_wallet.pk}"
+                            if membership and user_wallet
+                            else ""
+                        ),
+                    }
+                )
+
+        return result
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Expose the administrator-only unit management action state."""
+        """Expose unit status, available registries and the latest attempt."""
 
         context = super().get_context_data(**kwargs)
-        context["can_manage_units"] = has_administrator_role(self.membership)
+        can_manage_units = has_administrator_role(self.membership)
+        attempts = UnitRegistrationAttempt.objects.filter(unit=self.object).select_related(
+            "transaction__network",
+            "transaction__contract",
+        )
+        open_attempt = attempts.filter(is_open=True).order_by("-created_at", "-pk").first()
+        latest_attempt = attempts.order_by("-created_at", "-pk").first()
+
+        # Offer only networks with both required active deployments for this company.
+        registry_rows: list[dict[str, Any]] = []
+        registries = ContractInstance.objects.filter(
+            company=self.company,
+            kind=ContractInstance.Kind.UNIT_REGISTRY,
+            active=True,
+            network__active=True,
+        ).select_related("network").order_by("network__name")
+        for registry in registries:
+            has_soja_coin = ContractInstance.objects.filter(
+                company=self.company,
+                network_id=registry.network_id,
+                kind=ContractInstance.Kind.SOJA_COIN,
+                active=True,
+            ).exists()
+            if has_soja_coin:
+                registry_rows.append(
+                    {
+                        "network": registry.network,
+                        "registry": registry,
+                    }
+                )
+
+        context["can_manage_units"] = can_manage_units
+        context["unit_registry_options"] = registry_rows
+        context["unit_registration_attempt"] = open_attempt or latest_attempt
+        context["blockchain_transaction"] = (
+            latest_attempt.transaction if latest_attempt is not None else None
+        )
+        registration_hash_valid = is_valid_bytes32_hash(self.object.registration_hash)
+        context["unit_registration_hash_valid"] = registration_hash_valid
+        context["can_register_unit_on_chain"] = (
+            can_manage_units
+            and self.company.active
+            and self.object.active
+            and self.object.chain_unit_id is None
+            and registration_hash_valid
+            and bool(registry_rows)
+        )
+
+        # The permission operation must use the same confirmed deployment that
+        # wrote the unit's chain ID; the browser cannot choose another network.
+        permission_registration = (
+            UnitRegistrationAttempt.objects.filter(
+                unit=self.object,
+                transaction__status=BlockchainTransaction.Status.CONFIRMED,
+                transaction__operation_type=UNIT_REGISTRATION_OPERATION_TYPE,
+                transaction__contract__kind=ContractInstance.Kind.UNIT_REGISTRY,
+            )
+            .select_related("transaction__network", "transaction__contract")
+            .order_by("-transaction__confirmed_at", "-pk")
+            .first()
+            if self.object.chain_unit_id is not None
+            else None
+        )
+        context["wallet_permission_registration"] = permission_registration
+        context["wallet_permission_rows"] = self._wallet_permission_rows()
+        receive_candidates: list[WalletPermissionCandidate] = (
+            get_unit_wallet_permission_candidates(
+                self.object,
+                "receive",
+            )
+        )
+        issue_candidates: list[WalletPermissionCandidate] = (
+            get_unit_wallet_permission_candidates(
+                self.object,
+                "issue",
+            )
+        )
+        context["receive_wallet_candidates"] = receive_candidates
+        context["issue_wallet_candidates"] = issue_candidates
+        permission_rows = context["wallet_permission_rows"]
+        context["wallet_permission_sections"] = [
+            (
+                "receive",
+                "Recebimento",
+                receive_candidates,
+                permission_rows["receive"],
+            ),
+            (
+                "issue",
+                "Emissão",
+                issue_candidates,
+                permission_rows["issue"],
+            ),
+        ]
+        context["can_manage_wallet_permissions"] = bool(
+            can_manage_units
+            and self.company.active
+            and self.object.active
+            and permission_registration is not None
+            and permission_registration.transaction.contract.active
+            and permission_registration.transaction.network.active
+        )
         return context
+
+
+class UnitRegistrationActionView(CompanyAdministratorRequiredMixin, View):
+    """Share company and unit scoping for unit-registration POST endpoints."""
+
+    def get_unit(self) -> Unit:
+        """Load the target unit only inside the administrator's company."""
+
+        return get_object_or_404(
+            Unit.objects.select_related("company"),
+            pk=self.kwargs["unit_id"],
+            company_id=self.company.pk,
+        )
+
+    def get_attempt(self) -> UnitRegistrationAttempt:
+        """Load an attempt only when it belongs to this URL's unit and company."""
+
+        return get_object_or_404(
+            UnitRegistrationAttempt.objects.select_related(
+                "unit",
+                "transaction__network",
+                "transaction__contract",
+            ),
+            pk=self.kwargs["attempt_id"],
+            unit_id=self.get_unit().pk,
+            transaction__company_id=self.company.pk,
+        )
+
+    def validation_error(self, error: ValidationError) -> JsonResponse:
+        """Return Django validation details as a small JSON error response."""
+
+        return JsonResponse({"error": "; ".join(error.messages)}, status=400)
+
+    def service_unavailable(self, error: Exception) -> JsonResponse:
+        """Tell the browser to keep the attempt and retry the same operation."""
+
+        return JsonResponse(
+            {
+                "error": str(error)
+                or "Não foi possível consultar a rede agora. Tente novamente depois."
+            },
+            status=503,
+        )
+
+
+class UnitRegistrationPrepareView(UnitRegistrationActionView):
+    """Prepare and persist the exact call before the browser opens MetaMask."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Validate wallet/network data and return the saved attempt request."""
+
+        unit = self.get_unit()
+        try:
+            prepared = prepare_unit_registration(
+                company_id=self.company.pk,
+                unit_id=unit.pk,
+                network_id=int(request.POST.get("network_id", "")),
+                sender_address=request.POST.get("sender_address", ""),
+                wallet_chain_id=int(request.POST.get("wallet_chain_id", ""), 10),
+            )
+        except (TypeError, ValueError):
+            return JsonResponse(
+                {"error": "Selecione uma rede e conecte uma carteira válida."},
+                status=400,
+            )
+        except ValidationError as error:
+            return self.validation_error(error)
+        except (ConnectionError, ImproperlyConfigured) as error:
+            return self.service_unavailable(error)
+
+        attempt_kwargs = {
+            "company_id": self.company.pk,
+            "unit_id": unit.pk,
+            "attempt_id": prepared.attempt.pk,
+        }
+        result: dict[str, Any] = {
+            "status": prepared.status,
+            "attempt_id": prepared.attempt.pk,
+            "chain_id": prepared.chain_id,
+            "owner_address": prepared.owner_address,
+            "contract_address": prepared.contract_address,
+            "transaction_data": prepared.transaction_data,
+            "started_url": reverse("companies:unit_registration_started", kwargs=attempt_kwargs),
+            "rejected_url": reverse("companies:unit_registration_rejected", kwargs=attempt_kwargs),
+            "register_url": reverse("companies:unit_registration_hash", kwargs=attempt_kwargs),
+            "confirm_url": reverse("companies:unit_registration_confirm", kwargs=attempt_kwargs),
+        }
+        if prepared.status == "submitted":
+            result["message"] = "Esta tentativa já foi enviada. Consulte a confirmação da rede."
+        elif prepared.status == "recover":
+            result["message"] = (
+                "Esta tentativa já abriu a carteira. Informe a hash dela; não envie outra transação."
+            )
+        else:
+            result["message"] = "Tentativa preparada. Confirme a operação na carteira."
+        return JsonResponse(result)
+
+
+class UnitRegistrationStartedView(UnitRegistrationActionView):
+    """Save a send-intent marker before a wallet confirmation prompt is opened."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Mark the existing attempt as potentially submitted by the wallet."""
+
+        attempt = self.get_attempt()
+        try:
+            mark_unit_registration_submission_started(attempt.pk)
+        except ValidationError as error:
+            return self.validation_error(error)
+        return JsonResponse({"status": "ready"})
+
+
+class UnitRegistrationRejectedView(UnitRegistrationActionView):
+    """Record an explicit rejection from the connected wallet."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Close the rejected attempt while preserving its transaction record."""
+
+        attempt = self.get_attempt()
+        try:
+            reject_unit_registration_attempt(attempt.pk)
+        except ValidationError as error:
+            return self.validation_error(error)
+        return JsonResponse({"status": "failed", "message": "Envio recusado pela carteira."})
+
+
+class UnitRegistrationHashView(UnitRegistrationActionView):
+    """Verify the wallet-returned hash against the saved call on the RPC."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Save a verified hash or ask the browser to retry with that same hash."""
+
+        attempt = self.get_attempt()
+        try:
+            transaction_record = register_unit_registration_transaction_hash(
+                attempt_id=attempt.pk,
+                transaction_hash=request.POST.get("transaction_hash", ""),
+            )
+        except ValidationError as error:
+            return self.validation_error(error)
+        except (ConnectionError, ImproperlyConfigured) as error:
+            return self.service_unavailable(error)
+
+        if transaction_record is None:
+            return JsonResponse(
+                {
+                    "status": "waiting_for_rpc",
+                    "message": (
+                        "A rede ainda não encontrou esta transação. Tente conferir a mesma hash novamente."
+                    ),
+                },
+                status=202,
+            )
+        return JsonResponse(
+            {
+                "status": "submitted",
+                "message": "Hash conferida. Aguardando confirmação da rede.",
+            }
+        )
+
+
+class UnitRegistrationConfirmView(UnitRegistrationActionView):
+    """Query the saved transaction receipt without opening or sending a wallet call."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Return the chain result after validating its UnitRegistered event."""
+
+        attempt = self.get_attempt()
+        try:
+            result = confirm_unit_registration_attempt(attempt.pk)
+        except ValidationError as error:
+            return self.validation_error(error)
+        except (ConnectionError, ImproperlyConfigured) as error:
+            return self.service_unavailable(error)
+
+        response: dict[str, Any] = {
+            "status": result.status,
+            "chain_unit_id": result.chain_unit_id,
+        }
+        if result.status == "pending":
+            response["message"] = "A rede ainda não confirmou esta transação. Consulte novamente depois."
+        elif result.status == "failed":
+            response["message"] = "A transação falhou na rede. Você pode iniciar uma nova tentativa."
+        else:
+            response["message"] = (
+                f"Unidade registrada na blockchain. ID: {result.chain_unit_id}."
+            )
+        return JsonResponse(response)
+
+
+class UnitWalletPermissionActionView(CompanyAdministratorRequiredMixin, View):
+    """Scope wallet-permission endpoints to the active company and unit."""
+
+    def get_unit(self) -> Unit:
+        """Load only the unit belonging to the company validated by the mixin."""
+
+        return get_object_or_404(
+            Unit.objects.select_related("company"),
+            pk=self.kwargs["unit_id"],
+            company_id=self.company.pk,
+        )
+
+    def get_attempt(self) -> UnitWalletPermissionAttempt:
+        """Hide an attempt unless its unit and transaction match the URL company."""
+
+        return get_object_or_404(
+            UnitWalletPermissionAttempt.objects.select_related(
+                "unit",
+                "membership__user",
+                "user_wallet__wallet",
+                "transaction__network",
+                "transaction__contract",
+            ),
+            pk=self.kwargs["attempt_id"],
+            unit_id=self.get_unit().pk,
+            transaction__company_id=self.company.pk,
+        )
+
+    def validation_error(self, error: ValidationError) -> JsonResponse:
+        """Return a clear form-level error without changing the saved attempt."""
+
+        return JsonResponse({"error": "; ".join(error.messages)}, status=400)
+
+
+class UnitWalletPermissionPrepareView(UnitWalletPermissionActionView):
+    """Save a verified permission call before asking the owner to sign it."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Resolve the selected member wallet and return the MetaMask request."""
+
+        target_parts = request.POST.get("target", "").split(":")
+        if len(target_parts) != 2:
+            return JsonResponse({"error": "Selecione uma pessoa e uma carteira."}, status=400)
+        try:
+            membership_id, user_wallet_id = (int(value) for value in target_parts)
+            wallet_chain_id = int(request.POST.get("wallet_chain_id", ""), 10)
+        except (TypeError, ValueError):
+            return JsonResponse({"error": "A pessoa, carteira ou rede é inválida."}, status=400)
+
+        try:
+            prepared = prepare_unit_wallet_permission(
+                company_id=self.company.pk,
+                unit_id=self.get_unit().pk,
+                membership_id=membership_id,
+                user_wallet_id=user_wallet_id,
+                permission_kind=self.kwargs["permission_kind"],
+                action=self.kwargs["action"],
+                owner_address=request.POST.get("owner_address", ""),
+                wallet_chain_id=wallet_chain_id,
+                actor=request.user,
+            )
+        except ValidationError as error:
+            return self.validation_error(error)
+        except (ConnectionError, ImproperlyConfigured) as error:
+            return JsonResponse({"error": str(error)}, status=503)
+
+        attempt_kwargs = {
+            "company_id": self.company.pk,
+            "unit_id": self.get_unit().pk,
+            "attempt_id": prepared.attempt.pk,
+        }
+        return JsonResponse(
+            {
+                "status": prepared.status,
+                "attempt_id": prepared.attempt.pk,
+                "chain_id": prepared.chain_id,
+                "owner_address": prepared.owner_address,
+                "contract_address": prepared.contract_address,
+                "transaction_data": prepared.transaction_data,
+                "started_url": reverse(
+                    "companies:unit_wallet_permission_started", kwargs=attempt_kwargs
+                ),
+                "rejected_url": reverse(
+                    "companies:unit_wallet_permission_rejected", kwargs=attempt_kwargs
+                ),
+                "register_url": reverse(
+                    "companies:unit_wallet_permission_hash", kwargs=attempt_kwargs
+                ),
+                "confirm_url": reverse(
+                    "companies:unit_wallet_permission_confirm", kwargs=attempt_kwargs
+                ),
+            }
+        )
+
+
+class UnitWalletPermissionStartedView(UnitWalletPermissionActionView):
+    """Persist the intent to open the owner's wallet prompt."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Mark the attempt as uncertain before the browser sends the call."""
+
+        try:
+            attempt = mark_wallet_permission_submission_started(self.get_attempt().pk)
+        except ValidationError as error:
+            return self.validation_error(error)
+        return JsonResponse({"status": "ready", "attempt_id": attempt.pk})
+
+
+class UnitWalletPermissionRejectedView(UnitWalletPermissionActionView):
+    """Record a definitive cancellation returned by the connected wallet."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Close the attempt while keeping its transaction history."""
+
+        try:
+            reject_wallet_permission_attempt(self.get_attempt().pk)
+        except ValidationError as error:
+            return self.validation_error(error)
+        return JsonResponse(
+            {"status": "failed", "message": "A carteira recusou a alteração de permissão."}
+        )
+
+
+class UnitWalletPermissionHashView(UnitWalletPermissionActionView):
+    """Verify and save the transaction hash returned by the owner wallet."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Keep the same attempt open if its transaction is not visible in the RPC yet."""
+
+        try:
+            transaction_record = register_wallet_permission_transaction_hash(
+                attempt_id=self.get_attempt().pk,
+                transaction_hash=request.POST.get("transaction_hash", ""),
+            )
+        except ValidationError as error:
+            return self.validation_error(error)
+        except (ConnectionError, ImproperlyConfigured) as error:
+            return JsonResponse({"error": str(error)}, status=503)
+
+        if transaction_record is None:
+            return JsonResponse(
+                {
+                    "status": "waiting_for_rpc",
+                    "message": "A rede ainda não encontrou a transação. Confira novamente a mesma hash.",
+                },
+                status=202,
+            )
+        return JsonResponse(
+            {"status": "submitted", "message": "Transação enviada. Aguardando confirmação."}
+        )
+
+
+class UnitWalletPermissionConfirmView(UnitWalletPermissionActionView):
+    """Query the existing permission transaction without opening the wallet."""
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Return pending, failed or confirmed status for the saved attempt."""
+
+        try:
+            result = confirm_wallet_permission_attempt(self.get_attempt().pk)
+        except ValidationError as error:
+            return self.validation_error(error)
+        except (ConnectionError, ImproperlyConfigured) as error:
+            return JsonResponse({"error": str(error)}, status=503)
+
+        messages = {
+            "pending": "A rede ainda não confirmou esta alteração. Consulte novamente depois.",
+            "failed": "A transação falhou. Você poderá tentar novamente.",
+            "confirmed": "Permissão atualizada e confirmada na blockchain.",
+        }
+        return JsonResponse(
+            {
+                "status": result.status,
+                "message": messages[result.status],
+                "transaction_hash": result.transaction.transaction_hash,
+            }
+        )
 
 
 class UnitCreateView(CompanyAdministratorRequiredMixin, CreateView):

@@ -37,5 +37,9 @@ documents are separate from these static files.
 
 - `accounts`: authentication, profiles and wallet verification.
 - `companies`: companies, units, staff access and immutable access history.
+- `participants`: company-scoped participant records, exact terms, public acceptance links
+  and blockchain registration. See [`participants/README.md`](participants/README.md).
+- `receipts`: company-scoped local load records, weighing data, NF-e details and private PDFs.
+  See [`receipts/README.md`](receipts/README.md).
 - `blockchain`: networks, contract instances, transaction lifecycle and
   idempotent processed-event markers. See [`blockchain/README.md`](blockchain/README.md).

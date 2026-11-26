@@ -12,11 +12,26 @@ This walkthrough uses Anvil and the Solidity (Wake) extension for VS Code. It co
 
 ### 1. Start the local network and compile
 
-In a terminal, start Anvil:
+In a terminal, start Anvil with a persistent local state file:
 
 ```bash
-~/.foundry/bin/anvil --host 127.0.0.1 --port 8545 --gas-price 0 --block-base-fee-per-gas 0
+mkdir -p ~/.foundry/anvil/sojacoin
+
+~/.foundry/bin/anvil \
+  --host 127.0.0.1 \
+  --port 8545 \
+  --gas-price 0 \
+  --block-base-fee-per-gas 0 \
+  --state ~/.foundry/anvil/sojacoin/state.json \
+  --state-interval 10
 ```
+
+Anvil loads this file when it starts and saves the chain state to it when it
+exits. The `--state-interval 10` option also saves a snapshot every 10 seconds.
+Use the same file path every time you restart Anvil. After a normal shutdown,
+wait for Anvil to finish saving before closing the terminal. A sudden power loss
+may lose changes made after the most recent snapshot. This file stores the local
+blockchain state; the Django database is separate.
 
 In Wake, connect to an existing network:
 

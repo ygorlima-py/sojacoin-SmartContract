@@ -38,13 +38,20 @@ selecionada.
   permanece aberta e a mesma hash pode ser conferida de novo. O Django nunca
   recebe nem armazena a chave privada.
 
-#### Fora do fluxo local implementado
+#### Verificação manual e itens futuros
 
-- A MetaMask não foi aberta neste ambiente. A confirmação visual das onze
-  solicitações de assinatura ainda depende de teste manual no navegador.
-- A inicialização de Anvil foi tentada, mas o ambiente de execução bloqueou a
-  abertura da porta local com `Operation not permitted`. Portanto, não houve
-  deploy real nesta execução; os testes Django usam RPC simulado.
+- Em 25/11/2026, o operador concluiu o teste local com Anvil e MetaMask: nove
+  contratos e os dois vínculos foram confirmados. O processo no banco ficou com
+  9/9 etapas confirmadas e as duas tentativas de configuração confirmadas.
+- Durante o teste, a terceira implantação ficou na fila com nonce `3`, enquanto
+  o próximo nonce do Anvil era `2`. Uma transação local de valor zero no nonce
+  `2` preencheu a lacuna e liberou a implantação já assinada. Antes de iniciar
+  uma cadeia Anvil zerada, limpe a atividade e os nonces da MetaMask para essa
+  rede ou mantenha o estado persistido do Anvil.
+- O ambiente automatizado não conseguiu iniciar seu próprio Anvil porque a
+  abertura da porta local foi bloqueada. O teste integrado acima foi executado
+  manualmente na máquina do operador; os testes Django continuam usando RPC
+  simulado.
 - A detecção automática de reorganizações por consulta periódica, worker ou
   Celery continua pendente. O serviço que marca uma transação reorganizada e
   coloca o processo em revisão já existe.
@@ -150,12 +157,10 @@ o endereço público e, depois do envio, a hash pública da transação.
   confirmada ou falhou.
 
 A consulta ao RPC usa o endereço salvo na rede escolhida e exige que esse RPC
-esteja em execução. O fluxo local
-implementado pode preparar, enviar pela MetaMask, consultar e registrar os nove
-deploys e as duas configurações. Nesta execução, os testes automatizados
-passaram com RPC simulado. Anvil não pôde ser iniciado porque o ambiente negou a
-abertura da porta local, e não havia navegador MetaMask disponível para teste
-manual.
+esteja em execução. O fluxo local foi exercitado pelo operador em 25/11/2026:
+nove deploys e as duas configurações foram confirmados no Anvil. Os testes
+automatizados continuam cobrindo o fluxo com RPC simulado; o ambiente isolado
+usado para executá-los não permite iniciar seu próprio Anvil.
 
 A regra é:
 

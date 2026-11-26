@@ -32,7 +32,8 @@ soybeans.
 
 1. A warehouse company is set up with its own contracts and storage units.
 2. An assigned auditor records an audit and the inventory of each unit.
-3. Producers and creditors are registered, and participants accept the terms.
+3. Participants are registered for the company and accept its terms. A participant
+   may be a producer, creditor, or another person involved in the workflow.
 4. A producer's CPR is recorded and signed, identifying the creditor, quantity,
    unit and crop year.
 5. A warehouse employee records a delivery, including the net weight and its
@@ -59,6 +60,8 @@ not prove that the information in a document is accurate.
 | [`app/`](app/) | Django application, server-rendered templates and Tailwind CSS. |
 | [`app/accounts/`](app/accounts/) | User accounts, profiles and wallet-related records. |
 | [`app/companies/`](app/companies/) | Companies, storage units, staff roles and unit access. |
+| [`app/participants/`](app/participants/) | Company participants, terms and registration/acceptance workflows. |
+| [`app/receipts/`](app/receipts/) | Local soybean load records, weighing and private receipt documents. |
 | [`app/blockchain/`](app/blockchain/) | Network connections, deployed contract records, transactions and reconciliation. |
 | [`contracts/`](contracts/) | Solidity contracts, Foundry configuration and contract tests. |
 
@@ -70,9 +73,10 @@ other two contracts manage unit-related operations and issuance batches.
 ## Current implementation
 
 The Django application includes company and unit management, team membership,
-roles, unit access and access history. Unit registration is currently local:
-saving a unit in the application does not by itself register it on the chain.
-Initial company and user setup is assisted through Django Admin.
+roles, unit access and access history. Participant registration and local load
+receipt entry are available through company-scoped pages. A locally saved load
+is not yet a chain-confirmed deposit. Initial company and user setup is assisted
+through Django Admin.
 
 The blockchain app can connect to the RPC endpoint configured for a network,
 track transactions and use the Admin deployment flow. The current flow uses a
@@ -82,10 +86,11 @@ and transaction receipts before recording confirmations. It does not store user
 private keys.
 
 Remote owner approval, Safe integration, automatic transaction polling and
-automatic chain-reorganization detection are future work. The end-to-end SaaS
-screens for participants, CPRs, receipts, audits and issuance are also still
-being built. Contract capabilities should not be assumed to be available in
-the application interface.
+automatic chain-reorganization detection are future work. CPR, audit, receipt
+blockchain submission, issuance and balance screens remain to be built. A local
+receipt record does not itself open or confirm an on-chain deposit. Contract
+capabilities should not be assumed to be available in the application
+interface.
 
 ## Local development
 

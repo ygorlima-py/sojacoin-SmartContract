@@ -17,6 +17,7 @@ observed on the configured network.
 | `DeploymentStep` | Records one contract in deployment order and links its confirmed contract instance. |
 | `DeploymentAttempt` | Links a step to each transaction attempt, preserving the exact unsigned creation data, the wallet-send start time and whether the step still has an open attempt. |
 | `DeploymentConfigurationAttempt` | Preserves each attempt to link Unit Registry or Issuance Batches to SojaCoin, including the expected address and exact ABI call data. Its linked `BlockchainTransaction` stores the sender, hash, receipt state and timestamps. |
+| `ParticipantRegistrationAttempt` | Links a producer proposal or terms acceptance to its prepared transaction, exact call data and wallet or public-link recovery context. The model belongs to `participants`. |
 
 Every model has `created_at` and `updated_at`. A transaction is complete only
 when it has status `confirmed`, block data and a confirmation timestamp.
@@ -232,6 +233,11 @@ references for multiple networks remains future work.
 - `mark_transaction_reorged(record, reason)` removes the completed state when
   a previously observed confirmation leaves the canonical chain.
 
+The transaction lifecycle also validates participant attempts. A participant
+transaction cannot be submitted, confirmed, failed or marked reorganized
+without its matching saved attempt. A reorganization moves the associated
+terms to `needs_review`, so the participant is no longer shown as confirmed.
+
 Each transition locks the row in a database transaction. The functions are
 the intended write path for transaction status changes; views and future
 blockchain adapters should not edit lifecycle fields directly.
@@ -257,9 +263,11 @@ as failed, and records a successful receipt as confirmed. On success, it decodes
 events from the transaction's contract ABI when an `event_handler` is provided,
 and records each handled log once through `process_event_once`.
 
-Pass `required_event_names=("UnitRegistered",)` when that event is mandatory
-for the business operation. If the receipt is successful but the required event
-is absent, confirmation is rolled back and the transaction remains submitted.
+Pass `required_event_names=("UnitRegistered",)` for unit registration. Producer
+proposals require `ParticipantRegistrationProposed`; terms acceptance requires
+both `ParticipantRegistered` and `DepositAuthorizationChanged`. If a successful
+receipt lacks a required event, confirmation is rolled back and the transaction
+remains submitted.
 
 Pass an operation-specific `event_handler` when a decoded event must also update
 business data, such as filling a unit's `chain_unit_id`. The handler runs in the
@@ -310,8 +318,19 @@ reorganizations remain future work. Existing transaction services can be called
 by a future worker, and the lifecycle service already moves an explicitly
 reorganized deployment or configuration process to `NEEDS_REVIEW`.
 
-Unit-registration transactions have a manual reconciliation command, but their
-automatic worker and the MetaMask browser interaction still need separate
-follow-up. In this execution environment, Anvil could not be started because
-opening the local RPC port was denied; the Django suite used simulated RPC, and
-the eleven MetaMask prompts still require a manual browser run.
+Unit-registration transactions have a manual reconciliation command; their
+automatic worker and MetaMask interaction still need separate follow-up.
+
+### Manual Anvil verification
+
+On 25 November 2026, the operator completed the local flow with Anvil and
+MetaMask: all nine contract deployments and both SojaCoin links were confirmed.
+The Django database recorded nine confirmed deployment steps and two confirmed
+configuration transactions. The automated Django suite still uses simulated
+RPC; the isolated test environment cannot start its own Anvil node.
+
+During that run, the third deployment was submitted with nonce `3` while Anvil
+expected nonce `2`, so it remained queued. A zero-value transaction at nonce `2`
+filled the gap and allowed the already-signed deployment to proceed. When
+starting a fresh Anvil chain, clear MetaMask activity and nonce data for that
+local network first, or persist the Anvil state between sessions.

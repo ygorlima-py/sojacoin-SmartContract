@@ -403,6 +403,15 @@ class UnitWalletPermission(TimestampedModel):
         related_name="wallet_permissions",
         verbose_name="Unidade",
     )
+    # The company member associated with this wallet; older rows may not have one.
+    membership = models.ForeignKey(
+        CompanyMembership,
+        on_delete=models.PROTECT,
+        related_name="unit_wallet_permissions",
+        verbose_name="Pessoa autorizada",
+        null=True,
+        blank=True,
+    )
     # Public EVM address; private keys are never stored in this model.
     wallet = models.CharField("Carteira", max_length=42)
     # Complete uint256 mask sent to the contract, stored as an exact decimal value.
@@ -450,6 +459,13 @@ class UnitWalletPermission(TimestampedModel):
             raise ValidationError({"transaction": "Informe um hash de transação válido."})
         if self.permission_mask < 0:
             raise ValidationError({"permission_mask": "A máscara não pode ser negativa."})
+        if self.permission_mask >= 2**256:
+            raise ValidationError({"permission_mask": "A máscara deve caber em uint256."})
+        if self.membership_id and self.unit_id:
+            if self.membership.company_id != self.unit.company_id:
+                raise ValidationError(
+                    {"membership": "A pessoa e a unidade devem pertencer à mesma empresa."}
+                )
         if self.sync_status in {
             self.SyncStatus.CONFIRMED,
             self.SyncStatus.REVOKED,

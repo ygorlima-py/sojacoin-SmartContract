@@ -26,6 +26,8 @@ from .models import (
     DeploymentStep,
     Network,
     ProcessedEvent,
+    UnitRegistrationAttempt,
+    UnitWalletPermissionAttempt,
 )
 from .services.deployment import (
     DEPLOYMENT_KIND_LABELS,
@@ -223,6 +225,201 @@ class DeploymentConfigurationAttemptAdmin(admin.ModelAdmin):
         obj: DeploymentConfigurationAttempt | None = None,
     ) -> bool:
         """Keep configuration history append-only."""
+
+        return False
+
+
+@admin.register(UnitRegistrationAttempt)
+class UnitRegistrationAttemptAdmin(admin.ModelAdmin):
+    """Expose saved unit registration attempts as read-only audit records."""
+
+    list_display = (
+        "unit",
+        "company",
+        "transaction_status",
+        "transaction_hash",
+        "sender_address",
+        "is_open",
+        "created_at",
+    )
+    list_filter = ("is_open", "transaction__status", "transaction__network")
+    search_fields = (
+        "unit__name",
+        "unit__code",
+        "transaction__transaction_hash",
+        "transaction__sender_address",
+    )
+    fields = (
+        "unit",
+        "company",
+        "transaction",
+        "transaction_status",
+        "transaction_hash",
+        "sender_address",
+        "unit_code",
+        "registration_hash",
+        "prepared_data",
+        "submission_started_at",
+        "is_open",
+        "created_at",
+        "updated_at",
+    )
+    readonly_fields = fields
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[UnitRegistrationAttempt]:
+        """Load unit, company, network and transaction relations efficiently."""
+
+        return super().get_queryset(request).select_related(
+            "unit__company",
+            "transaction__network",
+            "transaction__contract",
+        )
+
+    @admin.display(description="Empresa")
+    def company(self, attempt: UnitRegistrationAttempt) -> str:
+        """Show the company that owns the registered unit."""
+
+        return str(attempt.unit.company)
+
+    @admin.display(description="Situação da transação")
+    def transaction_status(self, attempt: UnitRegistrationAttempt) -> str:
+        """Show the shared transaction lifecycle state."""
+
+        return attempt.transaction.get_status_display()
+
+    @admin.display(description="Hash da transação")
+    def transaction_hash(self, attempt: UnitRegistrationAttempt) -> str:
+        """Show the hash returned by the wallet when available."""
+
+        return attempt.transaction.transaction_hash or "—"
+
+    @admin.display(description="Carteira que enviou")
+    def sender_address(self, attempt: UnitRegistrationAttempt) -> str:
+        """Show the public sender address kept on the transaction record."""
+
+        return attempt.transaction.sender_address
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        """Require the registration service to create attempts."""
+
+        return False
+
+    def has_change_permission(
+        self,
+        request: HttpRequest,
+        obj: UnitRegistrationAttempt | None = None,
+    ) -> bool:
+        """Keep the wallet call and recovery state read-only in Admin."""
+
+        return obj is None and super().has_change_permission(request, obj)
+
+    def has_delete_permission(
+        self,
+        request: HttpRequest,
+        obj: UnitRegistrationAttempt | None = None,
+    ) -> bool:
+        """Keep transaction and unit-attempt history available for audit."""
+
+        return False
+
+
+@admin.register(UnitWalletPermissionAttempt)
+class UnitWalletPermissionAttemptAdmin(admin.ModelAdmin):
+    """Expose every permission request as an immutable transaction record."""
+
+    list_display = (
+        "unit",
+        "membership",
+        "permission_kind",
+        "action",
+        "transaction_status",
+        "transaction_hash",
+        "wallet_address",
+        "is_open",
+        "created_at",
+    )
+    list_filter = (
+        "permission_kind",
+        "action",
+        "transaction__status",
+        "is_open",
+        "transaction__network",
+        "unit__company",
+    )
+    search_fields = (
+        "unit__name",
+        "unit__code",
+        "membership__user__username",
+        "membership__user__email",
+        "wallet_address",
+        "transaction__transaction_hash",
+    )
+    fields = (
+        "unit",
+        "membership",
+        "user_wallet",
+        "requested_by",
+        "transaction",
+        "transaction_status",
+        "transaction_hash",
+        "wallet_address",
+        "permission_kind",
+        "action",
+        "permission_bit",
+        "previous_permission_mask",
+        "permission_mask",
+        "prepared_data",
+        "submission_started_at",
+        "is_open",
+        "created_at",
+        "updated_at",
+    )
+    readonly_fields = fields
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[UnitWalletPermissionAttempt]:
+        """Load transaction and target relations for the audit list and detail."""
+
+        return super().get_queryset(request).select_related(
+            "unit__company",
+            "membership__user",
+            "user_wallet__wallet",
+            "requested_by",
+            "transaction__network",
+            "transaction__contract",
+        )
+
+    @admin.display(description="Situação da transação")
+    def transaction_status(self, attempt: UnitWalletPermissionAttempt) -> str:
+        """Read lifecycle status from the linked blockchain transaction."""
+
+        return attempt.transaction.get_status_display()
+
+    @admin.display(description="Hash da transação")
+    def transaction_hash(self, attempt: UnitWalletPermissionAttempt) -> str:
+        """Display the submitted hash when the wallet has returned one."""
+
+        return attempt.transaction.transaction_hash or "—"
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        """Require the permission service to create a prepared attempt."""
+
+        return False
+
+    def has_change_permission(
+        self,
+        request: HttpRequest,
+        obj: UnitWalletPermissionAttempt | None = None,
+    ) -> bool:
+        """Keep the prepared payload and transaction state read-only in Admin."""
+
+        return False
+
+    def has_delete_permission(
+        self,
+        request: HttpRequest,
+        obj: UnitWalletPermissionAttempt | None = None,
+    ) -> bool:
+        """Preserve the attempt even after rejection, failure or revocation."""
 
         return False
 

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Termos do participante | SojaCoin{% endblock %}
+{% block page_title %}Termos do participante{% endblock %}
+{% block page_subtitle %}<p class="text-[11.5px] text-[#8A948B]">{{ company.trade_name|default:company.legal_name }}</p>{% endblock %}
+{% block header_actions %}
+    <a href="{% url 'participants:list' company_id=company.pk %}" class="inline-flex min-h-[40px] items-center gap-2 rounded-[7px] border border-[#D7DDD4] bg-white px-4 text-[12px] font-semibold text-[#344238] hover:bg-[#F9FAF7]"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Voltar aos participantes</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-4">
+    <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+        <div class="border-b border-[#E2E5DE] px-5 py-4">
+            <h2 class="text-[14px] font-semibold text-[#17211A]">Versão publicada atualmente</h2>
+            <p class="mt-1 text-[12px] leading-5 text-[#78837A]">Esta versão será associada a cada novo participante cadastrado pela empresa.</p>
+        </div>
+        {% if current_terms_document %}
+            <dl class="grid gap-4 p-5 text-[12px] sm:grid-cols-2">
+                <div><dt class="font-semibold text-[#78837A]">Versão</dt><dd class="mt-1 text-[#17211A]">{{ current_terms_document.version }}</dd></div>
+                <div><dt class="font-semibold text-[#78837A]">Publicado por</dt><dd class="mt-1 text-[#17211A]">{{ current_terms_document.uploaded_by }}</dd></div>
+                <div><dt class="font-semibold text-[#78837A]">Arquivo</dt><dd class="mt-1 break-all text-[#17211A]">{{ current_terms_document.original_filename }}</dd></div>
+                <div><dt class="font-semibold text-[#78837A]">Publicado em</dt><dd class="mt-1 text-[#17211A]">{{ current_terms_document.published_at|date:"d/m/Y H:i" }}</dd></div>
+                <div class="sm:col-span-2"><dt class="font-semibold text-[#78837A]">Hash do PDF</dt><dd class="mt-1 break-all font-mono text-[10px] text-[#344238]">{{ current_terms_document.terms_hash }}</dd></div>
+            </dl>
+            <div class="border-t border-[#E2E5DE] px-5 py-3">
+                <a href="{% url 'participants:terms_pdf_company' company_id=company.pk document_id=current_terms_document.pk %}" target="_blank" rel="noopener" class="inline-flex min-h-[40px] items-center gap-2 rounded-[7px] border border-[#D7DDD4] px-4 text-[12px] font-semibold text-[#344238] hover:bg-[#F9FAF7]"><i class="fa-solid fa-file-pdf text-[#1E6B3C]" aria-hidden="true"></i>Abrir PDF vigente</a>
+            </div>
+        {% else %}
+            <p class="m-5 rounded-[8px] border border-[#F0D79A] bg-[#FFF9E9] px-4 py-3 text-[12px] leading-5 text-[#75520A]">Nenhum PDF foi publicado. Publique o documento aprovado pela empresa antes de cadastrar participantes.</p>
+        {% endif %}
+    </section>
+
+    <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+        <div class="border-b border-[#E2E5DE] px-5 py-4">
+            <h2 class="text-[14px] font-semibold text-[#17211A]">Publicar nova versão</h2>
+            <p class="mt-1 text-[12px] leading-5 text-[#78837A]">Envie o PDF aprovado pela empresa. O arquivo será guardado sem alteração e terá uma hash calculada a partir dos bytes originais. O SaaS não revisa nem aprova o conteúdo jurídico.</p>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="space-y-4 p-5">
+            {% csrf_token %}
+            <div>
+                <label for="id_pdf_file" id="terms-dropzone" data-max-size-mb="{{ max_pdf_size_mb }}" class="relative flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[10px] border-2 border-dashed border-[#B8C8BB] bg-[#FAFBF9] px-5 py-7 text-center transition hover:border-[#1E6B3C] hover:bg-[#F4F8F4]">
+                    {{ form.pdf_file }}
+                    <i class="fa-solid fa-file-arrow-up text-[28px] text-[#1E6B3C]" aria-hidden="true"></i>
+                    <span class="mt-3 text-[14px] font-semibold text-[#17211A]">Arraste o PDF para esta área</span>
+                    <span class="mt-1 text-[12px] text-[#647166]">ou clique para escolher um arquivo</span>
+                    <span id="terms-file-name" class="mt-3 break-all text-[12px] font-semibold text-[#1E6B3C]">Nenhum arquivo selecionado</span>
+                    <span id="terms-file-description" class="mt-2 text-[11px] text-[#78837A]">Somente PDF, até {{ max_pdf_size_mb }} MB.</span>
+                </label>
+                {% for error in form.pdf_file.errors %}<p class="mt-2 text-[12px] text-[#B42318]">{{ error }}</p>{% endfor %}
+            </div>
+            <label class="flex items-start gap-3 rounded-[8px] border border-[#E2E5DE] bg-[#FAFBF9] p-3 text-[12px] leading-5 text-[#344238]">
+                {{ form.company_approval_confirmed }}
+                <span>{{ form.company_approval_confirmed.label }}</span>
+            </label>
+            {% for error in form.company_approval_confirmed.errors %}<p class="text-[12px] text-[#B42318]">{{ error }}</p>{% endfor %}
+            {% for error in form.non_field_errors %}<p class="rounded-[7px] bg-[#FFF0EE] px-3 py-2 text-[12px] text-[#A52B20]">{{ error }}</p>{% endfor %}
+            <p class="text-[11px] leading-5 text-[#78837A]">A nova publicação passa a valer para novos cadastros. Cada participante já cadastrado continua ligado à versão que recebeu.</p>
+            <button type="submit" class="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-5 text-[13px] font-semibold text-white transition hover:bg-[#185A32]"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>Publicar PDF dos termos</button>
+        </form>
+    </section>
+
+    <section class="overflow-hidden rounded-[10px] border border-[#E2E5DE] bg-white">
+        <div class="border-b border-[#E2E5DE] px-5 py-4">
+            <h2 class="text-[14px] font-semibold text-[#17211A]">Versões anteriores</h2>
+            <p class="mt-1 text-[12px] text-[#78837A]">O histórico é mantido para identificar qual arquivo cada participante recebeu.</p>
+        </div>
+        {% if terms_documents %}
+            <div class="divide-y divide-[#E2E5DE]">
+                {% for document in terms_documents %}
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                        <div class="min-w-0">
+                            <p class="text-[12px] font-semibold text-[#17211A]">Versão {{ document.version }}{% if document.is_current %} <span class="ml-1 rounded-full bg-[#E9F2EC] px-2 py-1 text-[10px] text-[#1E6B3C]">Atual</span>{% endif %}</p>
+                            <p class="mt-1 break-all text-[11px] text-[#647166]">{{ document.original_filename }} · {{ document.published_at|date:"d/m/Y H:i" }} · {{ document.uploaded_by }}</p>
+                            <p class="mt-1 break-all font-mono text-[10px] text-[#78837A]">{{ document.terms_hash }}</p>
+                        </div>
+                        <a href="{% url 'participants:terms_pdf_company' company_id=company.pk document_id=document.pk %}" target="_blank" rel="noopener" class="inline-flex min-h-[38px] shrink-0 items-center gap-2 rounded-[7px] border border-[#D7DDD4] px-3 text-[11px] font-semibold text-[#344238] hover:bg-[#F9FAF7]"><i class="fa-solid fa-eye" aria-hidden="true"></i>Abrir PDF</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="px-5 py-6 text-[12px] text-[#78837A]">Ainda não há versões publicadas.</p>
+        {% endif %}
+    </section>
+</div>
+<script src="{% static 'participants/participant_terms_upload.js' %}" defer></script>
+{% endblock %}

@@ -177,7 +177,7 @@ class BlockchainHistoryTests(TestCase):
             company=self.company,
             network=self.network,
             contract=self.contract,
-            operation_type="unit_registration",
+            operation_type="test_operation",
             sender_address="0x2222222222222222222222222222222222222222",
         )
 
@@ -894,7 +894,7 @@ class DeploymentWorkflowTests(TestCase):
         record = BlockchainTransaction.objects.create(
             company=self.company,
             network=self.network,
-            operation_type="unit_registration",
+            operation_type="test_operation",
             sender_address=self.sender_address,
         )
 
@@ -1219,7 +1219,7 @@ class DeploymentWorkflowTests(TestCase):
         unrelated = BlockchainTransaction.objects.create(
             company=self.company,
             network=self.network,
-            operation_type="unit_registration",
+            operation_type="test_operation",
             sender_address=self.sender_address,
         )
         unrelated = submit_transaction(unrelated, "0x" + "9" * 64)

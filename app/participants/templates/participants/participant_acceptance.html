@@ -1,0 +1,103 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Leia e aceite o termo associado à proposta de cadastro SojaCoin.">
+    <title>Aceite do termo | SojaCoin</title>
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="min-h-screen bg-[#F6F7F4] p-4 font-[Inter,system-ui,sans-serif] text-[#17211A] sm:p-8">
+    <main class="mx-auto max-w-6xl">
+        <header class="mb-5 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-[9px] bg-[#1E6B3C] text-[18px] font-bold text-white">S</div>
+            <div><p class="text-[15px] font-bold">SojaCoin</p><p class="text-[11px] text-[#78837A]">Leitura e aceite do termo</p></div>
+        </header>
+
+        <form id="participant-acceptance-csrf" class="hidden">{% csrf_token %}</form>
+        <section id="acceptance-flow"
+            data-token="{{ token }}"
+            data-company="{{ company.trade_name|default:company.legal_name }}"
+            data-wallet="{{ link.terms.participant.wallet_address_normalized }}"
+            data-chain-id="{{ network.chain_id }}"
+            data-challenge-url="{% url 'participants:acceptance_challenge' token=token %}"
+            data-prepare-url="{% url 'participants:acceptance_prepare' token=token %}"
+            data-start-template="{% url 'participants:acceptance_started' token=token attempt_id=0 %}"
+            data-hash-template="{% url 'participants:acceptance_hash' token=token attempt_id=0 %}"
+            data-rejected-template="{% url 'participants:acceptance_rejected' token=token attempt_id=0 %}"
+            data-confirm-template="{% url 'participants:acceptance_confirm' token=token attempt_id=0 %}"
+            class="overflow-hidden rounded-[12px] border border-[#E2E5DE] bg-white shadow-sm">
+            <div class="border-b border-[#E2E5DE] px-5 py-4 sm:px-7">
+                <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#78837A]">Proposta de cadastro</p>
+                <h1 class="mt-1 text-[21px] font-semibold">Leia o termo antes de assinar</h1>
+                <p class="mt-2 text-[12px] leading-5 text-[#647166]">O link mostra somente esta proposta. Ele não cria uma conta no SaaS nem dá acesso a dados de outras pessoas.</p>
+            </div>
+
+            <dl class="grid gap-4 border-b border-[#E2E5DE] bg-[#FAFBF9] px-5 py-4 sm:grid-cols-2 sm:px-7">
+                <div><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#78837A]">Empresa</dt><dd class="mt-1 text-[13px] font-medium">{{ company.trade_name|default:company.legal_name }}</dd></div>
+                <div><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#78837A]">Participante</dt><dd class="mt-1 text-[13px] font-medium">{{ link.terms.participant.name }}</dd></div>
+                <div class="sm:col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#78837A]">Carteira que precisa assinar</dt><dd class="mt-1 break-all font-mono text-[11px]">{{ link.terms.participant.wallet_address_normalized }}</dd></div>
+                <div><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#78837A]">Rede</dt><dd class="mt-1 text-[12px]">{{ network.name }} (ID {{ network.chain_id }})</dd></div>
+                <div><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#78837A]">SojaCoin</dt><dd class="mt-1 break-all font-mono text-[10px]">{{ contract_address }}</dd></div>
+            </dl>
+
+            <div class="px-5 py-5 sm:px-7">
+                <h2 class="text-[13px] font-semibold">Termo exato associado à proposta · versão {{ link.terms.version }}</h2>
+                {% if link.terms.document %}
+                    <p class="mt-2 break-all text-[11px] text-[#647166]">Arquivo publicado pela empresa: {{ link.terms.document.original_filename }}</p>
+                    <a href="{% url 'participants:acceptance_terms_pdf' token=token %}" target="_blank" rel="noopener" class="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-[7px] border border-[#D7DDD4] px-4 text-[12px] font-semibold text-[#344238] hover:bg-[#F9FAF7]"><i class="fa-solid fa-file-pdf text-[#1E6B3C]" aria-hidden="true"></i>Abrir PDF em outra aba</a>
+                    <iframe src="{% url 'participants:acceptance_terms_pdf' token=token %}" title="Termo do participante versão {{ link.terms.version }}" class="mt-3 h-[68vh] min-h-[560px] w-full rounded-[8px] border border-[#E2E5DE] bg-[#FAFBF9] sm:h-[74vh] sm:min-h-[680px] lg:h-[78vh] lg:min-h-[720px]"></iframe>
+                {% else %}
+                    <pre class="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap rounded-[8px] border border-[#E2E5DE] bg-[#FAFBF9] p-4 font-sans text-[12px] leading-6 text-[#344238]">{{ link.terms.content }}</pre>
+                {% endif %}
+                <p class="mt-3 break-all text-[10px] text-[#78837A]">Hash do termo: <span class="font-mono">{{ link.terms.terms_hash }}</span></p>
+
+                {% if link.terms.status == "confirmed" %}
+                    <div class="mt-4 rounded-[8px] border border-[#C9DFD0] bg-[#EEF7F0] px-4 py-3 text-[12px] text-[#1E6B3C]">
+                        <p class="font-semibold">Cadastro confirmado na SojaCoin</p>
+                        <p class="mt-1">A assinatura e o registro foram confirmados na rede.</p>
+                    </div>
+                {% elif attempt and attempt.transaction.status == "submitted" %}
+                    <div class="mt-4 rounded-[8px] border border-[#F0D79A] bg-[#FFF9E9] px-4 py-3 text-[12px] text-[#75520A]">
+                        <p class="font-semibold">Aceite enviado; aguardando confirmação</p>
+                        <p class="mt-1 break-all font-mono text-[10px]">{{ attempt.transaction.transaction_hash }}</p>
+                    </div>
+                    <form class="acceptance-confirm-form mt-3" method="post" data-url="{% url 'participants:acceptance_confirm' token=token attempt_id=attempt.pk %}">{% csrf_token %}<button class="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-4 text-[12px] font-semibold text-white"><i class="fa-solid fa-rotate" aria-hidden="true"></i>Consultar confirmação</button></form>
+                {% elif attempt and attempt.transaction.status == "prepared" and attempt.is_open and attempt.submission_started_at %}
+                    <div class="mt-4 rounded-[8px] border border-[#F0D79A] bg-[#FFF9E9] px-4 py-3 text-[12px] text-[#75520A]">
+                        <p class="font-semibold">Envio sem resposta definitiva</p>
+                        <p class="mt-1">Se a carteira mostrou uma hash, informe-a aqui para recuperar a mesma tentativa. Não inicie outro envio.</p>
+                    </div>
+                    <form class="acceptance-hash-form mt-3 flex flex-wrap gap-2" method="post" data-url="{% url 'participants:acceptance_hash' token=token attempt_id=attempt.pk %}">{% csrf_token %}<input name="transaction_hash" placeholder="Hash da carteira" class="min-w-[220px] flex-1 rounded-[7px] border border-[#D7DDD4] px-3 py-2 font-mono text-[10px]" required><button class="min-h-[40px] rounded-[7px] bg-[#1E6B3C] px-4 text-[11px] font-semibold text-white">Conferir hash</button></form>
+                {% elif attempt and attempt.transaction.status == "prepared" and attempt.is_open %}
+                    <div class="mt-4 rounded-[8px] border border-[#DDE3DA] bg-[#F9FAF7] px-4 py-3 text-[12px]">
+                        <p class="font-semibold">Sua assinatura foi guardada com segurança para esta tentativa.</p>
+                        <p class="mt-1 text-[#647166]">Confirme o envio do aceite pela carteira conectada.</p>
+                    </div>
+                    <button id="resume-acceptance" type="button" class="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-4 text-[13px] font-semibold text-white" data-attempt-id="{{ attempt.pk }}" data-sender="{{ attempt.sender_address }}" data-to="{{ attempt.transaction.contract.address_normalized }}" data-data="{{ attempt.prepared_data }}"><i class="fa-solid fa-wallet" aria-hidden="true"></i>Continuar com a carteira</button>
+                {% elif link.is_usable %}
+                    {% if link.terms.document %}
+                        <div class="mt-4 rounded-[8px] border border-[#DDE3DA] bg-[#F9FAF7] px-4 py-3 text-[12px] text-[#455148]">
+                            <p class="font-semibold">Confira o PDF antes de aceitar.</p>
+                            <p class="mt-1">Sua carteira primeiro assinará uma mensagem sem taxa e depois pedirá uma transação de rede com taxa.</p>
+                        </div>
+                    {% else %}
+                        <div class="mt-4 rounded-[8px] border border-[#F0D79A] bg-[#FFF9E9] px-4 py-3 text-[12px] text-[#75520A]">
+                            <p class="font-semibold">Este cadastro antigo usa um termo de teste em texto.</p>
+                            <p class="mt-1">A assinatura será uma mensagem sem taxa; depois a carteira solicitará uma transação de rede com taxa.</p>
+                        </div>
+                    {% endif %}
+                    <button id="sign-acceptance" type="button" class="mt-3 inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#1E6B3C] px-4 text-[13px] font-semibold text-white"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i>Assinar o termo com minha carteira</button>
+                {% else %}
+                    <p class="mt-4 rounded-[8px] bg-[#FFF0EE] px-4 py-3 text-[12px] text-[#A52B20]">Este link não pode mais iniciar um aceite. Peça à empresa para conferir a proposta.</p>
+                {% endif %}
+                <div id="acceptance-message" class="mt-3 hidden rounded-[8px] border px-4 py-3 text-[12px]" aria-live="polite"></div>
+                <div id="acceptance-recovery" class="mt-2" aria-live="polite"></div>
+            </div>
+        </section>
+        <p class="mt-4 text-center text-[10px] leading-5 text-[#78837A]">A chave privada fica na carteira. O sistema recebe somente o endereço público, a assinatura e a hash da transação.</p>
+    </main>
+    <script src="{% static 'participants/participant_acceptance.js' %}" defer></script>
+</body>
+</html>

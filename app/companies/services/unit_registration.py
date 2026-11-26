@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.db import transaction as db_transaction
+from blockchain.models import UNIT_REGISTRATION_OPERATION_TYPE, UnitRegistrationAttempt
 
 from ..models import Unit
 from utils.identifiers import (
@@ -36,7 +37,7 @@ _REGISTRATION_FIELDS = (
     "name",
     "state_registration",
 )
-UNIT_REGISTRATION_OPERATION = "unit_registration"
+UNIT_REGISTRATION_OPERATION = UNIT_REGISTRATION_OPERATION_TYPE
 UNIT_REGISTRY_CONTRACT_KIND = "unit_registry"
 
 # Rotation offsets indexed as [x][y] for the 5x5 Keccak state.
@@ -218,12 +219,27 @@ def save_unit_registration(unit: "Unit", data: Mapping[str, object]) -> "Unit":
     """
     is_new_unit = unit._state.adding
     normalized = normalize_unit_registration_data(data)
+    new_registration_hash = calculate_unit_registration_hash(normalized)
+    if not is_new_unit:
+        open_attempt = UnitRegistrationAttempt.objects.filter(
+            unit_id=unit.pk,
+            is_open=True,
+        ).first()
+        if open_attempt is not None and (
+            open_attempt.unit_code != normalized["code"]
+            or open_attempt.registration_hash != new_registration_hash
+        ):
+            raise ValidationError(
+                "Os dados da unidade não podem mudar enquanto o envio à blockchain "
+                "estiver aguardando uma resposta."
+            )
+
     unit.name = normalized["name"]
     unit.code = normalized["code"]
     unit.address = normalized["address"]
     unit.cnpj = normalized["cnpj"]
     unit.state_registration = normalized["state_registration"]
-    unit.registration_hash = calculate_unit_registration_hash(normalized)
+    unit.registration_hash = new_registration_hash
     if is_new_unit:
         unit.chain_unit_id = None
     unit.full_clean()
@@ -308,18 +324,48 @@ def handle_unit_registered_event(
         raise ValidationError("A carteira do evento não corresponde à transação enviada.")
 
     with db_transaction.atomic():
+        attempt: UnitRegistrationAttempt | None = None
         try:
-            # Company plus code prevents an event from another company from
-            # attaching its unit ID to this company's local record.
-            unit = Unit.objects.select_for_update().get(
-                company_id=transaction.company_id,
-                code=unit_code,
+            # Read the immutable unit link first. Lock the unit before the
+            # attempt, matching the registration service's lock order.
+            attempt = UnitRegistrationAttempt.objects.get(
+                transaction_id=transaction.pk,
             )
+            unit = Unit.objects.select_for_update().get(
+                pk=attempt.unit_id,
+                company_id=transaction.company_id,
+            )
+            attempt = UnitRegistrationAttempt.objects.select_for_update().get(
+                pk=attempt.pk,
+                transaction_id=transaction.pk,
+            )
+        except UnitRegistrationAttempt.DoesNotExist as error:
+            # Older records created before UnitRegistrationAttempt existed can
+            # still be reconciled by their company-scoped code and hash.
+            try:
+                unit = Unit.objects.select_for_update().get(
+                    company_id=transaction.company_id,
+                    code=unit_code,
+                    registration_hash=registration_hash,
+                )
+            except Unit.DoesNotExist as missing_unit_error:
+                raise ValidationError(
+                    "Não existe unidade local correspondente ao evento da blockchain."
+                ) from missing_unit_error
         except Unit.DoesNotExist as error:
             raise ValidationError(
-                "Não existe unidade local correspondente ao evento da blockchain."
+                "A unidade da tentativa não pertence à empresa da transação."
             ) from error
 
+        if unit.code != unit_code:
+            raise ValidationError(
+                "O código do evento não corresponde ao cadastro local da unidade."
+            )
+        if attempt is not None and (
+            attempt.unit_code != unit_code
+            or attempt.registration_hash != registration_hash
+        ):
+            raise ValidationError("O evento não corresponde aos dados preparados para esta unidade.")
         if unit.registration_hash != registration_hash:
             raise ValidationError(
                 "A hash do evento não corresponde ao cadastro local da unidade."
@@ -330,8 +376,14 @@ def handle_unit_registered_event(
                 raise ValidationError(
                     "A unidade já está vinculada a outro ID da blockchain."
                 )
+            if attempt is not None and attempt.is_open:
+                attempt.is_open = False
+                attempt.save(update_fields=("is_open", "updated_at"))
             return
 
         unit.chain_unit_id = raw_unit_id
         unit.full_clean()
         unit.save()
+        if attempt is not None and attempt.is_open:
+            attempt.is_open = False
+            attempt.save(update_fields=("is_open", "updated_at"))
