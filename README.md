@@ -58,11 +58,11 @@ Alternatively, configure BNB Smart Chain Testnet (chain ID `97`) in MetaMask and
 ## First-time company and contract setup
 
 1. In Django Admin, create an active **Company** and an ordinary active user for the company administrator under **Users**. Use a valid test CNPJ for the company.
-2. Under **Company memberships** (vínculos com empresas), create an active membership linking that user to the company. Under **Membership roles** (funções dos vínculos), grant that membership the active **Administrator** role. Select the Django superuser as **Granted by**: the recipient cannot grant a role to themselves. A Django superuser alone does not automatically have a company membership or company role.
+2. Under **Company memberships**, create an active membership linking that user to the company. Under **Membership roles**, grant that membership the active **Administrator** role. Select the Django superuser as **Granted by**: the recipient cannot grant a role to themselves. A Django superuser alone does not automatically have a company membership or company role.
 3. Under **Blockchain → Networks**, create an active network with the same chain ID and RPC as the wallet: `31337` and `http://127.0.0.1:8545` for local Anvil, or `97` and the selected RPC for BNB Testnet.
 4. Under **Blockchain → Deployment processes**, start a deployment for the company and network, entering the public address that will own SojaCoin and UnitRegistry. Follow the [deployment steps below](#deploy-and-link-the-contracts).
-5. Sign in to the SaaS as the company administrator, select the company under **Companies**, and create a unit under **Unidades**. Register it on the blockchain from its detail page with the UnitRegistry owner wallet, then confirm the transaction.
-6. Create separate staff users in Django Admin. In the SaaS, add them under **Equipe e permissões**, assign **Recebimento** or **Emissão**, and grant the appropriate access to the unit. Each employee signs in to their own account and verifies their wallet under **Meu perfil → Minha carteira**. Back on the unit page, the administrator grants each verified wallet its corresponding on-chain permission using the UnitRegistry owner wallet.
+5. Sign in to the SaaS as the company administrator, select the company under **Companies**, and create a unit under **Units**. Register it on the blockchain from its detail page with the UnitRegistry owner wallet, then confirm the transaction.
+6. Create separate staff users in Django Admin. In the SaaS, add them under **Team and permissions**, assign **Receiving** or **Issuance**, and grant the appropriate access to the unit. Each employee signs in to their own account and verifies their wallet under **My profile → My wallet**. Back on the unit page, the administrator grants each verified wallet its corresponding on-chain permission using the UnitRegistry owner wallet.
 7. Prepare an audit using the [manual steps below](#prepare-the-audit-in-remix). Every active unit must have a current audit for the issuance workflow.
 
 The full deployment procedure is documented in the [blockchain app README](app/blockchain/README.md#how-to-run-the-local-deployment-flow).
@@ -70,10 +70,10 @@ The full deployment procedure is documented in the [blockchain app README](app/b
 ### Deploy and link the contracts
 
 1. In MetaMask, select the owner wallet and the same network configured in Django Admin. Make sure the wallet has native test currency for deployment fees.
-2. Open **Blockchain → Deployment processes → Iniciar implantação** in Django Admin. Select the company and network, enter the owner's public address and click **Iniciar processo**.
-3. On the process page, click **Conectar carteira e implantar** for the available contract. Confirm the request in MetaMask, then click **Consultar confirmação**. Wait until the contract is confirmed before proceeding to the next available step.
+2. Open **Blockchain → Deployment processes → Start deployment** in Django Admin. Select the company and network, enter the owner's public address and start the process.
+3. On the process page, click **Connect wallet and deploy** for the available contract. Confirm the request in MetaMask, then click **Check confirmation**. Wait until the contract is confirmed before proceeding to the next available step.
 4. Repeat until all **nine contracts** are confirmed. Their addresses appear in the process and in the contract records in Django Admin. The application prepares each contract and its constructor arguments; no manual constructor input is needed in MetaMask.
-5. In **Configuração dos vínculos**, click **Configurar vínculo** for UnitRegistry and confirm the transaction. Consult the confirmation, then repeat for TokenIssuanceBatches. Both links must be confirmed before the deployment is ready.
+5. In **Contract links setup**, click **Configure link** for UnitRegistry and confirm the transaction. Check its confirmation, then repeat for TokenIssuanceBatches. Both links must be confirmed before the deployment is ready.
 
 This requires **11 transactions** in total: nine deployments and two configuration calls. Copy the SojaCoin and UnitRegistry addresses from this deployment; the SojaCoin address is also the SJC token address. If the wallet returns a transaction hash but the application cannot confirm it yet, use the existing confirmation or hash-recovery control rather than submitting a second transaction.
 
@@ -115,11 +115,11 @@ For a new load added after an empty-unit audit, use a weighing timestamp after t
 
 ## Walk through the MVP
 
-1. As the company administrator, open **Empresa → Gerenciar termos** and publish a test terms PDF. Under **Participantes**, register a participant's name and public wallet, then propose the registration using the SojaCoin owner wallet.
+1. As the company administrator, open **Company → Manage terms** and publish a test terms PDF. Under **Participants**, register a participant's name and public wallet, then propose the registration using the SojaCoin owner wallet.
 2. Once the proposal is confirmed, create and copy the acceptance link. The participant opens it, reviews the PDF, connects their own wallet, signs the terms and confirms a separate transaction. Check the registration confirmation.
-3. Sign in as the receiving employee. Under **Recebimentos**, create a receipt with the confirmed participant, authorized unit, crop season, weights, deductions, NF-e key and PDFs. Open its detail page and confirm the three blockchain calls: open the receipt, confirm weighing, and link the invoice.
-4. Sign in as the issuance employee. Open **Emissões**, select the confirmed receipt and create an issuance batch with an approval deadline. Once confirmed, create and copy its participant approval link.
-5. The participant opens the link, reviews the load and confirms **Aprovar e receber tokens** with the registered wallet. That transaction approves the single-receipt batch and issues the tokens. Check the confirmation and the amount shown on the receipt page.
+3. Sign in as the receiving employee. Under **Receipts**, create a receipt with the confirmed participant, authorized unit, crop season, weights, deductions, NF-e key and PDFs. Open its detail page and confirm the three blockchain calls: open the receipt, confirm weighing, and link the invoice.
+4. Sign in as the issuance employee. Open **Issuances**, select the confirmed receipt and create an issuance batch with an approval deadline. Once confirmed, create and copy its participant approval link.
+5. The participant opens the link, reviews the load and confirms **Approve and receive tokens** with the registered wallet. That transaction approves the single-receipt batch and issues the tokens. Check the confirmation and the amount shown on the receipt page.
 6. In MetaMask, select the participant account and the same network. If SJC is not listed, import the **SojaCoin contract address** from the deployment; the token uses six decimals. The participant also needs native test currency for transactions they send.
 
 Use a distinct weighing ticket PDF for each load: the contract rejects a weighing ticket hash that has already been used. A transaction can remain pending until its receipt is available; use the page's confirmation controls or recover the existing transaction hash before attempting another send.
